@@ -8,6 +8,10 @@ jobs:
     steps:
       - name: Simple JS Action
         id: greet
+      - name: List Files
+        run: |
+          pwd
+          ls
         uses: actions/hello-world-javascript-action@v1
         with: 
           who-to-greet: Saikumar
