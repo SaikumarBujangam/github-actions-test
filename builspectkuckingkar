@@ -1,42 +1,31 @@
 version: 0.2
+
+parameters:
+    
 env:
-  shell: bash
   variables:
     TARGET_REGION: "eu-central-1"
+    TARGET_BUCKET: "test-61923"
+    SOURCE_BUCKET: "codepipeline-eu-central-1-70758803032"
 
 phases:
-  install:
-    runtime-versions:
-      python: 3.9
-  pre_build:
-    commands:
-      - aws --version
-      - sudo wget -q https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -O /usr/bin/yq && sudo chmod +x /usr/bin/yq
-      - aws configure set region $TARGET_REGION --profile qa-account
-      - aws configure set role_arn arn:aws:iam::231719417377:role/InfraBuildRole --profile qa-account
-      - aws configure set credential_source EcsContainer --profile qa-account
-      - aws eks --region $TARGET_REGION update-kubeconfig --name qa-starcap-platform-cluster --profile qa-account
   build:
     commands:
-      - |
-        for version in $(yq eval -o=j qa-deployment-versions.yaml | jq -cr '.versions[]'); do
-          service_name=$(echo $version | jq '. | to_entries | .[].key' -)
-          appversion=$(echo $version | jq '. | to_entries | .[].value' -)
-          echo $service_name $appversion
-          if [ $service_name = "webapp" ]; then 
-            webapp_version=$appversion
-          else 
-            sed -i "s/<image_id>/$appversion/g" cluster-config/$service_name-deployment.yaml
-            cat $service_name-deployment.yaml
-          fi
-        done
-      #- kubectl apply -f cluster-config
-  post_build:
-    commands:
-      - echo Downloading frontend code
-      - aws s3 cp --recursive s3://starcap-webapp-build-artifact/qa-$webapp_version webapp
-artifacts:
-  files:
-    - "**/*"
-  discard-paths: no
-  base-directory: webapp
+      - aws configure set region $TARGET_REGION --profile dev-account
+      - aws configure set role_arn arn:aws:iam::745252665765:role/InfraBuildRole --profile dev-account
+      - aws configure set credential_source EcsContainer --profile dev-account
+      - echo "Listing Build Artifacts in ${SOURCE_BUCKET}/dev-webapp-pipeline-/BuildArtif/"
+      - aws s3 ls s3://${SOURCE_BUCKET}/dev-webapp-pipeline-/BuildArtif/ | sort
+      - echo "Getting the latest Build Artifact"
+      - latest_object=$(aws s3 ls s3://${SOURCE_BUCKET}/dev-webapp-pipeline-/BuildArtif/ | sort | tail -n 1 | awk '{print $4}')
+      - echo "Copying $latest_object Artifact from s3://${SOURCE_BUCKET}/dev-webapp-pipeline-/BuildArtif/"
+      - aws s3 cp s3://${SOURCE_BUCKET}/dev-webapp-pipeline-/BuildArtif/$latest_object .
+      - ls -lrt
+      - echo "Extracting the files from $latest_object"
+      - unzip *
+      - ls -lrt
+      - rm -rf $latest_object
+      - ls -lrt
+      - aws s3 rm --recursive s3://${TARGET_BUCKET} --profile dev-account
+      - echo "Deploying the files to ${TARGET_BUCKET}"
+      - aws s3 cp . s3://${TARGET_BUCKET}/ --recursive
