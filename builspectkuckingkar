@@ -1,0 +1,42 @@
+version: 0.2
+env:
+  shell: bash
+  variables:
+    TARGET_REGION: "eu-central-1"
+
+phases:
+  install:
+    runtime-versions:
+      python: 3.9
+  pre_build:
+    commands:
+      - aws --version
+      - sudo wget -q https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -O /usr/bin/yq && sudo chmod +x /usr/bin/yq
+      - aws configure set region $TARGET_REGION --profile qa-account
+      - aws configure set role_arn arn:aws:iam::231719417377:role/InfraBuildRole --profile qa-account
+      - aws configure set credential_source EcsContainer --profile qa-account
+      - aws eks --region $TARGET_REGION update-kubeconfig --name qa-starcap-platform-cluster --profile qa-account
+  build:
+    commands:
+      - |
+        for version in $(yq eval -o=j qa-deployment-versions.yaml | jq -cr '.versions[]'); do
+          service_name=$(echo $version | jq '. | to_entries | .[].key' -)
+          appversion=$(echo $version | jq '. | to_entries | .[].value' -)
+          echo $service_name $appversion
+          if [ $service_name = "webapp" ]; then 
+            webapp_version=$appversion
+          else 
+            sed -i "s/<image_id>/$appversion/g" cluster-config/$service_name-deployment.yaml
+            cat $service_name-deployment.yaml
+          fi
+        done
+      #- kubectl apply -f cluster-config
+  post_build:
+    commands:
+      - echo Downloading frontend code
+      - aws s3 cp --recursive s3://starcap-webapp-build-artifact/qa-$webapp_version webapp
+artifacts:
+  files:
+    - "**/*"
+  discard-paths: no
+  base-directory: webapp
