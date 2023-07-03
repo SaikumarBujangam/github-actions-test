@@ -1,56 +1,109 @@
-{
-  "openapi" : "3.0.1",
-  "info" : {
-    "title" : "rest-api",
-    "version" : "2023-01-27T15:40:06Z"
-  },
-  "servers" : [ {
-    "x-amazon-apigateway-endpoint-configuration" : {
-      "disableExecuteApiEndpoint" : false
-    }
-  } ],
-  "paths" : {
-    "/code-sync" : {
-      "post" : {
-        "responses" : {
-          "200" : {
-            "description" : "200 response",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/Empty"
-                }
-              }
-            }
-          }
-        },
-        "x-amazon-apigateway-integration" : {
-          "type" : "aws",
-          "uri" : "arn:aws:apigateway:${region}:sqs:path/${account_id}/${sqs_name}",
-          "credentials" : "${codesync-apigateway-role}",
-          "httpMethod" : "POST",
-          "responses" : {
-            "default" : {
-              "statusCode" : "200"
-            }
-          },
-          "requestParameters" : {
-            "integration.request.header.Content-Type" : "'application/x-www-form-urlencoded'"
-          },
-          "requestTemplates" : {
-            "application/json" : "Action=SendMessage&MessageBody=$util.urlEncode($input.body)"
-          },
-          "passthroughBehavior" : "never"
-        }
-      }
-    }
-  },
-  "components" : {
-    "schemas" : {
-      "Empty" : {
-        "title" : "Empty Schema",
-        "type" : "object"
-      }
-    }
-  }
-}
+$ terragrunt run-all init --terragrunt-non-interactive
+time=2023-07-03T16:03:54+05:30 level=info msg=The stack at C:/Users/umababy.kannan/OneDrive - HCL Technologies Ltd/Documents/Star CAP/devops-infra/live/devops will be processed in the following order for command init:
+Group 1
+- Module C:/Users/umababy.kannan/OneDrive - HCL Technologies Ltd/Documents/Star CAP/devops-infra/live/devops/eu-central-1/devops-infra-pipeline
+- Module C:/Users/umababy.kannan/OneDrive - HCL Technologies Ltd/Documents/Star CAP/devops-infra/live/devops/eu-central-1/pipelines-common
+
+Group 2
+- Module C:/Users/umababy.kannan/OneDrive - HCL Technologies Ltd/Documents/Star CAP/devops-infra/live/devops/eu-central-1/base-image-creation
+- Module C:/Users/umababy.kannan/OneDrive - HCL Technologies Ltd/Documents/Star CAP/devops-infra/live/devops/eu-central-1/pipelines-dev
+- Module C:/Users/umababy.kannan/OneDrive - HCL Technologies Ltd/Documents/Star CAP/devops-infra/live/devops/eu-central-1/pipelines-qa
+
+Group 3
+- Module C:/Users/umababy.kannan/OneDrive - HCL Technologies Ltd/Documents/Star CAP/devops-infra/live/devops/eu-central-1/gitlab-codecommit-sync
+
+
+Initializing modules...
+
+Initializing the backend...
+
+Initializing the backend...
+
+Initializing provider plugins...
+- Finding hashicorp/aws versions matching "4.59.0"...
+
+Initializing provider plugins...
+- Finding hashicorp/template versions matching "~> 2.0"...
+- Finding hashicorp/aws versions matching "4.59.0"...
+- Finding hashicorp/template versions matching "~> 2.0"...
+- Installing hashicorp/template v2.2.0...
+- Installing hashicorp/aws v4.59.0...
+- Installing hashicorp/aws v4.59.0...
+- Installing hashicorp/template v2.2.0...
+╷
+│ Error: Failed to install provider
+│
+│ Error while installing hashicorp/aws v4.59.0: mkdir .terraform/providers:
+│ The filename or extension is too long.
+╵
+
+╷
+│ Error: Failed to install provider
+│
+│ Error while installing hashicorp/template v2.2.0: mkdir
+│ .terraform/providers: The filename or extension is too long.
+╵
+
+time=2023-07-03T16:04:25+05:30 level=error msg=Terraform invocation failed in C:/Users/umababy.kannan/OneDrive - HCL Technologies Ltd/Documents/Star CAP/devops-infra/live/devops/eu-central-1/devops-infra-pipeline/.terragrunt-cache/I_llfVemlNIRotP08IHF8eQsUfA/Xd3worWQ1ige-pHfmIDhnYcFAvo/devops-infra-pipeline prefix=[C:\Users\umababy.kannan\OneDrive - HCL Technologies Ltd\Documents\Star CAP\devops-infra\live\devops\eu-central-1\devops-infra-pipeline]
+time=2023-07-03T16:04:25+05:30 level=error msg=Module C:/Users/umababy.kannan/OneDrive - HCL Technologies Ltd/Documents/Star CAP/devops-infra/live/devops/eu-central-1/devops-infra-pipeline has finished with an error: 1 error occurred:
+        * [C:/Users/umababy.kannan/OneDrive - HCL Technologies Ltd/Documents/Star CAP/devops-infra/live/devops/eu-central-1/devops-infra-pipeline/.terragrunt-cache/I_llfVemlNIRotP08IHF8eQsUfA/Xd3worWQ1ige-pHfmIDhnYcFAvo/devops-infra-pipeline] exit status 1
+
+ prefix=[C:\Users\umababy.kannan\OneDrive - HCL Technologies Ltd\Documents\Star CAP\devops-infra\live\devops\eu-central-1\devops-infra-pipeline]
+time=2023-07-03T16:04:25+05:30 level=error msg=Dependency C:/Users/umababy.kannan/OneDrive - HCL Technologies Ltd/Documents/Star CAP/devops-infra/live/devops/eu-central-1/devops-infra-pipeline of module C:/Users/umababy.kannan/OneDrive - HCL Technologies Ltd/Documents/Star CAP/devops-infra/live/devops/eu-central-1/base-image-creation just finished with an error. Module C:/Users/umababy.kannan/OneDrive - HCL Technologies Ltd/Documents/Star CAP/devops-infra/live/devops/eu-central-1/base-image-creation will have to return an error too. prefix=[C:\Users\umababy.kannan\OneDrive - HCL Technologies Ltd\Documents\Star CAP\devops-infra\live\devops\eu-central-1\base-image-creation]
+time=2023-07-03T16:04:25+05:30 level=error msg=Dependency C:/Users/umababy.kannan/OneDrive - HCL Technologies Ltd/Documents/Star CAP/devops-infra/live/devops/eu-central-1/devops-infra-pipeline of module C:/Users/umababy.kannan/OneDrive - HCL Technologies Ltd/Documents/Star CAP/devops-infra/live/devops/eu-central-1/gitlab-codecommit-sync just finished with an error. Module C:/Users/umababy.kannan/OneDrive - HCL Technologies Ltd/Documents/Star CAP/devops-infra/live/devops/eu-central-1/gitlab-codecommit-sync will have to return an error too. prefix=[C:\Users\umababy.kannan\OneDrive - HCL Technologies Ltd\Documents\Star CAP\devops-infra\live\devops\eu-central-1\gitlab-codecommit-sync]
+time=2023-07-03T16:04:25+05:30 level=error msg=Module C:/Users/umababy.kannan/OneDrive - HCL Technologies Ltd/Documents/Star CAP/devops-infra/live/devops/eu-central-1/base-image-creation has finished with an error: Cannot process module Module C:/Users/umababy.kannan/OneDrive - HCL Technologies Ltd/Documents/Star CAP/devops-infra/live/devops/eu-central-1/base-image-creation (excluded: false, assume applied: false, dependencies: [C:/Users/umababy.kannan/OneDrive - HCL Technologies Ltd/Documents/Star CAP/devops-infra/live/devops/eu-central-1/devops-infra-pipeline]) because one of its dependencies, Module C:/Users/umababy.kannan/OneDrive - HCL Technologies Ltd/Documents/Star CAP/devops-infra/live/devops/eu-central-1/devops-infra-pipeline (excluded: false, assume applied: false, dependencies: []), finished with an error: 1 error occurred:
+        * [C:/Users/umababy.kannan/OneDrive - HCL Technologies Ltd/Documents/Star CAP/devops-infra/live/devops/eu-central-1/devops-infra-pipeline/.terragrunt-cache/I_llfVemlNIRotP08IHF8eQsUfA/Xd3worWQ1ige-pHfmIDhnYcFAvo/devops-infra-pipeline] exit status 1
+
+ prefix=[C:\Users\umababy.kannan\OneDrive - HCL Technologies Ltd\Documents\Star CAP\devops-infra\live\devops\eu-central-1\base-image-creation]
+time=2023-07-03T16:04:25+05:30 level=error msg=Module C:/Users/umababy.kannan/OneDrive - HCL Technologies Ltd/Documents/Star CAP/devops-infra/live/devops/eu-central-1/gitlab-codecommit-sync has finished with an error: Cannot process module Module C:/Users/umababy.kannan/OneDrive - HCL Technologies Ltd/Documents/Star CAP/devops-infra/live/devops/eu-central-1/gitlab-codecommit-sync (excluded: false, assume applied: false, dependencies: [C:/Users/umababy.kannan/OneDrive - HCL Technologies Ltd/Documents/Star CAP/devops-infra/live/devops/eu-central-1/devops-infra-pipeline, C:/Users/umababy.kannan/OneDrive - HCL Technologies Ltd/Documents/Star CAP/devops-infra/live/devops/eu-central-1/base-image-creation]) because one of its dependencies, Module C:/Users/umababy.kannan/OneDrive - HCL Technologies Ltd/Documents/Star CAP/devops-infra/live/devops/eu-central-1/devops-infra-pipeline (excluded: false, assume applied: false, dependencies: []), finished with an error: 1 error occurred:
+        * [C:/Users/umababy.kannan/OneDrive - HCL Technologies Ltd/Documents/Star CAP/devops-infra/live/devops/eu-central-1/devops-infra-pipeline/.terragrunt-cache/I_llfVemlNIRotP08IHF8eQsUfA/Xd3worWQ1ige-pHfmIDhnYcFAvo/devops-infra-pipeline] exit status 1
+
+ prefix=[C:\Users\umababy.kannan\OneDrive - HCL Technologies Ltd\Documents\Star CAP\devops-infra\live\devops\eu-central-1\gitlab-codecommit-sync]
+╷
+│ Error: Failed to install provider
+│
+│ Error while installing hashicorp/template v2.2.0: mkdir
+│ .terraform/providers/registry.terraform.io: The system cannot find the path
+│ specified.
+╵
+
+╷
+│ Error: Failed to install provider
+│
+│ Error while installing hashicorp/aws v4.59.0: mkdir
+│ .terraform/providers/registry.terraform.io: The system cannot find the path
+│ specified.
+╵
+
+time=2023-07-03T16:04:31+05:30 level=error msg=Terraform invocation failed in C:/Users/umababy.kannan/OneDrive - HCL Technologies Ltd/Documents/Star CAP/devops-infra/live/devops/eu-central-1/pipelines-common/.terragrunt-cache/I7i1IXTAEuR3_ZL_zIqC6bJrfMc/Xd3worWQ1ige-pHfmIDhnYcFAvo/pipelines-common prefix=[C:\Users\umababy.kannan\OneDrive - HCL Technologies Ltd\Documents\Star CAP\devops-infra\live\devops\eu-central-1\pipelines-common]
+time=2023-07-03T16:04:31+05:30 level=error msg=Module C:/Users/umababy.kannan/OneDrive - HCL Technologies Ltd/Documents/Star CAP/devops-infra/live/devops/eu-central-1/pipelines-common has finished with an error: 1 error occurred:
+        * [C:/Users/umababy.kannan/OneDrive - HCL Technologies Ltd/Documents/Star CAP/devops-infra/live/devops/eu-central-1/pipelines-common/.terragrunt-cache/I7i1IXTAEuR3_ZL_zIqC6bJrfMc/Xd3worWQ1ige-pHfmIDhnYcFAvo/pipelines-common] exit status 1
+
+ prefix=[C:\Users\umababy.kannan\OneDrive - HCL Technologies Ltd\Documents\Star CAP\devops-infra\live\devops\eu-central-1\pipelines-common]
+time=2023-07-03T16:04:31+05:30 level=error msg=Dependency C:/Users/umababy.kannan/OneDrive - HCL Technologies Ltd/Documents/Star CAP/devops-infra/live/devops/eu-central-1/pipelines-common of module C:/Users/umababy.kannan/OneDrive - HCL Technologies Ltd/Documents/Star CAP/devops-infra/live/devops/eu-central-1/pipelines-qa just finished with an error. Module C:/Users/umababy.kannan/OneDrive - HCL Technologies Ltd/Documents/Star CAP/devops-infra/live/devops/eu-central-1/pipelines-qa will have to return an error too. prefix=[C:\Users\umababy.kannan\OneDrive - HCL Technologies Ltd\Documents\Star CAP\devops-infra\live\devops\eu-central-1\pipelines-qa]
+time=2023-07-03T16:04:31+05:30 level=error msg=Dependency C:/Users/umababy.kannan/OneDrive - HCL Technologies Ltd/Documents/Star CAP/devops-infra/live/devops/eu-central-1/pipelines-common of module C:/Users/umababy.kannan/OneDrive - HCL Technologies Ltd/Documents/Star CAP/devops-infra/live/devops/eu-central-1/pipelines-dev just finished with an error. Module C:/Users/umababy.kannan/OneDrive - HCL Technologies Ltd/Documents/Star CAP/devops-infra/live/devops/eu-central-1/pipelines-dev will have to return an error too. prefix=[C:\Users\umababy.kannan\OneDrive - HCL Technologies Ltd\Documents\Star CAP\devops-infra\live\devops\eu-central-1\pipelines-dev]
+time=2023-07-03T16:04:31+05:30 level=error msg=Module C:/Users/umababy.kannan/OneDrive - HCL Technologies Ltd/Documents/Star CAP/devops-infra/live/devops/eu-central-1/pipelines-qa has finished with an error: Cannot process module Module C:/Users/umababy.kannan/OneDrive - HCL Technologies Ltd/Documents/Star CAP/devops-infra/live/devops/eu-central-1/pipelines-qa (excluded: false, assume applied: false, dependencies: [C:/Users/umababy.kannan/OneDrive - HCL Technologies Ltd/Documents/Star CAP/devops-infra/live/devops/eu-central-1/pipelines-common]) because one of its dependencies, Module C:/Users/umababy.kannan/OneDrive - HCL Technologies Ltd/Documents/Star CAP/devops-infra/live/devops/eu-central-1/pipelines-common (excluded: false, assume applied: false, dependencies: []), finished with an error: 1 error occurred:
+        * [C:/Users/umababy.kannan/OneDrive - HCL Technologies Ltd/Documents/Star CAP/devops-infra/live/devops/eu-central-1/pipelines-common/.terragrunt-cache/I7i1IXTAEuR3_ZL_zIqC6bJrfMc/Xd3worWQ1ige-pHfmIDhnYcFAvo/pipelines-common] exit status 1
+
+ prefix=[C:\Users\umababy.kannan\OneDrive - HCL Technologies Ltd\Documents\Star CAP\devops-infra\live\devops\eu-central-1\pipelines-qa]
+time=2023-07-03T16:04:31+05:30 level=error msg=Module C:/Users/umababy.kannan/OneDrive - HCL Technologies Ltd/Documents/Star CAP/devops-infra/live/devops/eu-central-1/pipelines-dev has finished with an error: Cannot process module Module C:/Users/umababy.kannan/OneDrive - HCL Technologies Ltd/Documents/Star CAP/devops-infra/live/devops/eu-central-1/pipelines-dev (excluded: false, assume applied: false, dependencies: [C:/Users/umababy.kannan/OneDrive - HCL Technologies Ltd/Documents/Star CAP/devops-infra/live/devops/eu-central-1/pipelines-common]) because one of its dependencies, Module C:/Users/umababy.kannan/OneDrive - HCL Technologies Ltd/Documents/Star CAP/devops-infra/live/devops/eu-central-1/pipelines-common (excluded: false, assume applied: false, dependencies: []), finished with an error: 1 error occurred:
+        * [C:/Users/umababy.kannan/OneDrive - HCL Technologies Ltd/Documents/Star CAP/devops-infra/live/devops/eu-central-1/pipelines-common/.terragrunt-cache/I7i1IXTAEuR3_ZL_zIqC6bJrfMc/Xd3worWQ1ige-pHfmIDhnYcFAvo/pipelines-common] exit status 1
+
+ prefix=[C:\Users\umababy.kannan\OneDrive - HCL Technologies Ltd\Documents\Star CAP\devops-infra\live\devops\eu-central-1\pipelines-dev]
+time=2023-07-03T16:04:31+05:30 level=error msg=6 errors occurred:
+        * Cannot process module Module C:/Users/umababy.kannan/OneDrive - HCL Technologies Ltd/Documents/Star CAP/devops-infra/live/devops/eu-central-1/base-image-creation (excluded: false, assume applied: false, dependencies: [C:/Users/umababy.kannan/OneDrive - HCL Technologies Ltd/Documents/Star CAP/devops-infra/live/devops/eu-central-1/devops-infra-pipeline]) because one of its dependencies, Module C:/Users/umababy.kannan/OneDrive - HCL Technologies Ltd/Documents/Star CAP/devops-infra/live/devops/eu-central-1/devops-infra-pipeline (excluded: false, assume applied: false, dependencies: []), finished with an error: 1 error occurred:
+        * [C:/Users/umababy.kannan/OneDrive - HCL Technologies Ltd/Documents/Star CAP/devops-infra/live/devops/eu-central-1/devops-infra-pipeline/.terragrunt-cache/I_llfVemlNIRotP08IHF8eQsUfA/Xd3worWQ1ige-pHfmIDhnYcFAvo/devops-infra-pipeline] exit status 1
+
+
+        * [C:/Users/umababy.kannan/OneDrive - HCL Technologies Ltd/Documents/Star CAP/devops-infra/live/devops/eu-central-1/devops-infra-pipeline/.terragrunt-cache/I_llfVemlNIRotP08IHF8eQsUfA/Xd3worWQ1ige-pHfmIDhnYcFAvo/devops-infra-pipeline] exit status 1
+        * Cannot process module Module C:/Users/umababy.kannan/OneDrive - HCL Technologies Ltd/Documents/Star CAP/devops-infra/live/devops/eu-central-1/gitlab-codecommit-sync (excluded: false, assume applied: false, dependencies: [C:/Users/umababy.kannan/OneDrive - HCL Technologies Ltd/Documents/Star CAP/devops-infra/live/devops/eu-central-1/devops-infra-pipeline, C:/Users/umababy.kannan/OneDrive - HCL Technologies Ltd/Documents/Star CAP/devops-infra/live/devops/eu-central-1/base-image-creation]) because one of its dependencies, Module C:/Users/umababy.kannan/OneDrive - HCL Technologies Ltd/Documents/Star CAP/devops-infra/live/devops/eu-central-1/devops-infra-pipeline (excluded: false, assume applied: false, dependencies: []), finished with an error: 1 error occurred:
+        * [C:/Users/umababy.kannan/OneDrive - HCL Technologies Ltd/Documents/Star CAP/devops-infra/live/devops/eu-central-1/devops-infra-pipeline/.terragrunt-cache/I_llfVemlNIRotP08IHF8eQsUfA/Xd3worWQ1ige-pHfmIDhnYcFAvo/devops-infra-pipeline] exit status 1
+
+
+        * [C:/Users/umababy.kannan/OneDrive - HCL Technologies Ltd/Documents/Star CAP/devops-infra/live/devops/eu-central-1/pipelines-common/.terragrunt-cache/I7i1IXTAEuR3_ZL_zIqC6bJrfMc/Xd3worWQ1ige-pHfmIDhnYcFAvo/pipelines-common] exit status 1
+        * Cannot process module Module C:/Users/umababy.kannan/OneDrive - HCL Technologies Ltd/Documents/Star CAP/devops-infra/live/devops/eu-central-1/pipelines-dev (excluded: false, assume applied: false, dependencies: [C:/Users/umababy.kannan/OneDrive - HCL Technologies Ltd/Documents/Star CAP/devops-infra/live/devops/eu-central-1/pipelines-common]) because one of its dependencies, Module C:/Users/umababy.kannan/OneDrive - HCL Technologies Ltd/Documents/Star CAP/devops-infra/live/devops/eu-central-1/pipelines-common (excluded: false, assume applied: false, dependencies: []), finished with an error: 1 error occurred:
+        * [C:/Users/umababy.kannan/OneDrive - HCL Technologies Ltd/Documents/Star CAP/devops-infra/live/devops/eu-central-1/pipelines-common/.terragrunt-cache/I7i1IXTAEuR3_ZL_zIqC6bJrfMc/Xd3worWQ1ige-pHfmIDhnYcFAvo/pipelines-common] exit status 1
+
+
+        * Cannot process module Module C:/Users/umababy.kannan/OneDrive - HCL Technologies Ltd/Documents/Star CAP/devops-infra/live/devops/eu-central-1/pipelines-qa (excluded: false, assume applied: false, dependencies: [C:/Users/umababy.kannan/OneDrive - HCL Technologies Ltd/Documents/Star CAP/devops-infra/live/devops/eu-central-1/pipelines-common]) because one of its dependencies, Module C:/Users/umababy.kannan/OneDrive - HCL Technologies Ltd/Documents/Star CAP/devops-infra/live/devops/eu-central-1/pipelines-common (excluded: false, assume applied: false, dependencies: []), finished with an error: 1 error occurred:
+        * [C:/Users/umababy.kannan/OneDrive - HCL Technologies Ltd/Documents/Star CAP/devops-infra/live/devops/eu-central-1/pipelines-common/.terragrunt-cache/I7i1IXTAEuR3_ZL_zIqC6bJrfMc/Xd3worWQ1ige-pHfmIDhnYcFAvo/pipelines-common] exit status 1
