@@ -1,3 +1,19 @@
-C:/Users/umababy.kannan/Star CAP/devops-infra/live/devops/eu-central-1/devops-infra-pipeline/.terragrunt-cache/gP0RrB7fZKDNhaWeLMCwieU7Rc4/PXnLpiOKsGlYKX6jbpWm-O2UCUw/devops-infra-pipeline/.terraform/providers/registry.terraform.io/hashicorp/aws/4.59.0
+Initializing provider plugins...
+- Finding hashicorp/aws versions matching "4.59.0"...
+- Finding hashicorp/template versions matching "~> 2.0"...
+- Installing hashicorp/aws v4.59.0...
+- Installing hashicorp/template v2.2.0...
+╷
+│ Error: Failed to install provider
+│
+│ Error while installing hashicorp/aws v4.59.0: open
+│ .terraform\providers\registry.terraform.io\hashicorp\aws\4.59.0\windows_amd64\terraform-provider-aws_v4.59.0_x5.exe:
+│ The system cannot find the path specified.
+╵
 
-C:/Users/umababy.kannan/Star CAP/devops-infra/live/devops/eu-central-1/devops-infra-pipeline/.terragrunt-cache/gP0RrB7fZKDNhaWeLMCwieU7Rc4/PXnLpiOKsGlYKX6jbpWm-O2UCUw/devops-infra-pipeline/.terraform/providers/registry.terraform.io/hashicorp/aws/template
+╷
+│ Error: Failed to install provider
+│
+│ Error while installing hashicorp/template v2.2.0: open
+│ .terraform\providers\registry.terraform.io\hashicorp\template\2.2.0\windows_amd64\terraform-provider-template_v2.2.0_x4.exe:
+│ The system cannot find the path specified.
