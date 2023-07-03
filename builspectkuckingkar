@@ -1,13 +1,8 @@
-Error: Failed to install provider
-│
-│ Error while installing hashicorp/aws v4.59.0: open
-│ .terraform\providers\registry.terraform.io\hashicorp\aws\4.59.0\windows_amd64\terraform-provider-aws_v4.59.0_x5.exe:
-│ The system cannot find the path specified.
-
-$ terraform version -json
-{
-  "terraform_version": "1.0.10",
-  "platform": "windows_amd64",
-  "provider_selections": {},
-  "terraform_outdated": true
-}
+Initializing provider plugins...
+- Reusing previous version of hashicorp/template from the dependency lock file
+- Reusing previous version of hashicorp/aws from the dependency lock file
+- Using hashicorp/template v2.2.0 from the shared cache directory
+time=2023-07-03T22:19:55+05:30 level=error msg=Error forwarding signal: not supported by windows prefix=[C:\devops-infra\live\devops\eu-central-1\devops-infra-pipeline]
+time=2023-07-03T22:20:25+05:30 level=error msg=Error forwarding signal: not supported by windows prefix=[C:\devops-infra\live\devops\eu-central-1\devops-infra-pipeline]
+time=2023-07-03T22:21:05+05:30 level=error msg=Error forwarding signal: not supported by windows prefix=[C:\devops-infra\live\devops\eu-central-1\devops-infra-pipeline]
+time=2023-07-03T22:21:35+05:30 level=error msg=Error forwarding signal: not supported by windows prefix=[C:\devops-infra\live\devops\eu-central-1\devops-infra-pipeline]
