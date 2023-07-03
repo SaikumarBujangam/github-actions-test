@@ -1,1 +1,5 @@
-5wiû   1.0.10{"product":"terraform","current_version":"1.5.2","current_release":1687972351,"current_download_url":"https://releases.hashicorp.com/terraform/1.5.2","current_changelog_url":"https://github.com/hashicorp/terraform/blob/v1.5.2/CHANGELOG.md","outdated":true,"project_website":"https://www.terraform.io","alerts":[]}
+Error: Failed to install provider
+│
+│ Error while installing hashicorp/aws v4.59.0: open
+│ .terraform\providers\registry.terraform.io\hashicorp\aws\4.59.0\windows_amd64\terraform-provider-aws_v4.59.0_x5.exe:
+│ The system cannot find the path specified.
