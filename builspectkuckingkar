@@ -1,46 +1,13 @@
-$ make init
-cd ./live/devops/eu-central-1/devops-infra-pipeline && terragrunt run-all init --terragrunt-non-interactive
-time=2023-07-04T12:29:28+05:30 level=info msg=The stack at C:/devops-infra/live/devops/eu-central-1/devops-infra-pipeline will be processed in the following order for command init:
-Group 1
-- Module C:/devops-infra/live/devops/eu-central-1/devops-infra-pipeline
-
-
-Initializing modules...
-- sonar_token in ..\aws-common\secretmanager
-
-Initializing the backend...
-
-Successfully configured the backend "s3"! Terraform will automatically
-use this backend unless the backend configuration changes.
-
-Initializing provider plugins...
-- Finding hashicorp/aws versions matching "4.59.0"...
-- Finding hashicorp/template versions matching "~> 2.0"...
-- Installing hashicorp/aws v4.59.0...
-- Installing hashicorp/template v2.2.0...
-╷
-│ Error: Failed to install provider
-│
-│ Error while installing hashicorp/aws v4.59.0: open
-│ .terraform\providers\registry.terraform.io\hashicorp\aws\4.59.0\windows_amd64\terraform-provider-aws_v4.59.0_x5.exe:
-│ The system cannot find the path specified.
-╵
-
-╷
-│ Error: Failed to install provider
-│
-│ Error while installing hashicorp/template v2.2.0: open
-│ .terraform\providers\registry.terraform.io\hashicorp\template\2.2.0\windows_amd64\terraform-provider-template_v2.2.0_x4.exe:
-│ The system cannot find the path specified.
-╵
-
-time=2023-07-04T12:30:00+05:30 level=error msg=Terraform invocation failed in C:/devops-infra/live/devops/eu-central-1/devops-infra-pipeline/.terragrunt-cache/Z9AGCGpvuCR0-bpU4OD2ukHbCvM/H2zHRPYXPYJ98a5dYLbG4dK5VkI/devops-infra-pipeline prefix=[C:\devops-infra\live\devops\eu-central-1\devops-infra-pipeline]
-time=2023-07-04T12:30:00+05:30 level=error msg=Module C:/devops-infra/live/devops/eu-central-1/devops-infra-pipeline has finished with an error: 1 error occurred:
-        * exit status 1
-
- prefix=[C:\devops-infra\live\devops\eu-central-1\devops-infra-pipeline]
-time=2023-07-04T12:30:00+05:30 level=error msg=1 error occurred:
-        * exit status 1
-
-
-make: *** [Makefile:10: init] Error 1
+resource "aws_cloudfront_distribution" "distribution" {
+Omitting logging_config makes logs incomplete. Make sure it is safe here.
+Comment
+  
+  enabled             = true
+  aliases             = [var.domain_name]
+  origin {
+    domain_name = aws_s3_bucket.frontend.bucket_regional_domain_name
+    origin_id   = aws_s3_bucket.frontend.id
+    origin_path = ""
+    s3_origin_config {
+      origin_access_identity = aws_cloudfront_origin_access_identity.oai.cloudfront_access_identity_path
+    }
