@@ -1,29 +1,29 @@
-{
-  "Version": "2012-10-17",
-  "Id": "mycompliantpolicy",
-  "Statement": [
-    {
-      "Sid": "HTTPSOnly",
-      "Effect": "Deny",
-      "Principal": "*",
-      "Action": "s3:*",
-      "Resource": [
-        "{{ bucket_arn }}",
-        "{{ bucket_arn }}/*"
-      ],
-      "Condition": {
-        "Bool": {
-          "aws:SecureTransport": "false"
+policy    = jsonencode(
+            {
+              + Id        = "HTTPSOnly"
+              + Statement = [
+                  + {
+                      + Action    = "s3:*"
+                      + Condition = {
+                          + Bool = {
+                              + aws:SecureTransport = "false"
+                            }
+                        }
+                      + Effect    = "Deny"
+                      + Principal = "*"
+                      + Resource  = [
+                          + "arn:aws:s3:::starcap-devops-infra-codebuild-artifact",
+                          + "arn:aws:s3:::starcap-devops-infra-codebuild-artifact/*",
+                        ]
+                      + Sid       = "HTTPSOnly"
+                    },
+                ]
+              + Version   = "2012-10-17"
+            }
+        )
+      + policy_id = (known after apply)
+      + tags_all  = {
+          + "Environment" = "devops"
+          + "Terraform"   = "true"
         }
-      }
     }
-  ]
-}
-
-
-resource "aws_iam_policy" "mycompliantpolicy" {
-  name   = "mycompliantpolicy"
-  policy = templatefile("${path.module}/mycompliantpolicy.tpl", {
-    bucket_arn = aws_s3_bucket.mycompliantbucket.arn
-  })
-}
