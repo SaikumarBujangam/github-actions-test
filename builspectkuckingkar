@@ -1,14 +1,19 @@
-{
-  "Version": "2008-10-17",
-  "Statement": [
+olicy = jsonencode(
     {
-      "Effect": "Allow",
-      "Principal": {
-        "AWS": "*"
-      },
-      "Action": "SQS:*",
-      "Resource": "${aws_sqs_queue.code_sync_queue.arn}"
+      "Version" : "2012-10-17",
+      "Statement" : [
+        {
+          "Sid" : "SQSAccess",
+          "Effect" : "Allow",
+          "Action" : "sqs:*",
+          "Resource" : "*"
+        },
+        {
+          "Sid" : "LogsAccess",
+          "Effect" : "Allow",
+          "Action" : "logs:*",
+          "Resource" : "*"
+        }
+      ]
     }
-  ]
-}
-POLICY
+  )
