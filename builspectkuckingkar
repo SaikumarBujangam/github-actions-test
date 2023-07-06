@@ -1,42 +1,29 @@
-resource "aws_s3_bucket_policy" "mycompliantpolicy" {
-  bucket = "mycompliantbucketname"
-
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Id      = "mycompliantpolicy"
-    Statement = [
-      {
-        Sid       = "HTTPSOnly"
-        Effect    = "Deny"
-        Principal = "*"
-        Action    = "s3:*"
-        Resource = [
-          aws_s3_bucket.mycompliantbucket.arn,
-          "${aws_s3_bucket.mycompliantbucket.arn}/*",
-        ]
-        Condition = {
-          Bool = {
-            "aws:SecureTransport" = "false"
-          }
+{
+  "Version": "2012-10-17",
+  "Id": "mycompliantpolicy",
+  "Statement": [
+    {
+      "Sid": "HTTPSOnly",
+      "Effect": "Deny",
+      "Principal": "*",
+      "Action": "s3:*",
+      "Resource": [
+        "{{ bucket_arn }}",
+        "{{ bucket_arn }}/*"
+      ],
+      "Condition": {
+        "Bool": {
+          "aws:SecureTransport": "false"
         }
-      },
-    ]
-  })
+      }
+    }
+  ]
 }
 
 
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Action": [
-        "codecommit:CancelUploadArchive",
-        "codecommit:GetBranch",
-        "codecommit:GetCommit",
-        "codecommit:GetUploadArchiveStatus",
-        "codecommit:UploadArchive",
-        "codecommit:GetRepository"
-      ],
-      "Resource": "*",
-      "Effect": "Allow"
-    }
+resource "aws_iam_policy" "mycompliantpolicy" {
+  name   = "mycompliantpolicy"
+  policy = templatefile("${path.module}/mycompliantpolicy.tpl", {
+    bucket_arn = aws_s3_bucket.mycompliantbucket.arn
+  })
+}
