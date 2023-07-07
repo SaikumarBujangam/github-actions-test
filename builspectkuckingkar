@@ -1,21 +1,6 @@
-To obtain the details required for the "Resource" field in the policy, you can follow these steps:
-
-1. Log into the AWS Management Console.
-2. Open the CloudWatch service.
-3. In the navigation pane, select "Logs" to view the list of log groups.
-4. Locate and select the specific log group that you want to grant access to.
-5. In the log group details, you can find the "ARN" (Amazon Resource Name) associated with the log group.
-
-The log group ARN will have the following format:
-
-```
-arn:aws:logs:<region>:<account-id>:log-group:<log-group-name>
-```
-
-- Replace `<region>` with the appropriate AWS region where the log group is located.
-- Replace `<account-id>` with your AWS account ID.
-- Replace `<log-group-name>` with the name of the specific log group.
-
-By gathering this information, you can construct the correct ARN for the log group and use it in the "Resource" field of the policy.
-
-Please note that you will need sufficient permissions and access to CloudWatch Logs to view and retrieve the log group details.
+resource "aws_s3_bucket_policy" "terraform_state_https_policy" {
+  bucket = aws_s3_bucket.gitlab_codecommit_sync_source.id
+  policy = templatefile("${path.module}/../aws-common/templates/s3_bucket_https_policy.tpl", {
+    bucket_arn = aws_s3_bucket.gitlab_codecommit_sync_source.arn
+  })
+}
