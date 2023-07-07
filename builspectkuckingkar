@@ -1,29 +1,33 @@
-policy    = jsonencode(
-            {
-              + Id        = "HTTPSOnly"
-              + Statement = [
-                  + {
-                      + Action    = "s3:*"
-                      + Condition = {
-                          + Bool = {
-                              + aws:SecureTransport = "false"
-                            }
-                        }
-                      + Effect    = "Deny"
-                      + Principal = "*"
-                      + Resource  = [
-                          + "arn:aws:s3:::starcap-devops-infra-codebuild-artifact",
-                          + "arn:aws:s3:::starcap-devops-infra-codebuild-artifact/*",
-                        ]
-                      + Sid       = "HTTPSOnly"
-                    },
-                ]
-              + Version   = "2012-10-17"
-            }
-        )
-      + policy_id = (known after apply)
-      + tags_all  = {
-          + "Environment" = "devops"
-          + "Terraform"   = "true"
-        }
-    }
+.DEFAULT_GOAL := help
+
+ENVIRONMENT := devops/eu-central-1/pipelines-stage
+#PLAN_PATH := plan.out
+
+## Terragrunt/Terraform
+.PHONY: init validate plan apply destroy
+
+init: ## Init Terragrunt/Terraform resources
+	cd ./live/$(ENVIRONMENT) && terragrunt run-all init --terragrunt-non-interactive
+
+validate: init ## Validate Terragrunt/Terraform resources
+	cd ./live/$(ENVIRONMENT) && terragrunt run-all validate --terragrunt-non-interactive
+
+plan: validate ## Plan Terragrunt/Terraform resources
+	cd ./live/$(ENVIRONMENT) && terragrunt run-all plan --terragrunt-non-interactive
+
+apply: plan ## Apply Terragrunt/Terraform resources
+	cd ./live/$(ENVIRONMENT) && terragrunt run-all apply --terragrunt-non-interactive
+
+destroy: validate ## Destroy Terragrunt/Terraform resources
+	cd ./live/$(ENVIRONMENT) && terragrunt run-all destroy --terragrunt-non-interactive
+
+## Linter
+.PHONY: lint-all
+lint-all: init ## Lint all files
+	pre-commit run --all-files
+
+## Convenient commands
+.PHONY: help
+
+help: ## Print this help
+	@grep -E '(^[a-zA-Z_-]+:.*?##.*$$)|(^##)' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[32m%-15s\033[0m %s\n", $$1, $$2}' | sed -e 's/\[32m##/[33m/'
