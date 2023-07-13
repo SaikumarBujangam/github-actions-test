@@ -1,27 +1,24 @@
-Check: CKV_AWS_290: "Ensure IAM policies does not allow write access without constraints"
-        FAILED for resource: aws_iam_role_policy.api_gateway_role_policy
-        File: /gitlab-codecommit-sync\iam.tf:26-48
+heck: CKV_AWS_272: "Ensure AWS Lambda function is configured to validate code-signing"
+        FAILED for resource: aws_lambda_function.lambda_codesync_function
+        File: /gitlab-codecommit-sync\lambda.tf:5-24
 
-                26 | resource "aws_iam_role_policy" "api_gateway_role_policy" {
-                27 |   name = "${var.platform}-api-gateway-loggroup-policy"
-                28 |   role = aws_iam_role.api_gateway_role.id
-                29 |   policy = jsonencode(
-                30 |     {
-                31 |       "Version" : "2012-10-17",
-                32 |       "Statement" : [
-                33 |         {
-                34 |           "Sid" : "SQSAccess",
-                35 |           "Effect" : "Allow",
-                36 |           "Action" : "sqs:*",
-                37 |           "Resource" : "*"
-                38 |         },
-                39 |         {
-                40 |           "Sid" : "LogsAccess",
-                41 |           "Effect" : "Allow",
-                42 |           "Action" : "logs:*",
-                43 |           "Resource" : "*"
-                44 |         }
-                45 |       ]
-                46 |     }
-                47 |   )
-                48 | }
+                5  | resource "aws_lambda_function" "lambda_codesync_function" {
+                6  |   function_name = "${var.platform}-${var.lambda_function_name}"
+                7  |   description   = "Lambda function that will be used to sync gilab repo into codecommit."
+                8  |   memory_size   = "512"
+                9  |   timeout       = "300"
+                10 |   ephemeral_storage {
+                11 |     size = "2048"
+                12 |   }
+                13 |   role         = aws_iam_role.lambda_role.arn
+                14 |   image_uri    = "${var.ecr_repository_uri}:lambda-image-latest"
+                15 |   package_type = "Image"
+                16 |
+                17 |   lifecycle {
+                18 |     ignore_changes = [
+                19 |       # Ignore changes to image_uri, Because codebuild will
+                20 |       # update the image_uri on latest build.
+                21 |       image_uri,
+                22 |     ]
+                23 |   }
+                24 | }
