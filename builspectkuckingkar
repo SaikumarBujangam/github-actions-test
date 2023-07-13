@@ -1,18 +1,49 @@
-Check: CKV_AWS_136: "Ensure that ECR repositories are encrypted using KMS"
-        FAILED for resource: module.ecr_repository.aws_ecr_repository.image_repository
-        File: /aws-common\ecr\main.tf:1-12
-        Calling File: /base-image-creation\main.tf:1-5
-        Guide: https://docs.paloaltonetworks.com/content/techdocs/en_US/prisma/prisma-cloud/prisma-cloud-code-security-policy-reference/aws-policies/aws-general-policies/ensure-that-ecr-repositories-are-encrypted.html
+Check: CKV_AWS_237: "Ensure Create before destroy for API GATEWAY"
+        FAILED for resource: aws_api_gateway_rest_api.webhook_rest_api
+        File: /gitlab-codecommit-sync\apigateway.tf:8-20
+        Guide: https://docs.paloaltonetworks.com/content/techdocs/en_US/prisma/prisma-cloud/prisma-cloud-code-security-policy-reference/aws-policies/aws-general-policies/ensure-aws-api-gateway-enables-create-before-destroy.html
 
-                1  | resource "aws_ecr_repository" "image_repository" {
-                2  |   name                 = var.repository_name
-                3  |   image_tag_mutability = var.image_tag_mutability
-                4  |
-                5  |   image_scanning_configuration {
-                6  |     scan_on_push = var.scan_on_push
-                7  |   }
-                8  |   encryption_configuration {
-                9  |     encryption_type = "AES256"
-                10 |   }
-                11 |   tags = var.tags
-                12 | }
+                8  | resource "aws_api_gateway_rest_api" "webhook_rest_api" {
+                9  |   body = templatefile("${path.module}/templates/api_gateway_spec.tpl", {
+                10 |     region                   = data.aws_region.current.name,
+                11 |     account_id               = data.aws_caller_identity.current.account_id,
+                12 |     sqs_name                 = aws_sqs_queue.code_sync_queue.name,
+                13 |     codesync-apigateway-role = aws_iam_role.api_gateway_role.arn
+                14 |   })
+                15 |   name = "${var.platform}-gitlab-repo-webhook"
+                16 |   endpoint_configuration {
+                17 |     types = ["REGIONAL"]
+                18 |   }
+                19 |   disable_execute_api_endpoint = false
+                20 | }
+
+Check: CKV_AWS_76: "Ensure API Gateway has Access Logging enabled"
+        FAILED for resource: aws_api_gateway_stage.gitlab_webhook_api_gateway_stage
+        File: /gitlab-codecommit-sync\apigateway.tf:34-38
+        Guide: https://docs.paloaltonetworks.com/content/techdocs/en_US/prisma/prisma-cloud/prisma-cloud-code-security-policy-reference/aws-policies/aws-logging-policies/logging-17.html
+
+                34 | resource "aws_api_gateway_stage" "gitlab_webhook_api_gateway_stage" {
+                35 |   deployment_id = aws_api_gateway_deployment.gitlab_webhook_deployment.id
+                36 |   rest_api_id   = aws_api_gateway_rest_api.webhook_rest_api.id
+                37 |   stage_name    = "devops"
+                38 | }
+Check: CKV_AWS_120: "Ensure API Gateway caching is enabled"
+        FAILED for resource: aws_api_gateway_stage.gitlab_webhook_api_gateway_stage
+        File: /gitlab-codecommit-sync\apigateway.tf:34-38
+        Guide: https://docs.paloaltonetworks.com/content/techdocs/en_US/prisma/prisma-cloud/prisma-cloud-code-security-policy-reference/aws-policies/aws-general-policies/ensure-api-gateway-caching-is-enabled.html
+
+                34 | resource "aws_api_gateway_stage" "gitlab_webhook_api_gateway_stage" {
+                35 |   deployment_id = aws_api_gateway_deployment.gitlab_webhook_deployment.id
+                36 |   rest_api_id   = aws_api_gateway_rest_api.webhook_rest_api.id
+                37 |   stage_name    = "devops"
+                38 | }
+Check: CKV_AWS_73: "Ensure API Gateway has X-Ray Tracing enabled"
+        FAILED for resource: aws_api_gateway_stage.gitlab_webhook_api_gateway_stage
+        File: /gitlab-codecommit-sync\apigateway.tf:34-38
+        Guide: https://docs.paloaltonetworks.com/content/techdocs/en_US/prisma/prisma-cloud/prisma-cloud-code-security-policy-reference/aws-policies/aws-logging-policies/logging-15.html
+
+                34 | resource "aws_api_gateway_stage" "gitlab_webhook_api_gateway_stage" {
+                35 |   deployment_id = aws_api_gateway_deployment.gitlab_webhook_deployment.id
+                36 |   rest_api_id   = aws_api_gateway_rest_api.webhook_rest_api.id
+                37 |   stage_name    = "devops"
+                38 | }
