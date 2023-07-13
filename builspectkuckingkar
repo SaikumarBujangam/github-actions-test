@@ -1,8 +1,8 @@
-Check: CKV_AWS_163: "Ensure ECR image scanning on push is enabled"
+Check: CKV_AWS_136: "Ensure that ECR repositories are encrypted using KMS"
         FAILED for resource: module.ecr_repository.aws_ecr_repository.image_repository
         File: /aws-common\ecr\main.tf:1-12
         Calling File: /base-image-creation\main.tf:1-5
-        Guide: https://docs.paloaltonetworks.com/content/techdocs/en_US/prisma/prisma-cloud/prisma-cloud-code-security-policy-reference/aws-policies/aws-general-policies/general-8.html
+        Guide: https://docs.paloaltonetworks.com/content/techdocs/en_US/prisma/prisma-cloud/prisma-cloud-code-security-policy-reference/aws-policies/aws-general-policies/ensure-that-ecr-repositories-are-encrypted.html
 
                 1  | resource "aws_ecr_repository" "image_repository" {
                 2  |   name                 = var.repository_name
