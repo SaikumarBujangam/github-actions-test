@@ -1,1 +1,70 @@
-python -m pip install --trusted-host files.pythonhosted.org --trusted-host pypi.org --trusted-host pypi.python.org checkov
+Check: CKV_AWS_316: "Ensure CodeBuild project environments do not have privileged mode enabled"
+        FAILED for resource: module.base_docker_image_build.aws_codebuild_project.build
+        File: /aws-common\codebuild\main.tf:6-65
+        Calling File: /base-image-creation\main.tf:7-18
+
+data "template_file" "build_spec_template" {
+  template = file("${path.cwd}/build_spec/${var.build_spec}.yml")
+  vars     = var.build_specific_variables
+}
+
+resource "aws_codebuild_project" "build" {
+  name                   = var.build_project_name
+  description            = "${var.build_project_name} codebuild project"
+  build_timeout          = "60"
+  service_role           = var.codebuild_role_arn
+  encryption_key         = var.artifact_encryption_key_arn
+  concurrent_build_limit = var.concurrent_build_limit
+
+  dynamic "artifacts" {
+    for_each = var.store_artifact == true ? [1] : []
+    content {
+      type                    = "S3"
+      location                = var.artifact_bucket_name
+      override_artifact_name  = true
+      packaging               = "NONE"
+    }
+  }
+
+  dynamic "artifacts" {
+    for_each = var.store_artifact == false ? [1] : []
+    content {
+      type                    = "NO_ARTIFACTS"
+    }
+  }
+
+  cache {
+    type     = "S3"
+    location = "${var.codebuild_artifacts_bucket_name}/${var.target_environment}/${var.build_project_name}"
+  }
+
+  environment {
+    compute_type                = "BUILD_GENERAL1_SMALL"
+    image                       = var.build_image
+    type                        = "LINUX_CONTAINER"
+    image_pull_credentials_type = "CODEBUILD"
+    privileged_mode             = true
+  }
+
+  logs_config {
+    cloudwatch_logs {
+      group_name  = "${var.target_environment}-build-log-group"
+      stream_name = "${var.build_project_name}-log-stream"
+    }
+
+    s3_logs {
+      status   = "ENABLED"
+      location = "${var.codebuild_artifacts_bucket_name}/${var.target_environment}/${var.build_project_name}/build-log"
+    }
+  }
+
+  source {
+    type            = var.build_trigger
+    location        = var.source_location
+    buildspec       = data.template_file.build_spec_template.rendered
+    git_clone_depth = var.store_artifact == true ? 0 : null
+  }
+
+  source_version = var.build_branch
+
+}
