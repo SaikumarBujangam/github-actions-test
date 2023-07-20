@@ -1,19 +1,19 @@
-The code you provided is written in HashiCorp Configuration Language (HCL) and is used to create an AWS CodeStar Notifications notification rule for sending notifications to a Slack channel whenever there are updates to AWS CodePipeline pipelines. Let's break down the code to understand what it does:
+variable "event_type_ids" {
+  type    = list(string)
+  default = ["codepipeline-pipeline-action-execution-failed", "codepipeline-pipeline-stage-execution-failed"]
+}
 
-1. `resource "aws_codestarnotifications_notification_rule" "pipeline_updates" {`: This line indicates that you are creating an AWS CodeStar Notifications notification rule named "pipeline_updates."
+resource "aws_codestarnotifications_notification_rule" "pipeline_updates" {
+  count          = length(var.codepipelines)
+  detail_type    = "FULL"
+  event_type_ids = var.event_type_ids
+  name           = "slackNotification${var.codepipelines[count.index].name}"
+  resource       = var.codepipelines[count.index].arn
 
-2. `count = length(var.codepipelines)`: The `count` parameter is used to create multiple instances of the notification rule based on the number of elements in the `codepipelines` variable.
+  target {
+    address = aws_sns_topic.pipeline_updates.arn
+    type    = "SNS"
+  }
 
-3. `detail_type = "FULL"`: Specifies the level of detail in the notifications. In this case, it is set to "FULL."
-
-4. `event_type_ids = var.event_type_ids`: Specifies the event types for which notifications should be sent. It uses the values provided in the `event_type_ids` variable.
-
-5. `name = "slackNotification${var.codepipelines[count.index].name}"`: Sets the name of the notification rule with a prefix "slackNotification" followed by the name of the specific CodePipeline from the `codepipelines` variable based on the `count.index`.
-
-6. `resource = var.codepipelines[count.index].arn`: Specifies the AWS resource (in this case, a specific CodePipeline) for which the notification rule will be created based on the `arn` (Amazon Resource Name) provided in the `codepipelines` variable.
-
-7. `target { ... }`: Defines the target where the notifications will be sent. In this case, it's an SNS topic with the ARN `aws_sns_topic.pipeline_updates.arn`.
-
-8. `tags = module.default_label.tags`: Attaches tags to the notification rule, using the tags from the `default_label` module.
-
-Overall, this code creates multiple AWS CodeStar Notifications notification rules, one for each AWS CodePipeline specified in the `codepipelines` variable. Each notification rule will send notifications to a Slack channel using an SNS topic with the ARN `aws_sns_topic.pipeline_updates.arn`. The rule will be triggered when there are updates to the corresponding CodePipeline resource.
+  tags = module.default_label.tags
+}
