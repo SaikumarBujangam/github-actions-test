@@ -12,3 +12,8 @@ resource "aws_codestarnotifications_notification_rule" "pipeline_updates" {
 
   tags = module.default_label.tags
 }
+https://github.com/kjagiello/terraform-aws-codepipeline-slack-notifications/blob/master/main.tf
+
+ 
+
+https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-codestarnotifications-notificationrule-target.html
