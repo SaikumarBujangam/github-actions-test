@@ -100,3 +100,93 @@ Changes made:
 3. I've added a new variable named `tags`, which is of type `map(string)`, to allow you to attach tags to the notification rule. This variable allows you to pass a map of key-value pairs as tags, and it has a default value of an empty map (no tags) if not provided.
 
 With these adjustments, your Terraform code should now be able to create an AWS CodeStar Notifications notification rule that sends notifications to the specified Slack channel whenever there are updates to the specified AWS CodePipeline. Make sure to replace the placeholder values for `var.codepipelines_name` and `var.codepipelines_arn` with the actual names and ARNs of your CodePipeline resources when using this module. Additionally, you can customize the event type IDs and tags by passing appropriate values to the corresponding variables during module instantiation.
+
+
+
+
+
+
+
+resource "aws_codepipeline" "codepipeline" {
+  name     = "${var.environment}-webapp-pipeline"
+  role_arn = var.codepipeline_role_arn
+
+  artifact_store {
+    location = var.codepipeline_artifacts_bucket_name
+    type     = "S3"
+
+    encryption_key {
+      id   = var.artifact_encryption_key_arn
+      type = "KMS"
+    }
+  }
+
+  stage {
+    name = "Source"
+
+    action {
+      name             = "Source"
+      category         = "Source"
+      owner            = "AWS"
+      provider         = "CodeCommit"
+      version          = "1"
+      output_artifacts = ["SourceArtifact"]
+      namespace        = "SourceVariables"
+
+      configuration = {
+        RepositoryName       = var.repository_name
+        BranchName           = var.default_branch
+        PollForSourceChanges = "false"
+        OutputArtifactFormat = "CODE_ZIP"
+      }
+    }
+  }
+
+  stage {
+    name = "Build"
+
+    action {
+      name             = "Build"
+      category         = "Build"
+      owner            = "AWS"
+      provider         = "CodeBuild"
+      input_artifacts  = ["SourceArtifact"]
+      output_artifacts = ["BuildArtifact"]
+      version          = "1"
+      namespace        = "BuildVariables"
+
+      configuration = {
+        ProjectName = "${var.environment}-webapp-build"
+        
+      }
+    }
+  }
+
+  stage {
+    name = "Deploy"
+
+    action {
+      name              = "DeployAction"
+      category          = "Deploy"
+      owner             = "AWS"
+      provider          = "S3"
+      version           = "1"
+      input_artifacts   = ["BuildArtifact"]
+      namespace         = "DeployVariables"
+
+      configuration = {
+        BucketName      = var.webapp_bucket_name
+        Extract         = "true"
+
+      }
+    }
+  }
+  
+}
+
+module "pipeline_notification"{
+  source = "../../aws-common/pipeline-status"
+  codepipelines_name = aws_codepipeline.codepipeline.name
+  codepipelines_arn =  aws_codepipeline.codepipeline.arn
+
+}
