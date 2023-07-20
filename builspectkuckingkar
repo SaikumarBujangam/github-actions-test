@@ -5,9 +5,29 @@ resource "aws_codestarnotifications_notification_rule" "pipeline_updates" {
   resource       = var.codepipelines_arn
 
   target {
-    address = aws_sns_topic.pipeline_updates.arn
-    type    = "SNS"
+    address = arn:aws:chatbot::195227247767:chat-configuration/slack-channel/starcap-dev-cicd-channel
+    type    = "AWSChatbotSlack"
   }
 
   tags = var.tags
+}
+
+variable "event_type_ids" {
+  type    = list(string)
+  default = ["codepipeline-pipeline-action-execution-started", 
+  "codepipeline-pipeline-action-execution-succeeded",
+  "codepipeline-pipeline-action-execution-failed"]
+}
+
+variable "codepipelines_name" {
+  type    = string
+}
+
+variable "codepipelines_arn" {
+  type    = string
+}
+
+variable "map" {
+  type    = map
+  default {}
 }
