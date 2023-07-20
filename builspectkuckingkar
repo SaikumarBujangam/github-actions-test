@@ -1,11 +1,11 @@
 resource "aws_codestarnotifications_notification_rule" "pipeline_updates" {
   detail_type    = "FULL"
   event_type_ids = var.event_type_ids
-  name           = "slackNotification${var.codepipelines_name}"
+  name           = "slackNotification-${var.codepipelines_name}"
   resource       = var.codepipelines_arn
 
   target {
-    address = arn:aws:chatbot::195227247767:chat-configuration/slack-channel/starcap-dev-cicd-channel
+    address = "arn:aws:chatbot::195227247767:chat-configuration/slack-channel/starcap-dev-cicd-channel"
     type    = "AWSChatbotSlack"
   }
 
@@ -15,8 +15,8 @@ resource "aws_codestarnotifications_notification_rule" "pipeline_updates" {
 variable "event_type_ids" {
   type    = list(string)
   default = ["codepipeline-pipeline-action-execution-started", 
-  "codepipeline-pipeline-action-execution-succeeded",
-  "codepipeline-pipeline-action-execution-failed"]
+             "codepipeline-pipeline-action-execution-succeeded",
+             "codepipeline-pipeline-action-execution-failed"]
 }
 
 variable "codepipelines_name" {
@@ -27,7 +27,76 @@ variable "codepipelines_arn" {
   type    = string
 }
 
-variable "map" {
-  type    = map
-  default {}
+variable "tags" {
+  type    = map(string)
+  default = {}
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+It seems like you are on the right track to create an AWS CodeStar Notifications notification rule in Terraform. However, there are a few adjustments needed in your code to ensure it works correctly and is syntactically valid. Below is the updated version of your Terraform code:
+
+```hcl
+resource "aws_codestarnotifications_notification_rule" "pipeline_updates" {
+  detail_type    = "FULL"
+  event_type_ids = var.event_type_ids
+  name           = "slackNotification-${var.codepipelines_name}"
+  resource       = var.codepipelines_arn
+
+  target {
+    address = "arn:aws:chatbot::195227247767:chat-configuration/slack-channel/starcap-dev-cicd-channel"
+    type    = "AWSChatbotSlack"
+  }
+
+  tags = var.tags
+}
+
+variable "event_type_ids" {
+  type    = list(string)
+  default = ["codepipeline-pipeline-action-execution-started", 
+             "codepipeline-pipeline-action-execution-succeeded",
+             "codepipeline-pipeline-action-execution-failed"]
+}
+
+variable "codepipelines_name" {
+  type    = string
+}
+
+variable "codepipelines_arn" {
+  type    = string
+}
+
+variable "tags" {
+  type    = map(string)
+  default = {}
+}
+```
+
+Changes made:
+
+1. In the `name` attribute of the `aws_codestarnotifications_notification_rule`, I've added a hyphen "-" between "slackNotification" and `${var.codepipelines_name}` to have a clear separator in the name.
+
+2. In the `target` block, I've enclosed the `address` value in double quotes to make it a string, as it's required in Terraform to have string values enclosed in quotes.
+
+3. I've added a new variable named `tags`, which is of type `map(string)`, to allow you to attach tags to the notification rule. This variable allows you to pass a map of key-value pairs as tags, and it has a default value of an empty map (no tags) if not provided.
+
+With these adjustments, your Terraform code should now be able to create an AWS CodeStar Notifications notification rule that sends notifications to the specified Slack channel whenever there are updates to the specified AWS CodePipeline. Make sure to replace the placeholder values for `var.codepipelines_name` and `var.codepipelines_arn` with the actual names and ARNs of your CodePipeline resources when using this module. Additionally, you can customize the event type IDs and tags by passing appropriate values to the corresponding variables during module instantiation.
