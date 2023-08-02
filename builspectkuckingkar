@@ -1,7 +1,7 @@
 version: 0.2
 env:
   variables:
-    TARGET_REGION: "eu-central-1"
+    TARGET_REGION: "eu-west-1"
   secrets-manager:
     Endor_Graphql_Api_Key: "dev/variable/endorGraphqlApiKey"
     Service_Access_Key: "dev/variable/serviceAccessKey"
@@ -11,12 +11,12 @@ phases:
         java: corretto17
   pre_build:
     commands:
-      - aws configure set region $TARGET_REGION --profile dev-account
-      - aws configure set role_arn arn:aws:iam::745252665765:role/InfraBuildRole --profile dev-account
-      - aws configure set credential_source EcsContainer --profile dev-account
-      - aws eks --region $TARGET_REGION update-kubeconfig --name dev-starcap-platform-cluster --profile dev-account
+      - aws configure set region $TARGET_REGION --profile dev2-account
+      - aws configure set role_arn arn:aws:iam::745252665765:role/InfraBuildRole --profile dev2-account
+      - aws configure set credential_source EcsContainer --profile dev2-account
+      - aws eks --region $TARGET_REGION update-kubeconfig --name dev2-starcap-platform-cluster --profile dev2-account
   build:
     commands:
-      - sed -i "s/<endorGraphqlApiKey>/$Endor_Graphql_Api_Key/g" cluster-configmap/dev-backend-configmap.yaml
-      - sed -i "s/<serviceAccessKey>/$Service_Access_Key/g" cluster-configmap/dev-backend-configmap.yaml
-      - kubectl apply -f cluster-configmap/dev-backend-configmap.yaml
+      - sed -i "s/<endorGraphqlApiKey>/$Endor_Graphql_Api_Key/g" cluster-configmap/dev2-backend-configmap.yaml
+      - sed -i "s/<serviceAccessKey>/$Service_Access_Key/g" cluster-configmap/dev2-backend-configmap.yaml
+      - kubectl apply -f cluster-configmap/dev2-backend-configmap.yaml
