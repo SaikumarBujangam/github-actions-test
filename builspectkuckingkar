@@ -1,33 +1,22 @@
-data "aws_codecommit_repository" "repo" {
-  repository_name = var.repository_name
-}
-
-#####################################################
-# Creating cloudwatch-event-rule to trigger pipeline
-#####################################################
-resource "aws_cloudwatch_event_rule" "trigger_pipeline_on_repo_updates" {
-
-  name        = "${var.environment}-${var.repository_name}-${var.default_branch}-pipeline-rule"
-  description = "Amazon CloudWatch Events rule to automatically start the ${var.environment} pipeline when a change occurs in the ${var.repository_name} repository and ${var.default_branch} branch. "
-
-  event_pattern = <<EOF
-{
-  "source": ["aws.codecommit"],
-  "detail-type": ["CodeCommit Repository State Change"],
-  "resources": ["${data.aws_codecommit_repository.repo.arn}"],
-  "detail": {
-    "event": ["referenceCreated", "referenceUpdated"],
-    "referenceType": ["branch"],
-    "referenceName": ["${var.default_branch}"]
-  }
-}
-EOF
-}
-
-resource "aws_cloudwatch_event_target" "codepipeline" {
-
-  rule      = aws_cloudwatch_event_rule.trigger_pipeline_on_repo_updates.name
-  target_id = "TriggerPipeline"
-  arn       = aws_codepipeline.codepipeline.arn
-  role_arn  = var.cloudwatch_event_role_arn
-}
+version: 0.2
+env:
+  variables:
+    TARGET_REGION: "eu-central-1"
+  secrets-manager:
+    Endor_Graphql_Api_Key: "dev/variable/endorGraphqlApiKey"
+    Service_Access_Key: "dev/variable/serviceAccessKey"
+phases:
+  install:
+    runtime-versions:
+        java: corretto17
+  pre_build:
+    commands:
+      - aws configure set region $TARGET_REGION --profile dev-account
+      - aws configure set role_arn arn:aws:iam::745252665765:role/InfraBuildRole --profile dev-account
+      - aws configure set credential_source EcsContainer --profile dev-account
+      - aws eks --region $TARGET_REGION update-kubeconfig --name dev-starcap-platform-cluster --profile dev-account
+  build:
+    commands:
+      - sed -i "s/<endorGraphqlApiKey>/$Endor_Graphql_Api_Key/g" cluster-configmap/dev-backend-configmap.yaml
+      - sed -i "s/<serviceAccessKey>/$Service_Access_Key/g" cluster-configmap/dev-backend-configmap.yaml
+      - kubectl apply -f cluster-configmap/dev-backend-configmap.yaml
