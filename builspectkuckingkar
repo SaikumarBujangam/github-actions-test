@@ -119,3 +119,16 @@ resource "kubectl_manifest" "logging" {
     yaml_body = file("${path.module}/config/logging.yaml")
     depends_on = [ kubectl_manifest.aws_observability_namespace ]
 }
+
+
+ Error: reading ELBv2 Load Balancers: couldn't find resource
+│ 
+│   with data.aws_lb.alb,
+│   on api_gateway.tf line 1, in data "aws_lb" "alb":
+│    1: data "aws_lb" "alb" {
+│ 
+╵
+time=2023-08-03T15:17:17Z level=error msg=Terraform invocation failed in /codebuild/output/src3679116684/src/live/stg/eu-central-1/platform-backend/.terragrunt-cache/qyQJWfz_eu3pJhDMI7okMDAmR-8/Wxw-VoUEb61aLBQmNqVR44TL-Go/platform-backend prefix=[/codebuild/output/src3679116684/src/live/stg/eu-central-1/platform-backend] 
+
+time=2023-08-03T15:17:17Z level=error msg=1 error occurred:
+    * exit status 1
