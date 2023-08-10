@@ -1,8 +1,9 @@
- version: 0.2
+version: 0.2
 env:
   variables:
     TARGET_REGION: "eu-central-1"
     ENV: ""
+    SERVICES_TO_RESTART: ""
   secrets-manager:
     Endor_Graphql_Api_Key: "$ENV/variable/endorGraphqlApiKey"
     Service_Access_Key: "$ENV/variable/serviceAccessKey"
@@ -12,12 +13,20 @@ phases:
         java: corretto17
   pre_build:
     commands:
+      - echo "Validating environment parameter"
+      - |
+        if [ "$ENV" != "qa" ] && [ "$ENV" != "stg" ] && [ "$ENV" != "prod" ]; then
+          echo "Invalid environment paramter. Accepted values are 'qa', 'stg' or 'prod'."
+          exit 1
+        fi 
       - aws configure set region $TARGET_REGION --profile $ENV-account
       - aws configure set role_arn arn:aws:iam::745252665765:role/InfraBuildRole --profile $ENV-account
       - aws configure set credential_source EcsContainer --profile $ENV-account
       - aws eks --region $TARGET_REGION update-kubeconfig --name $ENV-starcap-platform-cluster --profile $ENV-account
   build:
     commands:
-      - sed -i "s/<endorGraphqlApiKey>/$Endor_Graphql_Api_Key/g" cluster-configmap/$ENV-backend-configmap.yaml
-      - sed -i "s/<serviceAccessKey>/$Service_Access_Key/g" cluster-configmap/$ENV-backend-configmap.yaml
-      - kubectl apply -f cluster-configmap/$ENV-backend-configmap.yaml
+      - |
+        IFS=',' read -ra SERVICES <<< "$SERVICES_TO_RESTART"
+        for service in $SERVICES[@]; do
+          kubectl rollout restart deployment $service -n backend
+        done
