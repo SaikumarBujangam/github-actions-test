@@ -50,3 +50,9 @@ time=2023-08-10T16:45:36+05:30 level=error msg=1 error occurred:
 
 
 make: *** [Makefile:16: plan] Error 1
+
+variable "short_name" {
+  description = "Short name for codebuild project"
+  type        = list(string)
+  default     = ["dev", "common"]
+}
