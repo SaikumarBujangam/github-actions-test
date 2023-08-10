@@ -1,35 +1,37 @@
-locals {
-  config_mgmt_build_data = [
-    for name in var.short_name : {
-      build_project_name              = "${name}-configmap-update-utility"
-      build_spec_file                 = "${path.cwd}/build_spec/${name}-configmap-update-buildspec.yml"
-      # ... other attributes
-    }
-  ]
-
-  microservices_restart_build_data = [
-    for name in var.short_name : {
-      build_project_name              = "${name}-microservices-restart-utility"
-      build_spec_file                 = "${path.cwd}/build_spec/${name}-microservices-restart-utility.yml"
-      # ... other attributes
-    }
-  ]
+variable "short_name" {
+  description = "Short name for codebuild project"
+  type        = list(string)
+  default     = ["dev", "common"]
 }
 
 module "config_mgmt_build" {
-  count = length(var.short_name)
+  for_each = toset(var.short_name)
+
   source = "../../aws-common/codebuild"
 
-  build_project_name              = local.config_mgmt_build_data[count.index].build_project_name
-  build_spec_file                 = local.config_mgmt_build_data[count.index].build_spec_file
-  # ... other attributes
+  build_project_name              = "${each.value}-configmap-update-utility"
+  build_spec_file                 = "${path.cwd}/build_spec/${each.value}-configmap-update-buildspec.yml"
+  codebuild_role_arn              = var.codebuild_role_arn
+  artifact_encryption_key_arn     = var.artifact_encryption_key_arn     
+  codebuild_artifacts_bucket_name = var.codebuild_artifacts_bucket_name
+  build_image                     = "aws/codebuild/amazonlinux2-x86_64-standard:4.0"
+  build_trigger                   = "CODECOMMIT"
+  source_location                 = data.aws_codecommit_repository.repo.clone_url_http
+  build_branch                    = "main"
 }
 
 module "microservices_restart_build" {
-  count = length(var.short_name)
+  for_each = toset(var.short_name)
+
   source = "../../aws-common/codebuild"
 
-  build_project_name              = local.microservices_restart_build_data[count.index].build_project_name
-  build_spec_file                 = local.microservices_restart_build_data[count.index].build_spec_file
-  # ... other attributes
+  build_project_name              = "${each.value}-microservices-restart-utility"
+  build_spec_file                 = "${path.cwd}/build_spec/${each.value}-microservices-restart-utility.yml"
+  codebuild_role_arn              = var.codebuild_role_arn
+  artifact_encryption_key_arn     = var.artifact_encryption_key_arn     
+  codebuild_artifacts_bucket_name = var.codebuild_artifacts_bucket_name
+  build_image                     = "aws/codebuild/amazonlinux2-x86_64-standard:4.0"
+  build_trigger                   = "CODECOMMIT"
+  source_location                 = data.aws_codecommit_repository.repo.clone_url_http
+  build_branch                    = "main"
 }
