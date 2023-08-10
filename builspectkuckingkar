@@ -1,37 +1,231 @@
-variable "short_name" {
-  description = "Short name for codebuild project"
-  type        = list(string)
-  default     = ["dev", "common"]
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "codebuild:CreateReportGroup",
+        "codebuild:CreateReport",
+        "codebuild:UpdateReport",
+        "codebuild:BatchPutTestCases",
+        "codebuild:BatchPutCodeCoverages"
+      ],
+      "Resource": [
+        "arn:aws:codebuild:*:${account}:report-group/*"
+      ]
+    },
+    {
+      "Effect": "Allow",
+      "Action": "sts:AssumeRole",
+      "Resource": "arn:aws:iam::${target_account_id}:role/InfraBuildRole"
+    },
+    {
+      "Sid": "AllowBuildOutputStreamingToDefaultLogGroup",
+      "Effect": "Allow",
+      "Resource": [
+        "arn:aws:logs:*:*:log-group:*"
+      ],
+      "Action": [
+        "logs:CreateLogGroup",
+        "logs:CreateLogStream",
+        "logs:PutLogEvents"
+      ]
+    },
+    {
+      "Sid": "AllowDDBTerraformStateLockAccess",
+      "Effect": "Allow",
+      "Action": [
+        "dynamodb:*"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "AllowBuildServiceToAccessCodeCommit",
+      "Action": [
+        "codecommit:CancelUploadArchive",
+        "codecommit:GetBranch",
+        "codecommit:GetCommit",
+        "codecommit:GetUploadArchiveStatus",
+        "codecommit:UploadArchive",
+        "codecommit:GitPull",
+        "codecommit:GetRepository"
+      ],
+      "Resource": "*",
+      "Effect": "Allow"
+    },
+    {
+      "Sid": "AllowAccessCodeBuildSSMParameters",
+      "Effect": "Allow",
+      "Action": "ssm:GetParameters",
+      "Resource": "arn:aws:ssm:*:*:parameter/*"
+    },
+    {
+      "Sid": "AllowRunningBuildInVpc",
+      "Effect": "Allow",
+      "Action": [
+        "ec2:CreateNetworkInterface",
+        "ec2:DescribeDhcpOptions",
+        "ec2:DescribeNetworkInterfaces",
+        "ec2:DeleteNetworkInterface",
+        "ec2:DescribeSubnets",
+        "ec2:DescribeSecurityGroups",
+        "ec2:DescribeVpcs"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "AllowBuildServiceToCreateENI",
+      "Effect": "Allow",
+      "Action": "ec2:CreateNetworkInterfacePermission",
+      "Resource": "arn:aws:ec2:*:*:network-interface/*",
+      "Condition": {
+        "StringEquals": {
+          "ec2:AuthorizedService": "codebuild.amazonaws.com"
+        }
+      }
+    },
+    {
+      "Sid": "AllowBuildServiceToAccessECR",
+      "Effect": "Allow",
+      "Action": [
+        "ecr:*",
+        "cloudtrail:LookupEvents"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "AllowBuildServiceToCreateSLR",
+      "Effect": "Allow",
+      "Action": [
+        "iam:CreateServiceLinkedRole"
+      ],
+      "Resource": "*",
+      "Condition": {
+        "StringEquals": {
+          "iam:AWSServiceName": [
+            "replication.ecr.amazonaws.com"
+          ]
+        }
+      }
+    },
+    {
+      "Action": [
+        "codeartifact:*"
+      ],
+      "Effect": "Allow",
+      "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": "sts:GetServiceBearerToken",
+      "Resource": "*",
+      "Condition": {
+        "StringEquals": {
+          "sts:AWSServiceName": "codeartifact.amazonaws.com"
+        }
+      }
+    },
+    {
+      "Action": [
+        "s3:*",
+        "s3-object-lambda:*"
+      ],
+      "Effect": "Allow",
+      "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "ecr:GetAuthorizationToken",
+        "ecr:BatchCheckLayerAvailability",
+        "ecr:GetDownloadUrlForLayer",
+        "ecr:GetRepositoryPolicy",
+        "ecr:DescribeRepositories",
+        "ecr:ListImages",
+        "ecr:DescribeImages",
+        "ecr:BatchGetImage",
+        "ecr:GetLifecyclePolicy",
+        "ecr:GetLifecyclePolicyPreview",
+        "ecr:ListTagsForResource",
+        "ecr:DescribeImageScanFindings",
+        "ecr:InitiateLayerUpload",
+        "ecr:UploadLayerPart",
+        "ecr:CompleteLayerUpload",
+        "ecr:PutImage"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Action": [
+          "secretsmanager:*",
+          "cloudformation:CreateChangeSet",
+          "cloudformation:DescribeChangeSet",
+          "cloudformation:DescribeStackResource",
+          "cloudformation:DescribeStacks",
+          "cloudformation:ExecuteChangeSet",
+          "ec2:DescribeSecurityGroups",
+          "ec2:DescribeSubnets",
+          "ec2:DescribeVpcs",
+          "kms:DescribeKey",
+          "kms:ListAliases",
+          "kms:ListKeys",
+          "lambda:ListFunctions",
+          "rds:DescribeDBClusters",
+          "rds:DescribeDBInstances",
+          "redshift:DescribeClusters",
+          "tag:GetResources"
+      ],
+      "Effect": "Allow",
+      "Resource": "*"
+  },
+  {
+      "Action": [
+          "lambda:AddPermission",
+          "lambda:CreateFunction",
+          "lambda:GetFunction",
+          "lambda:InvokeFunction",
+          "lambda:UpdateFunctionConfiguration"
+      ],
+      "Effect": "Allow",
+      "Resource": "arn:aws:lambda:*:*:function:SecretsManager*"
+  },
+  {
+      "Action": [
+          "serverlessrepo:CreateCloudFormationChangeSet",
+          "serverlessrepo:GetApplication"
+      ],
+      "Effect": "Allow",
+      "Resource": "arn:aws:serverlessrepo:*:*:applications/SecretsManager*"
+  },
+  {
+      "Action": [
+          "s3:GetObject"
+      ],
+      "Effect": "Allow",
+      "Resource": [
+          "arn:aws:s3:::awsserverlessrepo-changesets*",
+          "arn:aws:s3:::secrets-manager-rotation-apps-*/*"
+      ]
+  },
+  {
+    "Action": [
+        "codeartifact:*"
+    ],
+    "Effect": "Allow",
+    "Resource": "*"
+},
+{
+    "Effect": "Allow",
+    "Action": "sts:GetServiceBearerToken",
+    "Resource": "*",
+    "Condition": {
+        "StringEquals": {
+            "sts:AWSServiceName": "codeartifact.amazonaws.com"
+        }
+    }
+}
+  ]
 }
 
-module "config_mgmt_build" {
-  for_each = toset(var.short_name)
 
-  source = "../../aws-common/codebuild"
-
-  build_project_name              = "${each.value}-configmap-update-utility"
-  build_spec_file                 = "${path.cwd}/build_spec/${each.value}-configmap-update-buildspec.yml"
-  codebuild_role_arn              = var.codebuild_role_arn
-  artifact_encryption_key_arn     = var.artifact_encryption_key_arn     
-  codebuild_artifacts_bucket_name = var.codebuild_artifacts_bucket_name
-  build_image                     = "aws/codebuild/amazonlinux2-x86_64-standard:4.0"
-  build_trigger                   = "CODECOMMIT"
-  source_location                 = data.aws_codecommit_repository.repo.clone_url_http
-  build_branch                    = "main"
-}
-
-module "microservices_restart_build" {
-  for_each = toset(var.short_name)
-
-  source = "../../aws-common/codebuild"
-
-  build_project_name              = "${each.value}-microservices-restart-utility"
-  build_spec_file                 = "${path.cwd}/build_spec/${each.value}-microservices-restart-utility.yml"
-  codebuild_role_arn              = var.codebuild_role_arn
-  artifact_encryption_key_arn     = var.artifact_encryption_key_arn     
-  codebuild_artifacts_bucket_name = var.codebuild_artifacts_bucket_name
-  build_image                     = "aws/codebuild/amazonlinux2-x86_64-standard:4.0"
-  build_trigger                   = "CODECOMMIT"
-  source_location                 = data.aws_codecommit_repository.repo.clone_url_http
-  build_branch                    = "main"
-}
+13:58:48.768 [main] DEBUG com.amazonaws.request -- Received error response: com.amazonaws.services.simpleemail.model.AmazonSimpleEmailServiceException: User: arn:aws:sts::195227247767:assumed-role/dev-codebuild-role/AWSCodeBuild-80ee7a70-791b-40fe-b2fe-00761980fcb8 is not authorized to perform: ses:ListVerifiedEmailAddresses because no identity-based policy allows the ses:ListVerifiedEmailAddresses action (Service: AmazonSimpleEmailService; Status Code: 403; Error Code: AccessDenied; Request ID: c84c3519-5045-4a77-9f0a-1b32882d1b3a; Proxy: null)
