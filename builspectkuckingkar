@@ -1,27 +1,52 @@
-module "config_mgmt_build" {
-  source = "../../aws-common/codebuild"
+Releasing state lock. This may take a few moments...
+time=2023-08-10T16:45:36+05:30 level=error msg=Module C:/Users/umababy.kannan/OneDrive - HCL Technologies Ltd/Documents/Star CAP/devops-infra/live/devops/eu-central-1/pipelines-common has finished with an error: 1 error occurred:
+        * exit status 1
 
-  build_project_name              = "${var.short_name}-configmap-update-utility"
-  build_spec_file                 = "${path.cwd}/build_spec/"${var.short_name}"-configmap-update-buildspec.yml"
-  codebuild_role_arn              = var.codebuild_role_arn
-  artifact_encryption_key_arn     = var.artifact_encryption_key_arn     
-  codebuild_artifacts_bucket_name = var.codebuild_artifacts_bucket_name
-  build_image                     = "aws/codebuild/amazonlinux2-x86_64-standard:4.0"
-  build_trigger                   = "CODECOMMIT"
-  source_location                 = data.aws_codecommit_repository.repo.clone_url_http
-  build_branch                    = "main"
-}
+ prefix=[C:\Users\umababy.kannan\OneDrive - HCL Technologies Ltd\Documents\Star CAP\devops-infra\live\devops\eu-central-1\pipelines-common]
+time=2023-08-10T16:45:36+05:30 level=info msg=╷
+│ Error: Invalid template interpolation value
+│
+│   on config-management-utility\code_build.tf line 8, in module "config_mgmt_build":
+│    8:   build_project_name              = "${var.short_name}-configmap-update-utility"
+│     ├────────────────
+│     │ var.short_name is list of string with 2 elements
+│
+│ Cannot include the given value in a string template: string required.
+╵
+╷
+│ Error: Invalid template interpolation value
+│
+│   on config-management-utility\code_build.tf line 9, in module "config_mgmt_build":
+│    9:   build_spec_file                 = "${path.cwd}/build_spec/${var.short_name}-configmap-update-buildspec.yml"
+│     ├────────────────
+│     │ var.short_name is list of string with 2 elements
+│
+│ Cannot include the given value in a string template: string required.
+╵
+╷
+│ Error: Invalid template interpolation value
+│
+│   on config-management-utility\code_build.tf line 22, in module "microservices_restart_build":
+│   22:   build_project_name              = "${var.short_name}-microservices-restart-utility"
+│     ├────────────────
+│     │ var.short_name is list of string with 2 elements
+│
+│ Cannot include the given value in a string template: string required.
+╵
+╷
+│ Error: Invalid template interpolation value
+│
+│   on config-management-utility\code_build.tf line 23, in module "microservices_restart_build":
+│   23:   build_spec_file                 = "${path.cwd}/build_spec/${var.short_name}-microservices-restart-utility.yml"
+│     ├────────────────
+│     │ var.short_name is list of string with 2 elements
+│
+│ Cannot include the given value in a string template: string required.
+╵
+time=2023-08-10T16:45:36+05:30 level=error msg=Terraform invocation failed in C:/.terragrunt-cache/I7i1IXTAEuR3_ZL_zIqC6bJrfMc/Xd3worWQ1ige-pHfmIDhnYcFAvo/pipelines-common prefix=[C:\Users\umababy.kannan\OneDrive - HCL Technologies Ltd\Documents\Star CAP\devops-infra\live\devops\eu-central-1\pipelines-common]
 
-module "microservices_restart_build" {
-  source = "../../aws-common/codebuild"
+time=2023-08-10T16:45:36+05:30 level=error msg=1 error occurred:
+        * exit status 1
 
-  build_project_name              = "${var.short_name}-microservices-restart-utility"
-  build_spec_file                 = "${path.cwd}/build_spec/"${var.short_name}"-microservices-restart-utility.yml"
-  codebuild_role_arn              = var.codebuild_role_arn
-  artifact_encryption_key_arn     = var.artifact_encryption_key_arn     
-  codebuild_artifacts_bucket_name = var.codebuild_artifacts_bucket_name
-  build_image                     = "aws/codebuild/amazonlinux2-x86_64-standard:4.0"
-  build_trigger                   = "CODECOMMIT"
-  source_location                 = data.aws_codecommit_repository.repo.clone_url_http
-  build_branch                    = "main"
-}
+
+make: *** [Makefile:16: plan] Error 1
