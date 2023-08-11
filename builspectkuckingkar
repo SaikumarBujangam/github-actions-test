@@ -1,2 +1,48 @@
-[ERROR] [ERROR] Some problems were encountered while processing the POMs:
-[FATAL] Non-resolvable parent POM for com.alight.foundation:hello:1.0-SNAPSHOT: The following artifacts could not be resolved: com.alight.foundation:parent:pom:1.0.0 (absent): Could not transfer artifact com.alight.foundation:parent:pom:1.0.0 from/to central (https://repo.maven.apache.org/maven2): PKIX path building failed: sun.security.provider.certpath.SunCertPathBuilderException: unable to find valid certification path to requested target and 'parent.relativePath' points at wrong local POM @ line 3, column 9
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+Licensed to the Apache Software Foundation (ASF) under one
+or more contributor license agreements.  See the NOTICE file
+distributed with this work for additional information
+regarding copyright ownership.  The ASF licenses this file
+to you under the Apache License, Version 2.0 (the
+"License"); you may not use this file except in compliance
+with the License.  You may obtain a copy of the License at
+
+<http://www.apache.org/licenses/LICENSE-2.0>
+Unless required by applicable law or agreed to in writing,
+software distributed under the License is distributed on an
+"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+KIND, either express or implied.  See the License for the
+specific language governing permissions and limitations
+under the License.
+-->
+
+<settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0 http://maven.apache.org/xsd/settings-1.0.0.xsd">
+  <servers>
+    <server>
+      <id>central</id>
+      <username>saikumar.bujangam@alight.com</username>
+      <password>{56IZe32WliYHzQZAsCu/4IuclsW5aFpHBySzNB26EfMwWZo94lx0JGFp4otkh2/uwahGiBsKvpJbXnvyAIWeLPGfEjcuTPzFP9dQJOdM0YrNCw4s5zXc1j10+6lNxldY}</password>
+    </server>
+    <server>
+      <id>snapshots</id>
+      <username>saikumar.bujangam@alight.com</username>
+      <password>{56IZe32WliYHzQZAsCu/4IuclsW5aFpHBySzNB26EfMwWZo94lx0JGFp4otkh2/uwahGiBsKvpJbXnvyAIWeLPGfEjcuTPzFP9dQJOdM0YrNCw4s5zXc1j10+6lNxldY}</password>
+    </server>
+  </servers>
+  <profiles>
+    <profile>
+      <repositories>
+        <repository>
+          <id>central</id>
+          <name>Repository for alight artifacts</name>
+          <url>https://jfrog.alight.com/artifactory/adl-maven-local/</url>
+          <layout>default</layout>
+        </repository>
+      </repositories>
+    </profile>
+    </profiles>
+</settings>
