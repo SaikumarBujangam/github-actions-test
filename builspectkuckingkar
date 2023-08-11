@@ -35,6 +35,7 @@ under the License.
   </servers>
   <profiles>
     <profile>
+	  <id>alight</id>
       <repositories>
         <repository>
           <id>central</id>
@@ -45,4 +46,7 @@ under the License.
       </repositories>
     </profile>
     </profiles>
+	<activeProfiles>
+		<activeProfile>alight</activeProfile>
+	</activeProfiles>
 </settings>
