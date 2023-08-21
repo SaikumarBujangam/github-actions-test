@@ -1,35 +1,37 @@
-# Create ACM Certificate
-resource "aws_acm_certificate" "certificate" {
-  domain_name               = "api.${var.domain_name}"
-  validation_method         = "DNS"
-
-  lifecycle {
-    create_before_destroy = true
-  }
-
+data "aws_codecommit_repository" "repo" {
+  repository_name = "devops-config-management"
 }
 
-# Create Route53 DNS records for certificate validation
-resource "aws_route53_record" "validation" {
-  for_each = {
-    for dvo in aws_acm_certificate.certificate.domain_validation_options : dvo.domain_name => {
-      name   = dvo.resource_record_name
-      record = dvo.resource_record_value
-      type   = dvo.resource_record_type
-    }
-  }
+module "config_mgmt_build" {
+  source = "../../aws-common/codebuild"
 
-  name            = each.value.name
-  type            = each.value.type
-  zone_id         = data.aws_route53_zone.hosted_zone.id
-  records         = [each.value.record]
-  ttl             = "60"
-  allow_overwrite = true
+  build_project_name              = "${var.env_name}-configmap-update-utility"
+  build_spec_file                 = "${path.cwd}/build_spec/${var.env_name}-configmap-update-buildspec.yml"
+  codebuild_role_arn              = var.codebuild_role_arn
+  artifact_encryption_key_arn     = var.artifact_encryption_key_arn     
+  codebuild_artifacts_bucket_name = var.codebuild_artifacts_bucket_name
+  build_image                     = "aws/codebuild/amazonlinux2-x86_64-standard:4.0"
+  build_trigger                   = "CODECOMMIT"
+  source_location                 = data.aws_codecommit_repository.repo.clone_url_http
+  build_branch                    = "main"
 }
 
-# Validate the ACM certificate using Route53 DNS records
-resource "aws_acm_certificate_validation" "validation" {
+module "microservices_restart_build" {
+  source = "../../aws-common/codebuild"
 
-  certificate_arn = aws_acm_certificate.certificate.arn
-  validation_record_fqdns = [for record in aws_route53_record.validation : record.fqdn]
+  build_project_name              = "${var.env_name}-microservices-restart-utility"
+  build_spec_file                 = "${path.cwd}/build_spec/${var.env_name}-microservices-restart-utility.yml"
+  codebuild_role_arn              = var.codebuild_role_arn
+  artifact_encryption_key_arn     = var.artifact_encryption_key_arn     
+  codebuild_artifacts_bucket_name = var.codebuild_artifacts_bucket_name
+  build_image                     = "aws/codebuild/amazonlinux2-x86_64-standard:4.0"
+  build_trigger                   = "CODECOMMIT"
+  source_location                 = data.aws_codecommit_repository.repo.clone_url_http
+  build_branch                    = "main"
+}
+
+variable "env_name" {
+  description = "Bucket name of the codebuild artifact"
+  type        = list(string)
+  default     = ["dev","common"]
 }
