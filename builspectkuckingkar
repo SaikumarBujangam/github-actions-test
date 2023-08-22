@@ -1,37 +1,32 @@
-data "aws_codecommit_repository" "repo" {
-  repository_name = "devops-config-management"
-}
+Acquiring state lock. This may take a few moments...
+time=2023-08-22T13:35:25+05:30 level=error msg=Module C:/Users/umababy.kannan/OneDrive - HCL Technologies Ltd/Documents/Star CAP/clone/devops-infra/live/devops/eu-central-1/pipelines-common has finished with an error: 1 error occurred:
+        * exit status 1
 
-module "config_mgmt_build" {
-  source = "../../aws-common/codebuild"
+ prefix=[C:\Users\umababy.kannan\OneDrive - HCL Technologies Ltd\Documents\Star CAP\clone\devops-infra\live\devops\eu-central-1\pipelines-common]
+time=2023-08-22T13:35:25+05:30 level=info msg=╷
+│ Error: Error acquiring the state lock
+│
+│ Error message: ConditionalCheckFailedException: The conditional request
+│ failed
+│ Lock Info:
+│   ID:        28ea2f26-7c80-2e50-1902-7feb5ad848aa
+│   Path:      starcap-devops-tf-state/devops/eu-central-1/pipelines-common/terraform.tfstate
+│   Operation: OperationTypePlan
+│   Who:       HCLTECH\umababy.kannan@LP-5CG2311RDH
+│   Version:   1.0.10
+│   Created:   2023-08-22 08:00:55.2457426 +0000 UTC
+│   Info:
+│
+│
+│ Terraform acquires a state lock to protect the state from being written
+│ by multiple users at the same time. Please resolve the issue above and try
+│ again. For most commands, you can disable locking with the "-lock=false"
+│ flag, but this is not recommended.
+╵
+time=2023-08-22T13:35:25+05:30 level=error msg=Terraform invocation failed in C:/.terragrunt-cache/5X3N35u6y0xFr6S-gFxLWoCYgdk/awgbkOgcQguzkBVwZvttFX8v3Oc/pipelines-common prefix=[C:\Users\umababy.kannan\OneDrive - HCL Technologies Ltd\Documents\Star CAP\clone\devops-infra\live\devops\eu-central-1\pipelines-common]
 
-  build_project_name              = "${var.env_name}-configmap-update-utility"
-  build_spec_file                 = "${path.cwd}/build_spec/${var.env_name}-configmap-update-buildspec.yml"
-  codebuild_role_arn              = var.codebuild_role_arn
-  artifact_encryption_key_arn     = var.artifact_encryption_key_arn     
-  codebuild_artifacts_bucket_name = var.codebuild_artifacts_bucket_name
-  build_image                     = "aws/codebuild/amazonlinux2-x86_64-standard:4.0"
-  build_trigger                   = "CODECOMMIT"
-  source_location                 = data.aws_codecommit_repository.repo.clone_url_http
-  build_branch                    = "main"
-}
+time=2023-08-22T13:35:25+05:30 level=error msg=1 error occurred:
+        * exit status 1
 
-module "microservices_restart_build" {
-  source = "../../aws-common/codebuild"
 
-  build_project_name              = "${var.env_name}-microservices-restart-utility"
-  build_spec_file                 = "${path.cwd}/build_spec/${var.env_name}-microservices-restart-utility.yml"
-  codebuild_role_arn              = var.codebuild_role_arn
-  artifact_encryption_key_arn     = var.artifact_encryption_key_arn     
-  codebuild_artifacts_bucket_name = var.codebuild_artifacts_bucket_name
-  build_image                     = "aws/codebuild/amazonlinux2-x86_64-standard:4.0"
-  build_trigger                   = "CODECOMMIT"
-  source_location                 = data.aws_codecommit_repository.repo.clone_url_http
-  build_branch                    = "main"
-}
-
-variable "env_name" {
-  description = "Bucket name of the codebuild artifact"
-  type        = list(string)
-  default     = ["dev","common"]
-}
+make: *** [Makefile:17: plan] Error 1
