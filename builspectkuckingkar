@@ -1,57 +1,30 @@
-locals {
-  # Automatically load environment-level variables
-  environment_vars = read_terragrunt_config(find_in_parent_folders("env.hcl"))
-  global_vars      = read_terragrunt_config(find_in_parent_folders("globals.hcl"))
-  region_vars      = read_terragrunt_config(find_in_parent_folders("region.hcl"))
-
-  # Extract out common variables for reuse
-  env        = local.environment_vars.locals.environment
-  aws_region = local.region_vars.locals.aws_region
-
-  #Setting create_certificate_v2 to true
-  create_certificate_v2 = true
-}
-
-# Terragrunt will copy the Terraform configurations specified by the source parameter, along with any files in the
-# working directory, into a temporary folder, and execute your Terraform commands in that folder.
-terraform {
-  source = "../../../../modules//platform-frontend-v2"
-}
-
-# Include all settings from the root terragrunt.hcl file
-include {
-  path = find_in_parent_folders()
-}
-
-# Include all dependency modules in this section
-dependency "global" {
-  config_path = "../../us-east-1/platform-global"
-
-  mock_outputs = {
-    global_waf_arn  = "arn:aws:wafv2:us-east-1:745252665765:global/webacl/dev-starcap-web-acl/a20212ca-bfae-48b6-82ba-13f45a817586"
-    acm_arn         = "arn:aws:acm:us-east-1:745252665765:certificate/c48df85b-2530-41f5-8f93-1a0a00b1edad"
+# Create Route53 DNS records for certificate validation
+resource "aws_route53_record" "validation_v2" {
+  count = var.create_v2_certifcate ? 1 : 0
+  for_each = {
+    for dvo in aws_acm_certificate.certificate.domain_validation_options : dvo.domain_name => {
+      name   = dvo.resource_record_name
+      record = dvo.resource_record_value
+      type   = dvo.resource_record_type
+    }
   }
 
-  mock_outputs_merge_strategy_with_state = "shallow"
+  name            = each.value.name
+  type            = each.value.type
+  zone_id         = data.aws_route53_zone.hosted_zone.id
+  records         = [each.value.record]
+  ttl             = "60"
+  allow_overwrite = true
 }
 
-dependency "platform-frontend" {
-  config_path = "../../eu-central-1/platform-frontend"
+getting the below error:
 
-  mock_outputs = {
-    log_bucket_domain_name  = "temporary-dummy-id"
-  }
+Error: Invalid combination of "count" and "for_each"
+│
+│   on acm_v2.tf line 21, in resource "aws_route53_record" "validation_v2":
+│   21:   for_each = {
+│
+│ The "count" and "for_each" meta-arguments are mutually-exclusive, only one
+│ should be used to be explicit about the number of resources to be created.
 
-  mock_outputs_merge_strategy_with_state = "shallow"
-}
 
-# These are the variables we have to pass in to use the module specified in the terragrunt configuration above
-inputs = {
-  devops_account_id       = local.global_vars.locals.devops_account_id
-  environment             = local.env
-  global_waf_arn          = dependency.global.outputs.global_waf_arn
-  #acm_certificate_arn    = dependency.global.outputs.acm_arn
-  certificate_arn_v2      = local.create_certificate_v2 ? dependency.global.outputs.certificate_arn_v2 : null
-  domain_name             = local.environment_vars.locals.domain_name
-  log_bucket_domain_name  = dependency.platform-frontend.outputs.log_bucket_domain_name
-}
