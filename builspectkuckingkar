@@ -1,3 +1,8 @@
-output "certificate_arn_v2" {
-  value = var.create_v2_certifcate ? concat(aws_acm_certificate.certificate_v2.*.arn, [""])[0] : null
+inputs = {
+  devops_account_id       = local.global_vars.locals.devops_account_id
+  environment             = local.env
+  global_waf_arn          = dependency.global.outputs.global_waf_arn
+  acm_certificate_arn     = dependency.global.outputs.acm_arn
+  domain_name             = local.environment_vars.locals.domain_name
+  log_bucket_domain_name   = dependency.platform-frontend.outputs.log_bucket_domain_name
 }
