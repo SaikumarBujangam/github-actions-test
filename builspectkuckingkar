@@ -1,36 +1,33 @@
- Error: Missing required argument
-│
-│   on acm_v2.tf line 18, in resource "aws_route53_record" "validation_v2":
-│   18: resource "aws_route53_record" "validation_v2" {
-│
-│ The argument "type" is required, but no definition was found.
-╵
-╷
-│ Error: Missing required argument
-│
-│   on acm_v2.tf line 18, in resource "aws_route53_record" "validation_v2":
-│   18: resource "aws_route53_record" "validation_v2" {
-│
-│ The argument "zone_id" is required, but no definition was found.
-╵
-╷
-│ Error: Missing required argument
-│
-│   on acm_v2.tf line 18, in resource "aws_route53_record" "validation_v2":
-│   18: resource "aws_route53_record" "validation_v2" {
-│
-│ The argument "name" is required, but no definition was found.
-╵
-╷
-│ Error: Unsupported block type
-│
-│   on acm_v2.tf line 21, in resource "aws_route53_record" "validation_v2":
-│   21:   dynamic "dvo" {
-│
-│ Blocks of type "dvo" are not expected here.
-╵
-time=2023-08-23T12:34:26+05:30 level=error msg=Terraform invocation failed in C:/.terragrunt-cache/PNz591gzKYjD2t20kBqWC3pGcrE/VlJQvwBldSrlCuJoozEeVg97DMM/platform-global prefix=[C:\Users\umababy.kannan\OneDrive - HCL Technologies Ltd\Documents\Star CAP\platform-infra\live\dev\us-east-1\platform-global]
+resource "aws_route53_record" "validation_v2" {
+  for_each = {
+    for dvo in aws_acm_certificate.certificate_v2.domain_validation_options : dvo.domain_name => {
+      name   = dvo.resource_record_name
+      record = dvo.resource_record_value
+      type   = dvo.resource_record_type
+    }
+  }
 
-time=2023-08-23T12:34:26+05:30 level=error msg=1 error occurred:
+  name            = each.value.name
+  type            = each.value.type
+  zone_id         = data.aws_route53_zone.hosted_zone_v2.id
+  records         = [each.value.record]
+  ttl             = "60"
+  allow_overwrite = true
+}
+
+
+Error: Missing resource instance key
+│
+│   on acm_v2.tf line 20, in resource "aws_route53_record" "validation_v2":
+│   20:     for dvo in aws_acm_certificate.certificate_v2.domain_validation_options : dvo.domain_name => {
+│
+│ Because aws_acm_certificate.certificate_v2 has "count" set, its attributes
+│ must be accessed on specific instances.
+│
+│ For example, to correlate with indices of a referring resource, use:
+│     aws_acm_certificate.certificate_v2[count.index]
+╵
+time=2023-08-23T12:44:25+05:30 level=error msg=Terraform invocation failed in C:/.terragrunt-cache/PNz591gzKYjD2t20kBqWC3pGcrE/VlJQvwBldSrlCuJoozEeVg97DMM/platform-global prefix=[C:\Users\umababy.kannan\OneDrive - HCL Technologies Ltd\Documents\Star CAP\platform-infra\live\dev\us-east-1\platform-global]
+
+time=2023-08-23T12:44:25+05:30 level=error msg=1 error occurred:
         * exit status 1
-
