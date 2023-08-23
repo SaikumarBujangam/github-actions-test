@@ -1,1 +1,3 @@
-concat(aws_vpc.this.*.id, [""])[0]
+output "certificate_arn_v2" {
+  value = var.create_v2_certifcate ? concat(aws_acm_certificate.certificate_v2.*.arn, [""])[0] : null
+}
