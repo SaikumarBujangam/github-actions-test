@@ -1,3 +1,20 @@
+# Retrieve the Route53 hosted Zone
+data "aws_route53_zone" "hosted_zone_v2" {
+  name = var.domain_name
+}
+
+# Create ACM Certificate
+resource "aws_acm_certificate" "certificate_v2" {
+  count = var.create_v2_certifcate ? 1 : 0
+  domain_name               = "v2.${var.domain_name}"
+  validation_method         = "DNS"
+
+  lifecycle {
+    create_before_destroy = true
+  }
+
+}
+
 # Create Route53 DNS records for certificate validation
 resource "aws_route53_record" "validation_v2" {
   count = var.create_v2_certifcate ? 1 : 0
@@ -17,14 +34,10 @@ resource "aws_route53_record" "validation_v2" {
   allow_overwrite = true
 }
 
-getting the below error:
+# Validate the ACM certificate using Route53 DNS records
+resource "aws_acm_certificate_validation" "validation_v2" {
+  count = var.create_v2_certifcate ? 1 : 0
 
-Error: Invalid combination of "count" and "for_each"
-│
-│   on acm_v2.tf line 21, in resource "aws_route53_record" "validation_v2":
-│   21:   for_each = {
-│
-│ The "count" and "for_each" meta-arguments are mutually-exclusive, only one
-│ should be used to be explicit about the number of resources to be created.
-
-
+  certificate_arn = aws_acm_certificate.certificate.arn
+  validation_record_fqdns = [for record in aws_route53_record.validation : record.fqdn]
+}
