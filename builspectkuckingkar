@@ -1,24 +1,5 @@
-locals {
-  create_records = var.create_certificate_v2 ? {
-    for dvo in aws_acm_certificate.certificate_v2[0].domain_validation_options :
-    dvo.domain_name => {
-      name     = dvo.resource_record_name
-      type     = dvo.resource_record_type
-      zone_id  = data.aws_route53_zone.hosted_zone_v2.id
-      records  = [dvo.resource_record_value]
-      ttl      = "60"
-      allow_overwrite = true
-    }
-  } : {}
-}
-
-resource "aws_route53_record" "validation_v2" {
-  for_each = local.create_records
-
-  name            = each.value.name
-  type            = each.value.type
-  zone_id         = each.value.zone_id
-  records         = each.value.records
-  ttl             = each.value.ttl
-  allow_overwrite = each.value.allow_overwrite
+variable "create_v2_certificate" {
+  description = ""
+  type        = bool
+  default     = false
 }
