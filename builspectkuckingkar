@@ -1,40 +1,36 @@
-# Retrieve the Route53 hosted Zone for v2 domain
-data "aws_route53_zone" "hosted_zone_v2" {
-  name = "v2.${var.domain_name}"
-}
+ Error: Missing required argument
+│
+│   on acm_v2.tf line 18, in resource "aws_route53_record" "validation_v2":
+│   18: resource "aws_route53_record" "validation_v2" {
+│
+│ The argument "type" is required, but no definition was found.
+╵
+╷
+│ Error: Missing required argument
+│
+│   on acm_v2.tf line 18, in resource "aws_route53_record" "validation_v2":
+│   18: resource "aws_route53_record" "validation_v2" {
+│
+│ The argument "zone_id" is required, but no definition was found.
+╵
+╷
+│ Error: Missing required argument
+│
+│   on acm_v2.tf line 18, in resource "aws_route53_record" "validation_v2":
+│   18: resource "aws_route53_record" "validation_v2" {
+│
+│ The argument "name" is required, but no definition was found.
+╵
+╷
+│ Error: Unsupported block type
+│
+│   on acm_v2.tf line 21, in resource "aws_route53_record" "validation_v2":
+│   21:   dynamic "dvo" {
+│
+│ Blocks of type "dvo" are not expected here.
+╵
+time=2023-08-23T12:34:26+05:30 level=error msg=Terraform invocation failed in C:/.terragrunt-cache/PNz591gzKYjD2t20kBqWC3pGcrE/VlJQvwBldSrlCuJoozEeVg97DMM/platform-global prefix=[C:\Users\umababy.kannan\OneDrive - HCL Technologies Ltd\Documents\Star CAP\platform-infra\live\dev\us-east-1\platform-global]
 
-# Create ACM Certificate for v2 domain
-resource "aws_acm_certificate" "certificate_v2" {
-  count = var.create_v2_certifcate ? 1 : 0
-  domain_name     = "v2.${var.domain_name}"
-  validation_method = "DNS"
+time=2023-08-23T12:34:26+05:30 level=error msg=1 error occurred:
+        * exit status 1
 
-  lifecycle {
-    create_before_destroy = true
-  }
-}
-
-# Create Route53 DNS records for certificate validation of v2 domain
-resource "aws_route53_record" "validation_v2" {
-  count = var.create_v2_certifcate ? 1 : 0
-  
-  dynamic "dvo" {
-    for_each = aws_acm_certificate.certificate_v2[0].domain_validation_options
-    content {
-      name            = dvo.value.resource_record_name
-      type            = dvo.value.resource_record_type
-      zone_id         = data.aws_route53_zone.hosted_zone_v2.id
-      records         = [dvo.value.resource_record_value]
-      ttl             = "60"
-      allow_overwrite = true
-    }
-  }
-}
-
-# Validate the ACM certificate using Route53 DNS records for v2 domain
-resource "aws_acm_certificate_validation" "validation_v2" {
-  count = var.create_v2_certifcate ? 1 : 0
-
-  certificate_arn = aws_acm_certificate.certificate_v2[0].arn
-  validation_record_fqdns = [for record in aws_route53_record.validation_v2 : record.fqdn]
-}
