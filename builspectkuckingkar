@@ -17,7 +17,7 @@ resource "aws_acm_certificate" "certificate_v2" {
 # Create Route53 DNS records for certificate validation of v2 domain
 resource "aws_route53_record" "validation_v2" {
   for_each = {
-    for dvo in aws_acm_certificate.certificate_v2.domain_validation_options : dvo.domain_name => {
+    for idx, dvo in aws_acm_certificate.certificate_v2 : idx => dvo.domain_name => {
       name   = dvo.resource_record_name
       record = dvo.resource_record_value
       type   = dvo.resource_record_type
