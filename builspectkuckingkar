@@ -1,66 +1,15 @@
-locals {
-  # Automatically load environment-level variables
-  environment_vars = read_terragrunt_config(find_in_parent_folders("env.hcl"))
-  global_vars      = read_terragrunt_config(find_in_parent_folders("globals.hcl"))
-  region_vars      = read_terragrunt_config(find_in_parent_folders("region.hcl"))
+ Error: Inconsistent conditional result types
+│
+│   on acm_v2.tf line 19, in resource "aws_route53_record" "validation_v2":
+│   19:   for_each = var.create_v2_certifcate ? toset(aws_acm_certificate.certificate_v2[0].domain_validation_options) : {}
+│     ├────────────────
+│     │ aws_acm_certificate.certificate_v2[0].domain_validation_options is set of object with 1 element
+│     │ var.create_v2_certifcate is true
+│
+│ The true and false result expressions must have consistent types. The given
+│ expressions are set of object and object, respectively.
+╵
+time=2023-08-23T12:22:14+05:30 level=error msg=Terraform invocation failed in C:/.terragrunt-cache/PNz591gzKYjD2t20kBqWC3pGcrE/VlJQvwBldSrlCuJoozEeVg97DMM/platform-global prefix=[C:\Users\umababy.kannan\OneDrive - HCL Technologies Ltd\Documents\Star CAP\platform-infra\live\dev\us-east-1\platform-global]
 
-  # Extract out common variables for reuse
-  env        = local.environment_vars.locals.environment
-  aws_region = local.region_vars.locals.aws_region
-
-  #Setting create_certificate_v2 to true
-  create_certificate_v2 = true
-}
-
-# Terragrunt will copy the Terraform configurations specified by the source parameter, along with any files in the
-# working directory, into a temporary folder, and execute your Terraform commands in that folder.
-terraform {
-  source = "../../../../modules//platform-frontend-v2"
-}
-
-# Include all settings from the root terragrunt.hcl file
-include {
-  path = find_in_parent_folders()
-}
-
-# Include all dependency modules in this section
-dependency "global" {
-  config_path = "../../us-east-1/platform-global"
-
-  mock_outputs = {
-    global_waf_arn  = "arn:aws:wafv2:us-east-1:745252665765:global/webacl/dev-starcap-web-acl/a20212ca-bfae-48b6-82ba-13f45a817586"
-    acm_arn         = "arn:aws:acm:us-east-1:745252665765:certificate/c48df85b-2530-41f5-8f93-1a0a00b1edad"
-  }
-
-  mock_outputs_merge_strategy_with_state = "shallow"
-}
-
-dependency "platform-frontend" {
-  config_path = "../../eu-central-1/platform-frontend"
-
-  mock_outputs = {
-    log_bucket_domain_name  = "temporary-dummy-id"
-  }
-
-  mock_outputs_merge_strategy_with_state = "shallow"
-}
-
-# These are the variables we have to pass in to use the module specified in the terragrunt configuration above
-inputs = {
-  devops_account_id       = local.global_vars.locals.devops_account_id
-  environment             = local.env
-  global_waf_arn          = dependency.global.outputs.global_waf_arn
-  #acm_certificate_arn    = dependency.global.outputs.acm_arn
-  certificate_arn_v2      = local.create_certificate_v2 ? dependency.global.outputs.certificate_arn_v2 : null
-  domain_name             = local.environment_vars.locals.domain_name
-  log_bucket_domain_name  = dependency.platform-frontend.outputs.log_bucket_domain_name
-}
-
-
-Error getting:
-
-time=2023-08-23T11:47:28+05:30 level=error msg=1 error occurred:
-        * C:/Users/umababy.kannan/OneDrive - HCL Technologies Ltd/Documents/Star CAP/platform-infra/live/dev/eu-central-1/platform-frontend-v2/terragrunt.hcl:54,83-102: Unsupported attribute; This object does not have an attribute named "certificate_arn_v2".
-
-
-time=2023-08-23T11:47:28+05:30 level=error msg=Unable to determine underlying exit code, so Terragrunt will exit with error code 1
+time=2023-08-23T12:22:14+05:30 level=error msg=1 error occurred:
+        * exit status 1
