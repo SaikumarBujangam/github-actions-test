@@ -4,8 +4,9 @@ data "aws_route53_zone" "hosted_zone" {
 }
 
 # Create ACM Certificate
-resource "aws_acm_certificate" "certificate" {
-  domain_name               = var.domain_name
+resource "aws_acm_certificate" "certificate_v2" {
+  count = var.create_v2_certifcate ? 1 : 0
+  domain_name               = "v2.${var.domain_name}"
   validation_method         = "DNS"
 
   lifecycle {
@@ -15,7 +16,8 @@ resource "aws_acm_certificate" "certificate" {
 }
 
 # Create Route53 DNS records for certificate validation
-resource "aws_route53_record" "validation" {
+resource "aws_route53_record" "validation_v2" {
+  count = var.create_v2_certifcate ? 1 : 0
   for_each = {
     for dvo in aws_acm_certificate.certificate.domain_validation_options : dvo.domain_name => {
       name   = dvo.resource_record_name
@@ -33,7 +35,8 @@ resource "aws_route53_record" "validation" {
 }
 
 # Validate the ACM certificate using Route53 DNS records
-resource "aws_acm_certificate_validation" "validation" {
+resource "aws_acm_certificate_validation" "validation_v2" {
+  count = var.create_v2_certifcate ? 1 : 0
 
   certificate_arn = aws_acm_certificate.certificate.arn
   validation_record_fqdns = [for record in aws_route53_record.validation : record.fqdn]
