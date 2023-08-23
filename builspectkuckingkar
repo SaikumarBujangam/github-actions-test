@@ -7,6 +7,9 @@ locals {
   # Extract out common variables for reuse
   env        = local.environment_vars.locals.environment
   aws_region = local.region_vars.locals.aws_region
+
+  #Setting create_certificate_v2 to true
+  create_certificate_v2 = true
 }
 
 # Terragrunt will copy the Terraform configurations specified by the source parameter, along with any files in the
@@ -48,7 +51,7 @@ inputs = {
   environment             = local.env
   global_waf_arn          = dependency.global.outputs.global_waf_arn
   #acm_certificate_arn    = dependency.global.outputs.acm_arn
-  certificate_arn_v2      = dependency.global.outputs.certificate_arn_v2
+  certificate_arn_v2      = local.create_certificate_v2 ? dependency.global.outputs.certificate_arn_v2 : null
   domain_name             = local.environment_vars.locals.domain_name
   log_bucket_domain_name  = dependency.platform-frontend.outputs.log_bucket_domain_name
 }
