@@ -1,41 +1,10 @@
-# Retrieve the Route53 hosted Zone for v2 domain
-data "aws_route53_zone" "hosted_zone_v2" {
-  name = "v2.${var.domain_name}"
-}
+Error: Invalid 'for' expression
+│
+│ On acm_v2.tf line 20: Extra characters after the end of the 'for'
+│ expression.
+╵
 
-# Create ACM Certificate for v2 domain
-resource "aws_acm_certificate" "certificate_v2" {
-  count = var.create_v2_certifcate ? 1 : 0
-  domain_name     = "v2.${var.domain_name}"
-  validation_method = "DNS"
+time=2023-08-23T12:52:57+05:30 level=error msg=Terraform invocation failed in C:/.terragrunt-cache/PNz591gzKYjD2t20kBqWC3pGcrE/VlJQvwBldSrlCuJoozEeVg97DMM/platform-global prefix=[C:\Users\umababy.kannan\OneDrive - HCL Technologies Ltd\Documents\Star CAP\platform-infra\live\dev\us-east-1\platform-global]
 
-  lifecycle {
-    create_before_destroy = true
-  }
-}
-
-# Create Route53 DNS records for certificate validation of v2 domain
-resource "aws_route53_record" "validation_v2" {
-  for_each = {
-    for idx, dvo in aws_acm_certificate.certificate_v2 : idx => dvo.domain_name => {
-      name   = dvo.resource_record_name
-      record = dvo.resource_record_value
-      type   = dvo.resource_record_type
-    }
-  }
-
-  name            = each.value.name
-  type            = each.value.type
-  zone_id         = data.aws_route53_zone.hosted_zone_v2.id
-  records         = [each.value.record]
-  ttl             = "60"
-  allow_overwrite = true
-}
-
-# Validate the ACM certificate using Route53 DNS records for v2 domain
-resource "aws_acm_certificate_validation" "validation_v2" {
-  count = var.create_v2_certifcate ? 1 : 0
-
-  certificate_arn = aws_acm_certificate.certificate_v2[0].arn
-  validation_record_fqdns = [for record in aws_route53_record.validation_v2 : record.fqdn]
-}
+time=2023-08-23T12:52:57+05:30 level=error msg=1 error occurred:
+        * exit status 1
