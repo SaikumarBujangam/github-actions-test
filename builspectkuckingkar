@@ -1,15 +1,10 @@
- Error: Inconsistent conditional result types
-│
-│   on acm_v2.tf line 19, in resource "aws_route53_record" "validation_v2":
-│   19:   for_each = var.create_v2_certifcate ? toset(aws_acm_certificate.certificate_v2[0].domain_validation_options) : {}
-│     ├────────────────
-│     │ aws_acm_certificate.certificate_v2[0].domain_validation_options is set of object with 1 element
-│     │ var.create_v2_certifcate is true
-│
-│ The true and false result expressions must have consistent types. The given
-│ expressions are set of object and object, respectively.
-╵
-time=2023-08-23T12:22:14+05:30 level=error msg=Terraform invocation failed in C:/.terragrunt-cache/PNz591gzKYjD2t20kBqWC3pGcrE/VlJQvwBldSrlCuJoozEeVg97DMM/platform-global prefix=[C:\Users\umababy.kannan\OneDrive - HCL Technologies Ltd\Documents\Star CAP\platform-infra\live\dev\us-east-1\platform-global]
-
-time=2023-08-23T12:22:14+05:30 level=error msg=1 error occurred:
-        * exit status 1
+resource "aws_route53_record" "validation_v2" {
+  for_each = var.create_v2_certifcate ? toset(aws_acm_certificate.certificate_v2[0].domain_validation_options) : toset([])
+  
+  name            = each.value.resource_record_name
+  type            = each.value.resource_record_type
+  zone_id         = data.aws_route53_zone.hosted_zone_v2.id
+  records         = [each.value.resource_record_value]
+  ttl             = "60"
+  allow_overwrite = true
+}
