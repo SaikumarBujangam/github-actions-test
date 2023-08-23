@@ -1,6 +1,10 @@
-[root@cdp-datahub-qc-gateway0 apps]# df -h .
-Filesystem      Size  Used Avail Use% Mounted on
-/dev/nvme1n1    493G  493G     0 100% /apps
-[root@cdp-datahub-qc-gateway0 apps]# du -sch .
-112G    .
-112G    total
+resource "aws_acm_certificate" "certificate" {
+  count = var.create_v2_certifcate ? 1 : 0
+  domain_name               = "v2.${var.domain_name}"
+  validation_method         = "DNS"
+
+  lifecycle {
+    create_before_destroy = true
+  }
+
+}
