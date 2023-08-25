@@ -1,6 +1,1 @@
-PS C:\Users\umababy.kannan> curl.exe -LO "https://dl.k8s.io/release/v1.28.0/bin/windows/amd64/kubectl.exe"
-  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
-                                 Dload  Upload   Total   Spent    Left  Speed
-  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
-curl: (35) schannel: next InitializeSecurityContext failed: Unknown error (0x80092012) - The revocation function was unable to check revocation for the certificate.
-PS C:\Users\umababy.kannan>
+aws eks --region eu-central-1 update-kubeconfig --name dev-starcap-platform-cluster
