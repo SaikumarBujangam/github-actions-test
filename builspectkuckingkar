@@ -1,1 +1,3 @@
-aws eks --region eu-central-1 update-kubeconfig --name dev-starcap-platform-cluster
+C:\Users\umababy.kannan>aws eks --region eu-central-1 update-kubeconfig --name dev-starcap-platform-cluster
+
+An error occurred (ResourceNotFoundException) when calling the DescribeCluster operation: No cluster found for name: dev-starcap-platform-cluster.
