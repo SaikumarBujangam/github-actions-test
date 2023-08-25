@@ -1,9 +1,1 @@
-sonarqube-check:
-  image:
-    name: sonarsource/sonar-scanner-cli:latest
-  script:
-    - sonar-scanner -Dsonar.qualitygate.wait=true \
-        -Dsonar.host.url=https://your-sonarqube-server-url \
-        -Dsonar.login=$SONAR_TOKEN
-  only:
-    - merge_requests
+- sonar-scanner -Dsonar.qualitygate.wait=true -Dsonar.host.url=https://your-sonarqube-server-url -Dsonar.login=$SONAR_TOKEN
