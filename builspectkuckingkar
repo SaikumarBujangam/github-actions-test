@@ -1,62 +1,24 @@
-Yes, in order to ensure that only merge requests with successful SonarQube analysis can be merged in GitLab, you can use GitLab's "Approvals" feature. This will allow you to define specific requirements that need to be met before a merge request can be merged. Here's how you can set it up:
+name: webapp-Sonarqube-Analysis
 
-1. **Navigate to Your Project's Settings:**
-
-   In your GitLab project, go to "Settings" > "General".
-
-2. **Merge Request Approvals:**
-
-   Scroll down to the "Merge request approvals" section.
-
-3. **Approvals Configuration:**
-
-   - Enable "Merge request approvals."
-   - Set the "Minimum number of approvals" to 1 (or any desired number).
-   - You can also set the "Approvals required by" to a specific user or a group.
-
-4. **Rule Configuration:**
-
-   - Click on "Add approval rule."
-   - Set the "Name" to something like "SonarQube Analysis."
-   - In the "Scope" field, choose "Merge request pipelines must succeed."
-   - In the "Rule type" field, choose "Custom."
-
-5. **Custom Rule Configuration:**
-
-   - In the "Custom policy" field, enter the following:
-
-     ```plaintext
-     success? sonarqube-check
-     ```
-
-   - This configuration checks if the job named `sonarqube-check` (which is the job that performs the SonarQube analysis) has succeeded.
-
-6. **Save Changes:**
-
-   Save the changes you've made in the "Merge request approvals" section.
-
-With this configuration, a merge request will only be mergeable if the specified number of approvals is met and if the `sonarqube-check` job succeeds. This enforces the condition that only merge requests with a successful SonarQube analysis can be merged into the target branch.
-
-Keep in mind that these settings might vary slightly depending on the version of GitLab you are using, but the general idea remains the same. Always refer to the official GitLab documentation for the most accurate and up-to-date information.
-
-
-
-
-
-
-
-Your YAML file is a crucial part of your GitLab CI/CD pipeline, as it defines the tasks and jobs that need to be executed when a merge request is created or updated. It's responsible for running the SonarQube analysis and checking its results before allowing a merge request to be merged.
-
-However, to ensure a comprehensive integration and a controlled workflow, you might want to consider additional settings in GitLab:
-
-1. **Merge Request Approvals:** As mentioned earlier, using GitLab's "Approvals" feature to ensure that only merge requests with successful SonarQube analysis can be merged. This provides an additional layer of control.
-
-2. **Branch Protection Rules:** You can set up branch protection rules for your main/master branch. This can prevent direct pushes to the branch and enforce that changes are made only through merge requests, ensuring that CI/CD pipelines are triggered for every change.
-
-3. **Protected Branches:** Make sure that only authorized users can merge into your protected branches. You can configure this in the repository settings.
-
-4. **Merge Request Templates:** You can set up templates for merge requests, encouraging developers to provide necessary information about their changes and SonarQube analysis results.
-
-5. **Pipeline Configuration in GitLab UI:** While your `.gitlab-ci.yml` file defines the pipeline structure, some settings (like branch protection, approvals, and protected branches) might be easier to configure through the GitLab UI.
-
-Your YAML file is at the core of your CI/CD setup, but combining it with the appropriate settings and controls in GitLab's settings will help create a seamless and effective integration between SonarQube and your GitLab repository.
+jobs:
+  sonarqube-check:
+    image: sonarsource/sonar-scanner-cli:latest
+    variables:
+      SONAR_TOKEN: $SONAR_TOKEN
+      SONAR_USER_HOME: "${CI_PROJECT_DIR}/.sonar"
+      GIT_DEPTH: "0"
+    cache:
+      key: "${CI_JOB_NAME}"
+      paths:
+        - .sonar/cache
+    script:
+      - sonar-scanner -Dsonar.host.url=https://sonarqube.example.com -Dsonar.login=$SONAR_TOKEN
+      - sonar_status=$?
+      - if [ $sonar_status -eq 0 ]; then
+          echo "Sonar analysis completed successfully";
+        else
+          echo "Sonar analysis failed or had issues";
+          exit 1;
+        fi
+    only:
+      - merge_requests
