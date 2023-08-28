@@ -1,3 +1,43 @@
-C:\Users\umababy.kannan>aws eks --region eu-central-1 update-kubeconfig --name dev-starcap-platform-cluster
+import json
+from alight.foundation.util.logging.standardlogger import StandardLogger
+from alight.foundation.redshift.datapi import DataAPI
 
-An error occurred (ResourceNotFoundException) when calling the DescribeCluster operation: No cluster found for name: dev-starcap-platform-cluster.
+class RedshiftSchemaToJSON:
+    logger = StandardLogger().getDefaultLogger()
+
+    def __init__(self, data_api):
+        self.data_api = data_api
+
+    def get_object_schema(self, database_name, schema_name, object_name, object_type):
+        try:
+            if object_type not in ["TABLE", "VIEW"]:
+                raise ValueError("Unsupported object type. Only 'TABLE' or 'VIEW' are supported.")
+            
+            response = self.data_api.describe_table(
+                DatabaseName=database_name,
+                Schema=schema_name,
+                TableName=object_name,
+                DbUser=self.data_api._db_user_name
+            )
+            
+            object_schema = {
+                "Database": database_name,
+                "Schema": schema_name,
+                "ObjectName": object_name,
+                "ObjectType": object_type,
+                "Fields": []
+            }
+            
+            for column in response['Table']['Columns']:
+                field = {
+                    "FieldName": column['Name'],
+                    "FieldType": column['Type'],
+                    "FieldPrecision": column.get('Precision', None),
+                    "EncodingCompression": column.get('Encoding', None)
+                }
+                object_schema['Fields'].append(field)
+            
+            return json.dumps(object_schema, indent=4)
+        except Exception as e:
+            RedshiftSchemaToJSON.logger.error(str(e))
+            raise
