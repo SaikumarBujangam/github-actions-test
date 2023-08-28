@@ -1,34 +1,15 @@
-import os
-import json
-import sys
-from alight.foundation.util.argparsebuilder import GenerateParser
-from alight.foundation.redshift.datapi import DataAPI
-from alight.foundation.aws.redshiftobjectextractor import RedshiftSchemaToJSON
-
-if __name__ == "__main__":
-    try:
-        cmd_args = sys.argv
-        parser = GenerateParser(cmd_args=cmd_args)
-        args = parser.build()
-
-        config_file_path = os.path.join(args.baseArgParserConfigFileLocation, args.baseArgParserConfigFileName)
-        with open(config_file_path) as config_file:
-            config = json.load(config_file)
-
-        data_api = DataAPI(db_cluster_id=args.dbClusterId, db_name=args.dbName, db_user_name=args.dbUserName)
-        object_extractor = RedshiftSchemaToJSON(data_api)
-        object_schema_json = object_extractor.get_object_schema(args.dbName, args.schemaName, args.objectName)
-
-        if object_schema_json.startswith("Error:"):
-            print(object_schema_json)
-            exit(-1)
-
-        output_filename = args.outputFile if args.outputFile else args.objectName + ".json"
-        with open(output_filename, "wt") as output_file:
-            output_file.write(object_schema_json)
-
-        print("JSON schema for {} successfully written to {}".format(args.objectName, output_filename))
-        exit(0)
-    except Exception as e:
-        print(e)
-        exit(-1)
+{
+  "prog": "redshift",
+  "description": "Parameters required for extracting Redshift object schema",
+  "args": [
+    {"name": "--base-arg-parser-config-file-name", "dest": "baseArgParserConfigFileName", "required": true},
+    {"name": "--base-arg-parser-config-file-location", "dest": "baseArgParserConfigFileLocation", "required": true},
+    {"name": "--db-cluster-id", "dest": "dbClusterId", "required": true},
+    {"name": "--db-name", "dest": "dbName", "required": true},
+    {"name": "--db-user-name", "dest": "dbUserName", "required": true},
+    {"name": "--schema-name", "dest": "schemaName", "required": true},
+    {"name": "--object-name", "dest": "objectName", "required": true},
+    {"name": "--output-file", "dest": "outputFile", "required": false},
+    {"name": "--aws-region", "dest": "awsRegion", "required": false, "default": "us-east-1"}
+  ]
+}
