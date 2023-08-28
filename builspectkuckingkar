@@ -1,59 +1,49 @@
-In tests/alight/foundation/aws/test_redshiftobjecttojson.py:
-> @@ -0,0 +1,33 @@
-+import unittest
-+import boto3
-+import json
-+from alight.foundation.aws.redshiftobjectextractor import RedshiftObjectToJSONSchema
-+
-+class TestRedshiftObjectToJSONSchema(unittest.TestCase):
-+    #Setting up the credentials for testing
-+    AWS_REGION="us-east-1"
-+    DB_USER=""
-+    DB_CLUSTER_ID=""
-+    SCHEMA_NAME=""
-+    OBJECT_NAME=""
-+
-+    def setUp(self):
-Do the DataAPI() initialization here, not "redshift" boto3 client
-________________________________________
-In src/alight/foundation/aws/redshiftobjectextractor.py:
-> +				"ObjectName": object_name,
-+				"Fields": []
-+		    }
-+			for column in response['Table']['Columns']:
-+				field = {
-+					"FieldName": column['Name'],
-+					"FieldType": column['Type'],
-+					"FieldPrecision": column.get('Precision', None),
-+					"EncodingCompression": column.get('Encoding', None)
-+				}
-+				object_schema['Fields'].append(field)
-+			return json.dumps(object_schema, indent=4)
-+		except Exception as e:
-+			RedshiftObjectToJSONSchema.logger.error(str(e))
-+			raise
-+if __name__=="__main__":
+import unittest
+from alight.foundation.redshift.redshiftschematojson import RedshiftSchemaToJSON
+from alight.foundation.redshift.datapi import DataAPI
 
-Review:
-Remove all of this from this source file. A main is not needed here. The main will be a separate application that uses this class. Use unit tests to test rather than a main.
-Create a new python main script in src/alight/foundation/app, and for argument parsing use the standard parser here: src/alight/foundation/util/argparsebuilder.py
-Using the parameters outlined here, create a new runtime configuration in the config directory.
-Review this as a sample: config/redshift-build-args.json
+class TestRedshiftSchemaToJSONIntegration(unittest.TestCase):
 
-In tests/alight/foundation/aws/test_redshiftobjecttojson.py:
-> @@ -0,0 +1,33 @@
-+import unittest
-+import boto3
-+import json
-+from alight.foundation.aws.redshiftobjectextractor import RedshiftObjectToJSONSchema
-+
-+class TestRedshiftObjectToJSONSchema(unittest.TestCase):
-+    #Setting up the credentials for testing
-+    AWS_REGION="us-east-1"
+    def setUp(self):
+        self.data_api = DataAPI(
+            db_cluster_id="cluster-id",
+            db_name="your-db-name",
+            db_user_name="username"
+        )
+    def test_get_object_schema(self):
+        redshift_schema_extractor = RedshiftSchemaToJSON(self.data_api)
 
-Review:
-Lines 8-13 are not needed.
-Add the DataAPI creation and pass in hard-coded values (this is just a unit test)
+        object_schema_json = redshift_schema_extractor.get_object_schema(
+            database_name="test_db",
+            schema_name="public",
+            object_name="test_table"
+        )
+        expected_schema = {
+            "Database": "test_db",
+            "Schema": "public",
+            "ObjectName": "test_table",
+            "Fields": [
+                {
+                    "FieldName": "column1",
+                    "FieldType": "varchar",
+                    "FieldPrecision": None,
+                    "EncodingCompression": None
+                },
+                # Add more expected fields here
+            ]
+        }
 
+        self.assertEqual(json.loads(object_schema_json), expected_schema)
 
+    def test_get_object_schema_error(self):
+        redshift_schema_extractor = RedshiftSchemaToJSON(self.data_api)
 
+        with self.assertRaises(Exception):
+            redshift_schema_extractor.get_object_schema(
+                database_name="test_db",
+                schema_name="public",
+                object_name="non_existent_table"
+            )
+
+if __name__ == '__main__':
+    unittest.main()
