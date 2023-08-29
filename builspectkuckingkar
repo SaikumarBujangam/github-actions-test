@@ -1,1 +1,24 @@
-- mvn -s settings.xml clean verify --no-transfer-progress sonar:sonar -Pcoverage -U -e -Dsonar.projectName=starcap-$APPLICATION_NAME -Dsonar.projectKey=starcap-$APPLICATION_NAME -Dsonar.branch.name=develop -Dsonar.qualitygate.wait=true -Dsonar.host.url=https://sonarqube.roche.com -Dsonar.login=$SONAR_LOGIN
+name: platform-infra-Sonarqube-Analysis
+
+jobs:
+  sonarqube-check:
+    image: sonarsource/sonar-scanner-cli:latest
+    variables:
+      SONAR_TOKEN: $SONAR_TOKEN
+      SONAR_USER_HOME: "${CI_PROJECT_DIR}/.sonar"
+      GIT_DEPTH: "0"
+    cache:
+      key: "${CI_JOB_NAME}"
+      paths:
+        - .sonar/cache
+    script:
+      - sonar-scanner -Dsonar.qualitygate.wait=true -Dsonar.host.url=https://sonarqube.roche.com -Dsonar.login=$SONAR_TOKEN
+      - sonar_status=$?
+      - if [ $sonar_status -eq 0 ]; then
+          echo "Sonar analysis completed successfully";
+        else
+          echo "Sonar analysis failed or had issues";
+          exit 1;
+        fi
+    only:
+      - merge_requests
