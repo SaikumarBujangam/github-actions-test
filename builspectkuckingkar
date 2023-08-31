@@ -1,2 +1,22 @@
-023-08-31 03:02:55 INFO  [codedeploy-agent(846)]: [Aws::CodeDeployCommand::Client 200 0.035624 0 retries] put_host_command_complete(command_status:"Failed",diagnostics:{format:"JSON",payload:"{\"error_code\":5,\"script_name\":\"\",\"message\":\"Script at specified location: hookscripts/afterinstall.sh failed to complete in 300 seconds\",\"log\":\"\"}"},host_command_identifier:"eyJiYXRjaElkIjoiZWU2NjJlZmZmYWNkNjdmOWQ5MGY2MDcxYWZlOTZlNjYvcHVibGljMDE5IiwiZGVwbG95bWVudElkIjoiQ29kZURlcGxveS91cy1lYXN0LTEvcHJvZC9vcnBoZXVzOnB1YmxpYzAwNC8wNTY5OTQ3ODg3MTc6ZC1DNkhDSjcyRjEiLCJob3N0SWQiOiJhcm46YXdzOmVjMjp1cy1lYXN0LTE6MDU2OTk0Nzg4NzE3Omluc3RhbmNlL2ktMDFlMmMxMzIxMmVmM2RiZDIiLCJjb21tYW5kSWQiOiJBcG9sbG9EZXBsb3lDb250cm9sU2VydmljZXxhcm46YXdzOmVjMjp1cy1lYXN0LTE6MDU2OTk0Nzg4NzE3Omluc3RhbmNlL2ktMDFlMmMxMzIxMmVmM2RiZDJ8NXwwIiwiY29tbWFuZE5hbWUiOiJBZnRlckluc3RhbGwiLCJjb21tYW5kSW5kZXgiOjUsImF0dGVtcHRJbmRleCI6MX0=")
-[root@adl-com-informatica-1e codedeploy-agent]#
+Sonarjob:
+  stage: Sonarjob  
+  tags: ["gen10"]
+  only:
+    variables:
+      - $BUILD_TO == "dev"
+    #- casino2.1-dev
+   #- $CI_COMMIT_BRANCH == "casino20-dev" && $SONAR == "scan"
+  script:
+   #- npm run test
+    - pwd
+    - ls -la
+    #- cd coverage
+    #- ls -la
+    - npm install -g sonarqube-scanner
+    - sonar-scanner -v 
+    - ls -la
+    #- curl -v http://sonar.intranet.roche.com/batch/index
+    - sonar-scanner -Dsonar.host.url=$SONAR_URL -Dsonar.login=$SONAR_LOGIN -Dsonar.projectKey=redcap-webapp -Dproject.settings=sonar-project.properties -Dsonar.verbose=true
+    #- cd coverage
+   #- Dsonar.es.bootstrap.checks.disable=$SONAR_ES_BOOTSTRAP_CHECKS_DISABLE
+    - ls -la
