@@ -14,11 +14,8 @@ sonar-check:
       - .sonar/cache
   script:
     - sonar-scanner -Dsonar.projectKey=starcap-devops-infra -Dsonar.sources=. -Dsonar.qualitygate.wait=true -Dsonar.host.url=https://sonarqube.roche.com -Dsonar.login=sqa_6cfeeb90e46e9f88af70d6b63b0d8894ae033309
-  #only:
+  only:
+    - merge_requests
   rules:
     - if: '$CI_COMMIT_REF_NAME == "feature/merge-request-sonar-analysis" && $CI_PIPELINE_SOURCE == "merge_request_event"'
     - when: always
-    #- when: never
-    
-    #- merge_requests
-    #- main
