@@ -1,69 +1,50 @@
-version: 0.2
-env:
-  shell: bash
-  variables:
-    S3_BUCKET: "${S3_BUCKET}"
-    TARGET_REGION: "eu-central-1"
-  secrets-manager:
-    NPM_TOKEN: "dev_npm_token"
-    SONAR_TOKEN: "sonar_token"
-  parameter-store:
-    SONAR_ANALYSIS_EXCLUSION: "sonar_analysis_exclusion_develop"
+stages:
+  - setup
+  - testing
+  - sonar-analysis
 
-phases:
-  install:
-      runtime-versions:
-        nodejs: 14.x
-  pre_build:
-    commands:
-      - echo "jfrog auth ..."
-      - npm config set registry https://navify.jfrog.io/artifactory/api/npm/navify-npm/
-      - echo "registry=https://navify.jfrog.io/artifactory/api/npm/navify-npm/" > ~/.npmrc
-      - echo "always-auth=true" >> ~/.npmrc
-      - echo "email=ravi.govindasami@contractors.roche.com" >> ~/.npmrc
-      - echo "//navify.jfrog.io/artifactory/api/npm/navify-npm/:username=ravi.govindasami" >> ~/.npmrc
-      - echo "//navify.jfrog.io/artifactory/api/npm/navify-npm/:_password=$NPM_TOKEN" >> ~/.npmrc
-      - cat ~/.npmrc
-      - echo "Role Assume ..."
-      - aws configure set region $TARGET_REGION --profile dev-account
-      - aws configure set role_arn arn:aws:iam::745252665765:role/InfraBuildRole --profile dev-account
-      - aws configure set credential_source EcsContainer --profile dev-account
-      - npm install -y --save --legacy-peer-deps
-      - npm install -g @angular/cli@14.0.0
-      - |
-        if [[ ! $SONAR_ANALYSIS_EXCLUSION =~ "app-v2" ]]; then
-          npm run ng -v
-          npm i emoji-regex@8.0.0
-          npm i -D puppeteer karma-chrome-launcher
-          npm i --save-dev karma-junit-reporter
-          npm install -g sonarqube-scanner
-          wget -N https://chromedriver.storage.googleapis.com/101.0.4951.15/chromedriver_linux64.zip
-          unzip chromedriver_linux64.zip
-          chmod +x chromedriver
-          cp chromedriver /usr/local/bin
-          npm update --save
-          sonar-scanner -v
-        else
-          echo "Skipped sonar packages installation"
-        fi
-  build:
-    on-failure: ABORT
-    commands:
-      - |
-        if [[ ! $SONAR_ANALYSIS_EXCLUSION =~ "app-v2" ]]; then
-          ng test --watch=false --code-coverage
-          sonar-scanner -Dsonar.projectKey=starcap-webapp-v2 -Dsonar.projectName=starcap-webapp-v2 -Dsonar.branch.name=develop -Dsonar.projectBaseDir=. -Dsonar.sources=$PWD/src -Dsonar.javascript.lcov.reportPaths=$PWD/coverage/lcov.info -Dsonar.tests=$PWD/src -Dsonar.test.inclusions=$PWD/src/**/*.spec.ts -Dsonar.typescript.jstestdriver.coveragefile=$PWD/coverage/lcov.info -Dsonar.qualitygate.wait=true -Dsonar.host.url=https://sonarqube.roche.com
-        else
-          echo "Sonar analysis was not executed"
-        fi
-      - ng build --c=dev
-      - cd dist/webapp
-      - ls -lrt
-  post_build:
-    commands:
-      - aws s3 rm --recursive s3://${S3_BUCKET} --profile dev-account
-artifacts:
-  files:
-    - "**/*"
-  discard-paths: no
-  base-directory: dist/webapp
+setup:
+  image: node:14
+  stage: setup
+  tags: ["gen10"]
+  script:
+    - npm config set registry https://navify.jfrog.io/artifactory/api/npm/navify-npm/
+    - echo "registry=https://navify.jfrog.io/artifactory/api/npm/navify-npm/" > ~/.npmrc
+    - echo "always-auth=true" >> ~/.npmrc
+    - echo "email=ravi.govindasami@contractors.roche.com" >> ~/.npmrc
+    - echo "//navify.jfrog.io/artifactory/api/npm/navify-npm/:username=ravi.govindasami" >> ~/.npmrc
+    - cat ~/.npmrc
+    - apt-get update -y && apt-get install -y unzip wget
+    - npm install -y --save --legacy-peer-deps
+    - npm install -g @angular/cli@14.0.0
+    - npm install -g sonarqube-scanner
+    - npm run ng -v
+    - npm i emoji-regex@8.0.0
+    - npm i -D puppeteer karma-chrome-launcher
+    - npm i --save-dev karma-junit-reporter
+    - wget -N https://chromedriver.storage.googleapis.com/101.0.4951.15/chromedriver_linux64.zip
+    - unzip chromedriver_linux64.zip
+    - chmod +x chromedriver
+    - cp chromedriver /usr/local/bin
+    - npm update --save
+    - sonar-scanner -v
+
+testing:
+  image: node:14
+  stage: testing
+  tags: ["gen10"]
+  script:
+    - ng test --watch=false --code-coverage
+
+sonar-analysis:
+  image: node:14
+  stage: analysis-build
+  tags: ["gen10"]
+  script:
+    - sonar-scanner -Dsonar.projectKey=starcap-webapp-v2 -Dsonar.projectName=starcap-webapp-v2 -Dsonar.branch.name=develop -Dsonar.projectBaseDir=. -Dsonar.sources=$PWD/src -Dsonar.javascript.lcov.reportPaths=$PWD/coverage/lcov.info -Dsonar.tests=$PWD/src -Dsonar.test.inclusions=$PWD/src/**/*.spec.ts -Dsonar.typescript.jstestdriver.coveragefile=$PWD/coverage/lcov.info -Dsonar.qualitygate.wait=true -Dsonar.host.url=https://sonarqube.roche.com
+
+only:
+  refs:
+    - merge_requests
+  variables:
+    - $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "develop"
