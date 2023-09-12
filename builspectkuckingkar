@@ -226,19 +226,92 @@ resource "aws_route_table_association" "mgmt" {
   route_table_id = element(aws_route_table.mgmt_private.*.id, count.index)
 } 
 
-╷
-│ Error: Error in function call
-│
-│   on main.tf line 149, in resource "aws_nat_gateway" "mgmt_nat_gateway":
-│  149:   subnet_id = element(
-│  150:     aws_subnet.mgmt_public_subnet.*.id,
-│  151:     count.index,
-│  152:   )
-│     ├────────────────
-│     │ aws_subnet.mgmt_public_subnet is empty tuple
-│     │ count.index is 0
-│
-│ Call to function "element" failed: cannot use element function with an
-│ empty list.
+variable "azs" {
+  description = "A list of availability zones names or ids in the region"
+  type        = list(string)
+  default     = []
+}
+
+variable "env" {
+  description = "Environment Name to be used as identifier"
+  type        = string
+  default     = "dev"
+}
+
+variable "platform" {
+  description = "Environment Name to be used as identifier"
+  type        = string
+  default     = "starcap"
+}
+variable "vpc_cidr" {
+  description = "The CIDR block for the VPC"
+  type        = string
+  default     = "0.0.0.0/0"
+}
+
+variable "public_subnets_cidr" {
+  description = "The CIDR block for the public subnet"
+  type        = list(string)
+  default     = []
+}
+variable "create_vpc" {
+  description = "Controls if VPC should be created (it affects almost all resources)"
+  type        = bool
+  default     = true
+}
+
+variable "public_subnets" {
+  description = "A list of public subnets inside the VPC"
+  type        = list(string)
+  default     = []
+}
+
+variable "enable_nat_gateway" {
+  description = "Should be true if you want to provision NAT Gateways for each of your private networks"
+  type        = bool
+  default     = false
+}
+
+variable "enable_dhcp_options" {
+  description = "Should be true if you want to specify a DHCP options set with a custom domain name, DNS servers, NTP servers, netbios servers, and/or netbios server type"
+  type        = bool
+  default     = false
+}
+
+variable "dhcp_options_domain_name" {
+  description = "Specifies DNS name for DHCP options set (requires enable_dhcp_options set to true)"
+  type        = string
+  default     = ""
+}
+
+variable "dhcp_options_domain_name_servers" {
+  description = "Specify a list of DNS server addresses for DHCP options set, default to AWS provided (requires enable_dhcp_options set to true)"
+  type        = list(string)
+  default     = ["AmazonProvidedDNS"]
+}
+
+variable "create_igw" {
+  description = "Controls if an Internet Gateway is created for public subnets and the related routes that connect them."
+  type        = bool
+  default     = true
+}
+
+variable "ad_subnets" {
+  description = "A list of Active Directory subnets inside the VPC"
+  type        = list(string)
+  default     = []
+}
+
+variable "mgmt_subnets" {
+  description = "A list of Management subnets inside the Management VPC"
+  type        = list(string)
+  default     = []
+}
+
+variable "mgmt_subnet_tags" {
+  description = "Additional tags for the Management subnets"
+  type        = map(string)
+  default     = {}
+}
 
 
