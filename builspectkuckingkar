@@ -1,38 +1,170 @@
-stages:
-  - sonar-check
-  - merge-check
-  
-sonar-check:
-  stage: sonar-check
-  image: sonarsource/sonar-scanner-cli:latest
-  variables:
-    SONAR_TOKEN: $SONAR_TOKEN
-    SONAR_USER_HOME: "${CI_PROJECT_DIR}/.sonar"
-    GIT_DEPTH: "0"
-  cache:
-    key: "${CI_JOB_NAME}"
-    paths:
-      - .sonar/cache
-  script:
-    - sonar-scanner -Dsonar.projectKey=starcap-devops-infra -Dsonar.sources=. -Dsonar.qualitygate.wait=true -Dsonar.host.url=https://sonarqube.roche.com -Dsonar.login=sqa_6cfeeb90e46e9f88af70d6b63b0d8894ae033309
+locals { 
+  tables = [
+      {
+          name      = "Organisation",
+          hash_key  = "org_key"
+          
+      },
+      {
+          name      = "PlatformConfig",
+          hash_key  = "item_name"
+          range_key = "item_type",
+          
+      },
+      {
+          name      = "Project",
+          hash_key  = "project_key"
+          range_key = "org_key",
+          
+      },
+      {
+          name      = "User",
+          hash_key  = "id"
+          range_key = null,
+          
+      },
+      {
+          name      = "UserRoleDetails",
+          hash_key  = "user_id"
+          range_key = "role_hashkey",
+          
+      },
+      {
+          name      = "UserTrainingDetails",
+          hash_key  = "id"
+          
+          
+      },
+      {
+          name      = "DataIngress",
+          hash_key  = "project_key"
+          range_key = "composed_key",
+          
+      },
+      {
+          name                  = "UserLoginDetails",
+          hash_key              = "user_email"
+          ttl_attribute_name    = "expiry_time"
+      },
+      {
+          name      = "ProjectInfraDetails",
+          hash_key  = "project_key"
+          range_key = "resource_key",
+          
+      },
+      {
+          name      = "RoleDetails",
+          hash_key  = "role_id"
+          
+      }
+  ]
 
-  only:
-    refs:
-        - merge_requests
-    variables:
-        - ($CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "feature/merge-request-sonar-analysis" || $CI_MERGE_REQUEST_TARGET_BRANCH_NAME =="feature/test-branch")
+  default_attriutes = [
+    {
+        range_key      = null,
+        ttl_attribute_name  = null
+    },    
+  ]
+}
 
-merge-check:
-  stage: merge-check
-  script: 
-    - echo "pipeline success"
-  only:
-    refs:
-        - merge_requests
-    variables:
-        #if !["feature/merge-request-sonar-analysis" || "feature/test-branch"]
-#         - $CI_MERGE_REQUEST_TARGET_BRANCH_NAME 
-       - ($CI_MERGE_REQUEST_TARGET_BRANCH_NAME != "feature/merge-request-sonar-analysis" || $CI_MERGE_REQUEST_TARGET_BRANCH_NAME =="feature/test-branch")
-      # - $CI_MERGE_REQUEST_TARGET_BRANCH_NAME != "feature/merge-request-sonar-analysis" 
+# Creation of platform dynamodb tables
+module "platform_dynamodb_table" {
+  source      = "../aws-common/dynamodb"
 
-  
+  for_each              = { for table, default in local.tables : table.name => merge(local.default_attriutes, table)  }
+  table_name            = each.key
+  hash_key              = each.value.hash_key
+  range_key             = each.value.range_key
+  ttl_attribute_name    = each.value.ttl_attribute_name
+}
+
+prefix=[C:\Users\umababy.kannan\OneDrive - HCL Technologies Ltd\Documents\Star CAP\platform-infra\live\dev\eu-central-1\platform-datastore]
+time=2023-09-12T16:10:58+05:30 level=info msg=╷
+│ Error: Unsupported attribute
+│
+│   on main.tf line 74, in module "platform_dynamodb_table":
+│   74:   for_each              = { for table, default in local.tables : table.name => merge(local.default_attriutes, table)  }
+│
+│ Can't access attributes on a primitive-typed value (number).
+╵
+╷
+│ Error: Unsupported attribute
+│
+│   on main.tf line 74, in module "platform_dynamodb_table":
+│   74:   for_each              = { for table, default in local.tables : table.name => merge(local.default_attriutes, table)  }
+│
+│ Can't access attributes on a primitive-typed value (number).
+╵
+╷
+│ Error: Unsupported attribute
+│
+│   on main.tf line 74, in module "platform_dynamodb_table":
+│   74:   for_each              = { for table, default in local.tables : table.name => merge(local.default_attriutes, table)  }
+│
+│ Can't access attributes on a primitive-typed value (number).
+╵
+╷
+│ Error: Unsupported attribute
+│
+│   on main.tf line 74, in module "platform_dynamodb_table":
+│   74:   for_each              = { for table, default in local.tables : table.name => merge(local.default_attriutes, table)  }
+│
+│ Can't access attributes on a primitive-typed value (number).
+╵
+╷
+│ Error: Unsupported attribute
+│
+│   on main.tf line 74, in module "platform_dynamodb_table":
+│   74:   for_each              = { for table, default in local.tables : table.name => merge(local.default_attriutes, table)  }
+│
+│ Can't access attributes on a primitive-typed value (number).
+╵
+╷
+│ Error: Unsupported attribute
+│
+│   on main.tf line 74, in module "platform_dynamodb_table":
+│   74:   for_each              = { for table, default in local.tables : table.name => merge(local.default_attriutes, table)  }
+│
+│ Can't access attributes on a primitive-typed value (number).
+╵
+╷
+│ Error: Unsupported attribute
+│
+│   on main.tf line 74, in module "platform_dynamodb_table":
+│   74:   for_each              = { for table, default in local.tables : table.name => merge(local.default_attriutes, table)  }
+│
+│ Can't access attributes on a primitive-typed value (number).
+╵
+╷
+│ Error: Unsupported attribute
+│
+│   on main.tf line 74, in module "platform_dynamodb_table":
+│   74:   for_each              = { for table, default in local.tables : table.name => merge(local.default_attriutes, table)  }
+│
+│ Can't access attributes on a primitive-typed value (number).
+╵
+╷
+│ Error: Unsupported attribute
+│
+│   on main.tf line 74, in module "platform_dynamodb_table":
+│   74:   for_each              = { for table, default in local.tables : table.name => merge(local.default_attriutes, table)  }
+│
+│ Can't access attributes on a primitive-typed value (number).
+╵
+╷
+│ Error: Unsupported attribute
+│
+│   on main.tf line 74, in module "platform_dynamodb_table":
+│   74:   for_each              = { for table, default in local.tables : table.name => merge(local.default_attriutes, table)  }
+│
+│ Can't access attributes on a primitive-typed value (number).
+╵
+time=2023-09-12T16:10:58+05:30 level=error msg=Terraform invocation failed in C:/.terragrunt-cache/XTQi-oi0p63BODQSy4EBJhN-Zak/VlJQvwBldSrlCuJoozEeVg97DMM/platform-datastore prefix=[C:\Users\umababy.kannan\OneDrive - HCL Technologies Ltd\Documents\Star CAP\platform-infra\live\dev\eu-central-1\platform-datastore]
+
+time=2023-09-12T16:10:58+05:30 level=error msg=1 error occurred:
+        * exit status 1
+
+
+
+umababy.kannan@LP-5CG2311RDH MINGW64 ~/OneDrive - HCL Technologies Ltd/Documents/Star CAP/platform-infra/live/dev/eu-central-1/platform-datastore (main)
+$
