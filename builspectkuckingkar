@@ -1,14 +1,244 @@
- Error: expected "cidr_block" to contain a network Value with between 16 and 28 significant bits, got: 0
-│
-│   with aws_vpc.mgmt_vpc,
-│   on main.tf line 11, in resource "aws_vpc" "mgmt_vpc":
-│   11:   cidr_block           = var.vpc_cidr
-│
-╵
-time=2023-09-12T17:57:50+05:30 level=error msg=Terraform invocation failed in C:/.terragrunt-cache/po3Ala64-srlQYqjHFq7icXUwzY/VlJQvwBldSrlCuJoozEeVg97DMM/management-vpc prefix=[C:\Users\umababy.kannan\OneDrive - HCL Technologies Ltd\Documents\Star CAP\platform-infra\live\dev\eu-central-1\management-vpc]
+locals {
+  nat_gateway_count = 2
+  vpc_name = "${var.env}-${var.platform}-management-vpc"
+}
 
-time=2023-09-12T17:57:50+05:30 level=error msg=1 error occurred:
-        * exit status 1
+##########################
+# Management VPC of Starcap 
+##########################
+resource "aws_vpc" "mgmt_vpc" {
 
+  cidr_block           = var.vpc_cidr
+  instance_tenancy     = "default"
+  enable_dns_hostnames = true
+  enable_dns_support   = true
+
+  tags = merge(
+    {
+      "Name" = local.vpc_name
+    },
+  )
+}
+
+
+###################
+# DHCP Options Set
+###################
+resource "aws_vpc_dhcp_options" "mgmt_dhcp_options" {
+  count = var.create_vpc && var.enable_dhcp_options ? 1 : 0
+
+  domain_name         = var.dhcp_options_domain_name
+  domain_name_servers = var.dhcp_options_domain_name_servers
+
+  tags = merge(
+    {
+      "Name" = format("%s%s", local.vpc_name,"_dhcp_options_name")
+    }
+    
+  )
+}
+
+###############################
+# DHCP Options Set Association
+###############################
+resource "aws_vpc_dhcp_options_association" "mgmt_dhcp_options_association" {
+  count = var.create_vpc && var.enable_dhcp_options ? 1 : 0
+
+  vpc_id          = aws_vpc.mgmt_vpc.id
+  dhcp_options_id = aws_vpc_dhcp_options.mgmt_dhcp_options[0].id
+}
+
+###################
+# Public Subnets
+###################
+resource "aws_subnet" "mgmt_public_subnet" {
+  count             = length(var.public_subnets_cidr) > 0 ? length(var.public_subnets_cidr) : 0
+  vpc_id            = aws_vpc.mgmt_vpc.id
+  cidr_block        = var.public_subnets_cidr[count.index]
+  availability_zone = var.azs[count.index]
+
+  tags = merge(
+    {
+      "Name" = "${var.env}-${var.platform}-mgmt-az-${element(split("-",var.azs[count.index]),2)}"
+    },
+  )
+}
+
+###################
+# Internet Gateway
+###################
+resource "aws_internet_gateway" "mgmt_igw" {
+  count = var.create_vpc && var.create_igw && length(var.public_subnets) > 0 ? 1 : 0
+
+  vpc_id = aws_vpc.mgmt_vpc.id
+
+  tags = merge(
+    {
+      "Name" = "${var.env}-${var.platform}-mgmt-igw"
+    },
+  )
+}
+
+
+################
+# Publiс routes
+################
+resource "aws_route_table" "mgmt_public_rt" {
+  count = var.create_vpc && length(var.public_subnets) > 0 ? 1 : 0
+
+  vpc_id = aws_vpc.mgmt_vpc.id
+
+  tags = merge(
+    {
+      "Name" = "${var.env}-${var.platform}-mgmt-pub-rt"
+    },
+  )
+}
+
+resource "aws_route" "mgmt_public_internet_gateway" {
+  count = var.create_vpc && var.create_igw && length(var.public_subnets) > 0 ? 1 : 0
+
+  route_table_id         = aws_route_table.mgmt_public_rt[0].id
+  destination_cidr_block = "0.0.0.0/0"
+  gateway_id             = aws_internet_gateway.mgmt_igw[0].id
+
+  timeouts {
+    create = "5m"
+  }
+}
+
+##########################
+# Route table association
+##########################
+
+resource "aws_route_table_association" "public_rt_association" {
+  count = var.create_vpc && length(var.public_subnets) > 0 ? length(var.public_subnets) : 0
+
+  subnet_id      = element(aws_subnet.mgmt_public_subnet.*.id, count.index)
+  route_table_id = aws_route_table.mgmt_public_rt[0].id
+}
+
+####################
+# EIP of NAT Gateway
+####################
+
+resource "aws_eip" "mgmt_nat" {
+  count = local.nat_gateway_count
+
+  vpc = true
+
+  tags = merge(
+    {
+      "Name" = "${var.env}-${var.platform}-mgmt-nat-eip-${count.index}"
+    },
+  )
+}
+
+
+##############
+# NAT Gateway
+##############
+
+resource "aws_nat_gateway" "mgmt_nat_gateway" {
+  count = local.nat_gateway_count
+
+  allocation_id = element(
+    aws_eip.mgmt_nat.*.id,
+    count.index,
+  )
+  subnet_id = element(
+    aws_subnet.mgmt_public_subnet.*.id,
+    count.index,
+  )
+
+  tags = merge(
+    {
+      "Name" = "${var.env}-${var.platform}-mgmt-nat-az-${element(split("-",var.azs[count.index]),2)}"
+    },
+  )
+
+  depends_on = [aws_internet_gateway.mgmt_igw]
+}
+
+################################
+# Active Directory Subnet
+################################
+resource "aws_subnet" "ad" {
+  count             = var.create_vpc && length(var.ad_subnets) > 0 ? length(var.ad_subnets) : 0
+  vpc_id            = aws_vpc.mgmt_vpc.id
+  cidr_block        = var.ad_subnets[count.index]
+  availability_zone = var.azs[count.index]
+
+  tags = merge(
+    {
+      "Name" = "${var.env}-${var.platform}-mgmt-${element(split("-",var.azs[count.index]),2)}"
+    },
+  )
+}
+
+
+######################################
+# Management Subnet - Management VPC
+#######################################
+resource "aws_subnet" "mgmt" {
+  count             = var.create_vpc && length(var.mgmt_subnets) > 0 ? length(var.mgmt_subnets) : 0
+  vpc_id            = aws_vpc.mgmt_vpc.id
+  cidr_block        = var.mgmt_subnets[count.index]
+  availability_zone = var.azs[count.index]
+
+  tags = merge(
+    {
+      "Name" = "${var.env}-${var.platform}-mgmt-${element(split("-",var.azs[count.index]),2)}"
+    },
+  )
+}
+
+#################
+# Private routes
+# There are as many routing tables as the number of NAT gateways
+#################
+resource "aws_route_table" "mgmt_private" {
+  count = local.nat_gateway_count
+  vpc_id = aws_vpc.mgmt_vpc.id
+  tags = merge(
+    {
+      "Name" = "${var.env}-${var.platform}-mgmt-pvt-rt-${count.index}"
+    },
+  )
+}
+
+resource "aws_route" "private_nat_gateway" {
+  count = var.create_vpc && var.enable_nat_gateway ? local.nat_gateway_count : 0
+
+  route_table_id         = element(aws_route_table.mgmt_private.*.id, count.index)
+  destination_cidr_block = "0.0.0.0/0"
+  nat_gateway_id         = element(aws_nat_gateway.mgmt_nat_gateway.*.id, count.index)
+
+  timeouts {
+    create = "5m"
+  }
+}
+
+resource "aws_route_table_association" "mgmt" {
+  count = length(var.mgmt_subnets)
+
+  subnet_id = element(aws_subnet.mgmt.*.id, count.index)
+  route_table_id = element(aws_route_table.mgmt_private.*.id, count.index)
+} 
+
+╷
+│ Error: Error in function call
+│
+│   on main.tf line 149, in resource "aws_nat_gateway" "mgmt_nat_gateway":
+│  149:   subnet_id = element(
+│  150:     aws_subnet.mgmt_public_subnet.*.id,
+│  151:     count.index,
+│  152:   )
+│     ├────────────────
+│     │ aws_subnet.mgmt_public_subnet is empty tuple
+│     │ count.index is 0
+│
+│ Call to function "element" failed: cannot use element function with an
+│ empty list.
 
 
