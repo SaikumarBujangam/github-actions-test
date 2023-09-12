@@ -1,75 +1,21 @@
-locals { 
-  tables = [
-      {
-          name      = "Organisation",
-          hash_key  = "org_key"
-          range_key = null,
-          ttl_attribute_name = null
-      },
-      {
-          name      = "PlatformConfig",
-          hash_key  = "item_name"
-          range_key = "item_type",
-          ttl_attribute_name = null
-      },
-      {
-          name      = "Project",
-          hash_key  = "project_key"
-          range_key = "org_key",
-          ttl_attribute_name = null
-      },
-      {
-          name      = "User",
-          hash_key  = "id"
-          range_key = null,
-          ttl_attribute_name = null
-      },
-      {
-          name      = "UserRoleDetails",
-          hash_key  = "user_id"
-          range_key = "role_hashkey",
-          ttl_attribute_name = null
-      },
-      {
-          name      = "UserTrainingDetails",
-          hash_key  = "id"
-          range_key = null,
-          ttl_attribute_name = null
-      },
-      {
-          name      = "DataIngress",
-          hash_key  = "project_key"
-          range_key = "composed_key",
-          ttl_attribute_name = null
-      },
-      {
-          name                  = "UserLoginDetails",
-          hash_key              = "user_email"
-          range_key             = null,
-          ttl_attribute_name    = "expiry_time"
-      },
-      {
-          name      = "ProjectInfraDetails",
-          hash_key  = "project_key"
-          range_key = "resource_key",
-          ttl_attribute_name = null
-      },
-      {
-          name      = "RoleDetails",
-          hash_key  = "role_id"
-          range_key = null,
-          ttl_attribute_name = null
-      }
-  ]
-}
+resource "aws_subnet" "mgmt_public_subnet" {
+  count             = length(var.public_subnets_cidr) > 0 ? length(var.public_subnets_cidr) : 0
+  vpc_id            = aws_vpc.mgmt_vpc.id
+  cidr_block        = var.public_subnets_cidr[count.index]
+  availability_zone = var.azs[count.index]
 
-# Creation of platform dynamodb tables
-module "platform_dynamodb_table" {
-  source      = "../aws-common/dynamodb"
-
-  for_each              = { for table in local.tables : table.name => table }
-  table_name            = each.key
-  hash_key              = each.value.hash_key
-  range_key             = each.value.range_key
-  ttl_attribute_name    = each.value.ttl_attribute_name
+  tags = merge(
+    {
+      "Name" = "${var.env}-${var.platform}-mgmt-az-${element(split("-",var.azs[count.index]),2)}"
+    },
+  )
 }
+Error: Invalid index
+│
+│   on main.tf line 57, in resource "aws_subnet" "mgmt_public_subnet":
+│   57:   cidr_block        = var.public_subnets_cidr[count.index]
+│     ├────────────────
+│     │ count.index is a number, known only after apply
+│     │ var.public_subnets_cidr is a string, known only after apply
+│
+│ This value does not have any indices.
