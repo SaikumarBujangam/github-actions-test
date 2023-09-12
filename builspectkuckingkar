@@ -3,23 +3,26 @@ resource "aws_route" "mgmt_public_internet_gateway" {
 
   route_table_id         = aws_route_table.mgmt_public_rt[0].id
   destination_cidr_block = "0.0.0.0/0"
-  gateway_id             = aws_internet_gateway.mgmt_vpc.id
+  gateway_id             = aws_internet_gateway.mgmt_igw.id
 
   timeouts {
     create = "5m"
   }
 }
 
-
-│ Error: Reference to undeclared resource
+ Error: Missing resource instance key
 │
 │   on main.tf line 103, in resource "aws_route" "mgmt_public_internet_gateway":
-│  103:   gateway_id             = aws_internet_gateway.mgmt_vpc.id
+│  103:   gateway_id             = aws_internet_gateway.mgmt_igw.id
 │
-│ A managed resource "aws_internet_gateway" "mgmt_vpc" has not been declared
-│ in the root module.
+│ Because aws_internet_gateway.mgmt_igw has "count" set, its attributes must
+│ be accessed on specific instances.
+│
+│ For example, to correlate with indices of a referring resource, use:
+│     aws_internet_gateway.mgmt_igw[count.index]
 ╵
-time=2023-09-12T17:52:23+05:30 level=error msg=Terraform invocation failed in C:/.terragrunt-cache/po3Ala64-srlQYqjHFq7icXUwzY/VlJQvwBldSrlCuJoozEeVg97DMM/management-vpc prefix=[C:\Users\umababy.kannan\OneDrive - HCL Technologies Ltd\Documents\Star CAP\platform-infra\live\dev\eu-central-1\management-vpc]
+time=2023-09-12T17:56:22+05:30 level=error msg=Terraform invocation failed in C:/.terragrunt-cache/po3Ala64-srlQYqjHFq7icXUwzY/VlJQvwBldSrlCuJoozEeVg97DMM/management-vpc prefix=[C:\Users\umababy.kannan\OneDrive - HCL Technologies Ltd\Documents\Star CAP\platform-infra\live\dev\eu-central-1\management-vpc]
 
-time=2023-09-12T17:52:23+05:30 level=error msg=1 error occurred:
+time=2023-09-12T17:56:22+05:30 level=error msg=1 error occurred:
         * exit status 1
+
