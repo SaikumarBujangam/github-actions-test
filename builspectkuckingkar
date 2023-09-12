@@ -1,21 +1,25 @@
-resource "aws_subnet" "mgmt_public_subnet" {
-  count             = length(var.public_subnets_cidr) > 0 ? length(var.public_subnets_cidr) : 0
-  vpc_id            = aws_vpc.mgmt_vpc.id
-  cidr_block        = var.public_subnets_cidr[count.index]
-  availability_zone = var.azs[count.index]
+resource "aws_route" "mgmt_public_internet_gateway" {
+  count = var.create_vpc && var.create_igw && length(var.public_subnets) > 0 ? 1 : 0
 
-  tags = merge(
-    {
-      "Name" = "${var.env}-${var.platform}-mgmt-az-${element(split("-",var.azs[count.index]),2)}"
-    },
-  )
+  route_table_id         = aws_route_table.mgmt_public_rt[0].id
+  destination_cidr_block = "0.0.0.0/0"
+  gateway_id             = aws_internet_gateway.mgmt_vpc.id
+
+  timeouts {
+    create = "5m"
+  }
 }
-Error: Invalid index
+
+
+│ Error: Reference to undeclared resource
 │
-│   on main.tf line 57, in resource "aws_subnet" "mgmt_public_subnet":
-│   57:   cidr_block        = var.public_subnets_cidr[count.index]
-│     ├────────────────
-│     │ count.index is a number, known only after apply
-│     │ var.public_subnets_cidr is a string, known only after apply
+│   on main.tf line 103, in resource "aws_route" "mgmt_public_internet_gateway":
+│  103:   gateway_id             = aws_internet_gateway.mgmt_vpc.id
 │
-│ This value does not have any indices.
+│ A managed resource "aws_internet_gateway" "mgmt_vpc" has not been declared
+│ in the root module.
+╵
+time=2023-09-12T17:52:23+05:30 level=error msg=Terraform invocation failed in C:/.terragrunt-cache/po3Ala64-srlQYqjHFq7icXUwzY/VlJQvwBldSrlCuJoozEeVg97DMM/management-vpc prefix=[C:\Users\umababy.kannan\OneDrive - HCL Technologies Ltd\Documents\Star CAP\platform-infra\live\dev\eu-central-1\management-vpc]
+
+time=2023-09-12T17:52:23+05:30 level=error msg=1 error occurred:
+        * exit status 1
