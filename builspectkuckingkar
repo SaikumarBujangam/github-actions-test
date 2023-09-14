@@ -1,48 +1,74 @@
+Let's calculate how long each of the "phases" (Design, Development, Testing, and Rework) would take and when they would occur during the 5 months of the project in a traditional project management approach, based on the business value of each feature:
 
-Feature​
+First, let's list the features and their business value:
 
-Business Value​
+- Feature 1: 20 Units
+- Feature 2: 4 Units
+- Feature 3: 40 Units
+- Feature 4: 12 Units
+- Feature 5: 24 Units
 
-Feature 1​
+In a traditional approach, you would typically prioritize features based on their business value and allocate resources accordingly. Let's calculate the duration of each phase for each feature:
 
-20 Units​
+**Traditional Approach:**
 
-Feature 2​
+Each month, you have 100 person-days of effort available. We'll prioritize features based on business value and allocate effort accordingly:
 
-4 Units​
+**Month 1:**
+- Feature 3 (Development and Testing) - 40 Units
+- Feature 1 (Development) - 20 Units
+- Feature 5 (Design) - 24 Units
+- Remaining effort: 16 Units
 
-Feature 3​
+**Month 2:**
+- Feature 3 (Rework) - 40 Units
+- Feature 5 (Development and Testing) - 24 Units
+- Remaining effort: 12 Units
 
-40 Units​
+**Month 3:**
+- Feature 5 (Rework) - 24 Units
+- Feature 4 (Development and Testing) - 12 Units
+- Remaining effort: 12 Units
 
-Feature 4​
+**Month 4:**
+- Feature 4 (Rework) - 12 Units
+- Feature 2 (Development and Testing) - 4 Units
+- Remaining effort: 8 Units
 
-12 Units​
+**Month 5:**
+- Feature 2 (Rework) - 4 Units
+- Remaining effort: 4 Units
 
-Feature 5​
+In this traditional approach, you prioritize the features based on their business value and allocate resources accordingly. You focus on delivering the highest-value features first and then proceed to lower-value features.
 
-24 Units​
+Now, let's plan the same project using an Agile approach, focusing on delivering increments of value each month.
 
-Total​
+**Agile Approach:**
 
-100 units​
+In Agile, we aim to deliver value incrementally and iteratively. We'll plan what should be developed during each of the 5 months of the project based on priorities and customer value:
 
+**Month 1:**
+- Feature 3 (Development and Testing) - 40 Units
+- Feature 1 (Development) - 20 Units
+- Total: 60 Units
 
+**Month 2:**
+- Feature 3 (Rework) - 40 Units
+- Feature 5 (Development and Testing) - 24 Units
+- Total: 64 Units
 
-The Case study​
+**Month 3:**
+- Feature 5 (Rework) - 24 Units
+- Feature 4 (Development and Testing) - 12 Units
+- Total: 36 Units
 
-You have 5 months to complete a software project​
+**Month 4:**
+- Feature 4 (Rework) - 12 Units
+- Feature 2 (Development and Testing) - 4 Units
+- Total: 16 Units
 
-In the project, you must deliver the following 5 features.​
+**Month 5:**
+- Feature 2 (Rework) - 4 Units
+- Total: 4 Units
 
-Each month, you have 100 person-days of efforts available.​
-
-Each feature requires 20 person-days of Design, 40 person-days of Development, 20 person-days of Testing and 20 person – days of rework ( fixing defects and enhancing the features based on hands-on usage) ​
-
-​
-
-Try below options​
-
-TRADITIONAL: Based on the case study, calculate how long each of the “phases” – Design, Development, Testing & Rework would take and when they  would occur during the 5 months of the project.​
-
-AGILE:  plan out what should be developed during each of the 5 months of the project.
+In this Agile approach, each month focuses on delivering increments of value, prioritizing work based on customer value and feedback. This allows for flexibility and the ability to adapt to changing requirements and priorities throughout the project while delivering value consistently.
