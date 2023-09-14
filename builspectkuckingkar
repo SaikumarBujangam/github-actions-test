@@ -1,12 +1,17 @@
-Our highest priority is to satisfy the customer through early and continuous delivery of valuable software
-Welcome changing requirements, even late in development. Agile processes harness change for the customer's competitive advantage.
-Deliver working software frequently, from a couple of weeks to a couple of months, with a preference to the shorter timescale
-Business people and developers must work together daily throughout the project
-Build projects around motivated individuals. Give them the environment and support they need, and trust them to get the job done
-The most efficient and effective method of conveying information to and within a development team is face-to-face conversation
-Working software is the primary measure of progress.
-Agile processes promote sustainable development. The sponsors, developers, and users should be able to maintain a constant pace indefinitely
-Continuous attention to technical excellence and good design enhances agility.
-Simplicity--the art of maximizing the amount of work not done--is essential
-The best architectures, requirements, and designs emerge from self-organizing teams
-At regular intervals, the team reflects on how  to become more effective, then tunes and adjusts its behavior accordingly
+The Case study​
+
+You have 5 months to complete a software project​
+
+In the project, you must deliver the following 5 features.​
+
+Each month, you have 100 person-days of efforts available.​
+
+Each feature requires 20 person-days of Design, 40 person-days of Development, 20 person-days of Testing and 20 person – days of rework ( fixing defects and enhancing the features based on hands-on usage) ​
+
+​
+
+Try below options​
+
+TRADITIONAL: Based on the case study, calculate how long each of the “phases” – Design, Development, Testing & Rework would take and when they  would occur during the 5 months of the project.​
+
+AGILE:  plan out what should be developed during each of the 5 months of the project.
