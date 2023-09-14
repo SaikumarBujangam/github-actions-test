@@ -1,17 +1,72 @@
-The Case study​
+Let's first calculate how long each of the "phases" (Design, Development, Testing, and Rework) would take and when they would occur during the 5 months of the project in a traditional project management approach:
 
-You have 5 months to complete a software project​
+**Traditional Approach:**
 
-In the project, you must deliver the following 5 features.​
+Each month, you have 100 person-days of effort available, and each feature has the following effort requirements:
+- Design: 20 person-days
+- Development: 40 person-days
+- Testing: 20 person-days
+- Rework: 20 person-days
 
-Each month, you have 100 person-days of efforts available.​
+Now, let's calculate when each phase would occur for each feature:
 
-Each feature requires 20 person-days of Design, 40 person-days of Development, 20 person-days of Testing and 20 person – days of rework ( fixing defects and enhancing the features based on hands-on usage) ​
+**Feature 1:**
+- Design (Month 1): 20 person-days
+- Development (Month 1): 40 person-days
+- Testing (Month 2): 20 person-days
+- Rework (Month 2): 20 person-days
 
-​
+**Feature 2:**
+- Design (Month 2): 20 person-days
+- Development (Month 2): 40 person-days
+- Testing (Month 3): 20 person-days
+- Rework (Month 3): 20 person-days
 
-Try below options​
+**Feature 3:**
+- Design (Month 3): 20 person-days
+- Development (Month 3): 40 person-days
+- Testing (Month 4): 20 person-days
+- Rework (Month 4): 20 person-days
 
-TRADITIONAL: Based on the case study, calculate how long each of the “phases” – Design, Development, Testing & Rework would take and when they  would occur during the 5 months of the project.​
+**Feature 4:**
+- Design (Month 4): 20 person-days
+- Development (Month 4): 40 person-days
+- Testing (Month 5): 20 person-days
+- Rework (Month 5): 20 person-days
 
-AGILE:  plan out what should be developed during each of the 5 months of the project.
+**Feature 5:**
+- Design (Month 5): 20 person-days
+- Development (Month 5): 40 person-days
+- Testing (Month 5): 20 person-days
+- Rework (Month 5): 20 person-days
+
+In this traditional approach, each phase for each feature occurs sequentially, with a one-month gap between each phase. Now, let's plan the same project using an Agile approach.
+
+**Agile Approach:**
+
+In Agile, we aim to deliver value incrementally and iteratively. We'll plan what should be developed during each of the 5 months of the project based on priorities and customer value. Here's a high-level plan:
+
+**Month 1:**
+- Feature 1 (Design and Development)
+- Feature 2 (Design)
+
+**Month 2:**
+- Feature 1 (Testing and Rework)
+- Feature 2 (Development and Testing)
+- Feature 3 (Design)
+
+**Month 3:**
+- Feature 2 (Rework)
+- Feature 3 (Development and Testing)
+- Feature 4 (Design)
+
+**Month 4:**
+- Feature 3 (Rework)
+- Feature 4 (Development and Testing)
+- Feature 5 (Design)
+
+**Month 5:**
+- Feature 4 (Rework)
+- Feature 5 (Development, Testing, and Rework)
+
+In this Agile approach, each month focuses on delivering part of each feature while prioritizing work based on customer value. This allows for flexibility and the ability to adapt to changing requirements and priorities throughout the project.
