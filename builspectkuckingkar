@@ -1,74 +1,104 @@
-Let's calculate how long each of the "phases" (Design, Development, Testing, and Rework) would take and when they would occur during the 5 months of the project in a traditional project management approach, based on the business value of each feature:
+##########################
+# creating Lambda Function
+###########################
 
-First, let's list the features and their business value:
 
-- Feature 1: 20 Units
-- Feature 2: 4 Units
-- Feature 3: 40 Units
-- Feature 4: 12 Units
-- Feature 5: 24 Units
+resource "aws_lambda_function" "lambda_dynamodb_stream" {
+  function_name = var.lambda_function_name
+  description   = "Dynamodb stream"
+  memory_size   = "512"
+  timeout       = "300"
+  ephemeral_storage {
+    size = "2048"
+  }
+  role         = aws_iam_role.lambda_role.arn
+  runtime      = Python3.9 
+  
+  s3_bucket         = aws_s3_bucket.bucket.name
+  s3_key            = lambda/lambda_function.zip
+    
+}
+#######################################
+# Common module for creating s3 bucket
+#######################################
 
-In a traditional approach, you would typically prioritize features based on their business value and allocate resources accordingly. Let's calculate the duration of each phase for each feature:
+resource "aws_s3_bucket" "bucket" {
+  bucket = dynamodb_stream
+}
 
-**Traditional Approach:**
+resource "aws_s3_bucket_public_access_block" "bucket" {
+  bucket = aws_s3_bucket.bucket.id
 
-Each month, you have 100 person-days of effort available. We'll prioritize features based on business value and allocate effort accordingly:
+  block_public_acls       = true
+  block_public_policy     = true
+  restrict_public_buckets = true
+  ignore_public_acls      = true
+}
 
-**Month 1:**
-- Feature 3 (Development and Testing) - 40 Units
-- Feature 1 (Development) - 20 Units
-- Feature 5 (Design) - 24 Units
-- Remaining effort: 16 Units
+resource "aws_s3_bucket_server_side_encryption_configuration" "bucket" {
+  bucket = aws_s3_bucket.bucket.id
 
-**Month 2:**
-- Feature 3 (Rework) - 40 Units
-- Feature 5 (Development and Testing) - 24 Units
-- Remaining effort: 12 Units
+  rule {
+    apply_server_side_encryption_by_default {
+      sse_algorithm     = "AES256"
+    }
+  }
+}
 
-**Month 3:**
-- Feature 5 (Rework) - 24 Units
-- Feature 4 (Development and Testing) - 12 Units
-- Remaining effort: 12 Units
+resource "aws_s3_bucket_versioning" "bucket" {
+  bucket = aws_s3_bucket.bucket.id
+  
+  versioning_configuration {
+    status = "Enabled"
+  }
+}
 
-**Month 4:**
-- Feature 4 (Rework) - 12 Units
-- Feature 2 (Development and Testing) - 4 Units
-- Remaining effort: 8 Units
+resource "aws_s3_bucket_ownership_controls" "bucket" {
+  count = var.bucket_ownership ? 1 : 0
+  bucket = aws_s3_bucket.bucket.id
 
-**Month 5:**
-- Feature 2 (Rework) - 4 Units
-- Remaining effort: 4 Units
+  rule {
+    object_ownership = "BucketOwnerPreferred"
+  }
+}
 
-In this traditional approach, you prioritize the features based on their business value and allocate resources accordingly. You focus on delivering the highest-value features first and then proceed to lower-value features.
+####################################################
+# Adding bucket policy to Authorizing HTTP requests
+####################################################
 
-Now, let's plan the same project using an Agile approach, focusing on delivering increments of value each month.
+resource "aws_s3_bucket_policy" "policy" {
+  bucket = aws_s3_bucket.bucket.id
+  
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Id      = "compliantpolicy"
+    Statement = [
+      {
+        Sid       = "HTTPSOnly"
+        Effect    = "Deny"
+        Principal = "*"
+        Action    = "s3:*"
+        Resource = [
+          aws_s3_bucket.bucket.arn,
+          "${aws_s3_bucket.bucket.arn}/*",
+        ]
+        Condition = {
+          Bool = {
+            "aws:SecureTransport" = "false"
+          }
+        }
+      },
+    ]
+  })
+}
+prefix=[C:\Users\umababy.kannan\OneDrive - HCL Technologies Ltd\Documents\Star CAP\clone\platform-infra\platform-infra\live\dev\eu-central-1\platform-backend]
+time=2023-09-20T12:21:14+05:30 level=info msg=╷
+│ Error: Invalid reference
+│
+│   on s3.tf line 6, in resource "aws_s3_bucket" "bucket":
+│    6:   bucket = dynamodb_stream
+│
+│ A reference to a resource type must be followed by at least one attribute
+│ access, specifying the resource name.
 
-**Agile Approach:**
 
-In Agile, we aim to deliver value incrementally and iteratively. We'll plan what should be developed during each of the 5 months of the project based on priorities and customer value:
-
-**Month 1:**
-- Feature 3 (Development and Testing) - 40 Units
-- Feature 1 (Development) - 20 Units
-- Total: 60 Units
-
-**Month 2:**
-- Feature 3 (Rework) - 40 Units
-- Feature 5 (Development and Testing) - 24 Units
-- Total: 64 Units
-
-**Month 3:**
-- Feature 5 (Rework) - 24 Units
-- Feature 4 (Development and Testing) - 12 Units
-- Total: 36 Units
-
-**Month 4:**
-- Feature 4 (Rework) - 12 Units
-- Feature 2 (Development and Testing) - 4 Units
-- Total: 16 Units
-
-**Month 5:**
-- Feature 2 (Rework) - 4 Units
-- Total: 4 Units
-
-In this Agile approach, each month focuses on delivering increments of value, prioritizing work based on customer value and feedback. This allows for flexibility and the ability to adapt to changing requirements and priorities throughout the project while delivering value consistently.
