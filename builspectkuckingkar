@@ -101,4 +101,18 @@ time=2023-09-20T12:21:14+05:30 level=info msg=╷
 │ A reference to a resource type must be followed by at least one attribute
 │ access, specifying the resource name.
 
+time=2023-09-20T13:01:11+05:30 level=error msg=Module C:/Users/umababy.kannan/OneDrive - HCL Technologies Ltd/Documents/Star CAP/clone/platform-infra/platform-infra/live/dev/eu-central-1/platform-backend has finished with an error: 1 error occurred:
+        * exit status 1
+
+ prefix=[C:\Users\umababy.kannan\OneDrive - HCL Technologies Ltd\Documents\Star CAP\clone\platform-infra\platform-infra\live\dev\eu-central-1\platform-backend]
+time=2023-09-20T13:01:11+05:30 level=info msg=╷
+│ Error: expected runtime to be one of [nodejs nodejs4.3 nodejs6.10 nodejs8.10 nodejs10.x nodejs12.x nodejs14.x nodejs16.x java8 java8.al2 java11 python2.7 python3.6 python3.7 python3.8 python3.9 dotnetcore1.0 dotnetcore2.0 dotnetcore2.1 dotnetcore3.1 dotnet6 nodejs4.3-edge go1.x ruby2.5 ruby2.7 provided provided.al2 nodejs18.x], got Python3.9
+│
+│   with aws_lambda_function.lambda_dynamodb_stream,
+│   on lambda.tf line 15, in resource "aws_lambda_function" "lambda_dynamodb_stream":
+│   15:   runtime      = "Python3.9"
+│
+╵
+time=2023-09-20T13:01:11+05:30 level=error msg=Terraform invocation failed in C:/.terragrunt-cache/T_zVCIR7CkgT8SJcEL7cvJ_9Gig/3i_WC85hFbG0RGQjdTVce7dxmn4/platform-backend prefix=[C:\Users\umababy.kannan\One
+
 
