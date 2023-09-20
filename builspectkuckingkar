@@ -1,24 +1,51 @@
- prefix=[C:\Users\umababy.kannan\OneDrive - HCL Technologies Ltd\Documents\Star CAP\clone\platform-infra\platform-infra\live\dev\eu-central-1\platform-backend]
-time=2023-09-20T13:06:30+05:30 level=info msg=╷
-│ Error: handler and runtime must be set when PackageType is Zip
-│
-│   with aws_lambda_function.lambda_dynamodb_stream,
-│   on lambda.tf line 6, in resource "aws_lambda_function" "lambda_dynamodb_stream":
-│    6: resource "aws_lambda_function" "lambda_dynamodb_stream" {
+#######################
+# IAM Role - For Lambda
+#######################
 
-
-resource "aws_lambda_function" "lambda_dynamodb_stream" {
-  function_name = var.lambda_function_name
-  description   = "Dynamodb stream"
-  memory_size   = "512"
-  timeout       = "300"
-  ephemeral_storage {
-    size = "2048"
-  }
-  role         = aws_iam_role.lambda_role.arn
-  runtime      = "python3.9"
-
-  s3_bucket         = aws_s3_bucket.bucket.id
-  s3_key            = "lambda/lambda_function.zip"
-    
+resource "aws_iam_role" "lambda_role" {
+  name               = "${var.platform}-${var.lambda_function_name}-role"
+  assume_role_policy = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Action": "sts:AssumeRole",
+      "Principal": {
+        "Service": "lambda.amazonaws.com"
+      },
+      "Effect": "Allow"
+    }
+  ]
 }
+EOF
+}
+
+###########################################
+# IAM Policy: Dynamo db stream
+###########################################]
+
+data "template_file" "Dynamo_db_stream" {
+  template = file("${path.module}/templates/Dynamodbstream.tpl")
+}
+
+resource "aws_iam_role_policy" "dynamo_db_stream_policy" {
+  name   = "${var.platform}-${var.lambda_function_name}-dynamo-db-stream-policy"
+  role   = aws_iam_role.lambda_role.name
+  policy = data.template_file.Dynamo_db_stream.rendered
+}
+Releasing state lock. This may take a few moments...
+time=2023-09-20T14:22:39+05:30 level=error msg=Module C:/Users/umababy.kannan/OneDrive - HCL Technologies Ltd/Documents/Star CAP/clone/platform-infra/platform-infra/live/dev/eu-central-1/platform-backend has finished with an error: 1 error occurred:
+        * exit status 1
+
+ prefix=[C:\Users\umababy.kannan\OneDrive - HCL Technologies Ltd\Documents\Star CAP\clone\platform-infra\platform-infra\live\dev\eu-central-1\platform-backend]
+time=2023-09-20T14:22:39+05:30 level=info msg=╷
+│ Error: invalid value for name (must match [\w+=,.@-])
+│
+│   with aws_iam_role.lambda_role,
+│   on iam.tf line 6, in resource "aws_iam_role" "lambda_role":
+│    6:   name               = "${var.platform}-${var.lambda_function_name}-role"
+│
+╵
+time=2023-09-20T14:22:39+05:30 level=error msg=Terraform invocation failed in C:/.terragrunt-cache/T_zVCIR7CkgT8SJcEL7cvJ_9Gig/3i_WC85hFbG0RGQjdTVce7dxmn4/platform-backend prefix=[C:\Users\umababy.kannan\OneDrive - HCL Technologies Ltd\Documents\Star CAP\clone\platform-infra\platform-infra\live\dev\eu-central-1\platform-backend]
+
+time=2023-09-20T14:22:39+05:30 level=error msg=1 error occurred:
