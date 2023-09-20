@@ -1,51 +1,7 @@
-#######################
-# IAM Role - For Lambda
-#######################
-
-resource "aws_iam_role" "lambda_role" {
-  name               = "${var.platform}-${var.lambda_function_name}-role"
-  assume_role_policy = <<EOF
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Action": "sts:AssumeRole",
-      "Principal": {
-        "Service": "lambda.amazonaws.com"
-      },
-      "Effect": "Allow"
-    }
-  ]
+resource "aws_lambda_event_source_mapping" "dynamodb_stream_lambda_mapping" {
+  
+  event_source_arn       = var.stream_cloud_dynamodb_stream_arn
+  function_name          = aws_lambda_function.lambda_dynamodb_stream.arn
+  maximum_retry_attempts = var.cloudsearch_stream_maximum_retry_attempts
+  starting_position      = "LATEST"
 }
-EOF
-}
-
-###########################################
-# IAM Policy: Dynamo db stream
-###########################################]
-
-data "template_file" "Dynamo_db_stream" {
-  template = file("${path.module}/templates/Dynamodbstream.tpl")
-}
-
-resource "aws_iam_role_policy" "dynamo_db_stream_policy" {
-  name   = "${var.platform}-${var.lambda_function_name}-dynamo-db-stream-policy"
-  role   = aws_iam_role.lambda_role.name
-  policy = data.template_file.Dynamo_db_stream.rendered
-}
-Releasing state lock. This may take a few moments...
-time=2023-09-20T14:22:39+05:30 level=error msg=Module C:/Users/umababy.kannan/OneDrive - HCL Technologies Ltd/Documents/Star CAP/clone/platform-infra/platform-infra/live/dev/eu-central-1/platform-backend has finished with an error: 1 error occurred:
-        * exit status 1
-
- prefix=[C:\Users\umababy.kannan\OneDrive - HCL Technologies Ltd\Documents\Star CAP\clone\platform-infra\platform-infra\live\dev\eu-central-1\platform-backend]
-time=2023-09-20T14:22:39+05:30 level=info msg=╷
-│ Error: invalid value for name (must match [\w+=,.@-])
-│
-│   with aws_iam_role.lambda_role,
-│   on iam.tf line 6, in resource "aws_iam_role" "lambda_role":
-│    6:   name               = "${var.platform}-${var.lambda_function_name}-role"
-│
-╵
-time=2023-09-20T14:22:39+05:30 level=error msg=Terraform invocation failed in C:/.terragrunt-cache/T_zVCIR7CkgT8SJcEL7cvJ_9Gig/3i_WC85hFbG0RGQjdTVce7dxmn4/platform-backend prefix=[C:\Users\umababy.kannan\OneDrive - HCL Technologies Ltd\Documents\Star CAP\clone\platform-infra\platform-infra\live\dev\eu-central-1\platform-backend]
-
-time=2023-09-20T14:22:39+05:30 level=error msg=1 error occurred:
