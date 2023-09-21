@@ -36,6 +36,18 @@ module "lambda-s3" {
   bucket_name = "${var.platform}-${var.env}-dynamodb_stream"
 }
 
+rror: Unsupported attribute
+│
+│   on lambda.tf line 21, in resource "aws_lambda_function" "lambda_dynamodb_stream":
+│   21:   s3_bucket         = module.lambda-s3.bucket_name
+│     ├────────────────
+│     │ module.lambda-s3 is a object, known only after apply
+│
+│ This object does not have an attribute named "bucket_name".
+╵
+time=2023-09-21T10:50:24+05:30 level=error msg=Terraform invocation failed in C:/.terragrunt-cache/4EjCFoLUepVr4mMWBW-pKLhmKTw/3i_WC85hFbG0RGQjdTVce7dxmn4/platform-backend prefix=[C:\Users\umababy.kannan\OneDrive - HCL Technologies Ltd\Documents\Star CAP\clone\platform-infra\platform-infra\live\dev2\eu-west-1\platform-backend]
+
+time=2023-09-21T10:50:32+05:30 level=info msg=
  Error: Unsupported attribute
 │
 │   on lambda.tf line 21, in resource "aws_lambda_function" "lambda_dynamodb_stream":
