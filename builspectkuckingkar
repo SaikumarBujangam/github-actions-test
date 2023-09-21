@@ -1,58 +1,110 @@
-##########################
-# creating Lambda Function
-###########################
+locals { 
+  tables = [
+      {
+          name      = "Organisation",
+          hash_key  = "org_key"
+          
+      },
+      {
+          name      = "PlatformConfig",
+          hash_key  = "item_name"
+          range_key = "item_type",
+          
+      },
+      {
+          name      = "Project",
+          hash_key  = "project_key"
+          range_key = "org_key",
+          
+      },
+      {
+          name      = "User",
+          hash_key  = "id"
+          range_key = null,
+          
+      },
+      {
+          name      = "UserRoleDetails",
+          hash_key  = "user_id"
+          range_key = "role_hashkey",
+          
+      },
+      {
+          name      = "UserTrainingDetails",
+          hash_key  = "id"
+          
+          
+      },
+      {
+          name      = "DataIngress",
+          hash_key  = "project_key"
+          range_key = "composed_key",
+          stream_enabled = true
+          stream_view_type = true
+          
+          
+      },
+      {
+          name                  = "UserLoginDetails",
+          hash_key              = "user_email"
+          ttl_attribute_name    = "expiry_time"
+      },
+      {
+          name      = "ProjectInfraDetails",
+          hash_key  = "project_key"
+          range_key = "resource_key",
+          
+      },
+      {
+          name      = "RoleDetails",
+          hash_key  = "role_id"
+          
+      }
+  ]
+}
+
+# Creation of platform dynamodb tables
+module "platform_dynamodb_table" {
+  source      = "../aws-common/dynamodb"
+
+  for_each              = { for table in local.tables : table.name => merge(var.default_table_attributes, table)  }
+  table_name            = each.key
+  hash_key              = each.value.hash_key
+  range_key             = each.value.range_key
+  ttl_attribute_name    = each.value.ttl_attribute_name
+  stream_enabled        = each.value.stream_enabled
+  stream_view_type      = each.value.stream_view_type
+}
 
 
-resource "aws_lambda_function" "lambda_dynamodb_stream" {
-  function_name = var.lambda_function_name
-  description   = "Dynamodb stream"
-  memory_size   = "512"
-  timeout       = "300"
-  ephemeral_storage {
-    size = "2048"
+# Creates DynamoDB Table
+  resource "aws_dynamodb_table" "table" {
+  name           = var.table_name
+  billing_mode   = "PAY_PER_REQUEST"
+  hash_key       = var.hash_key
+  range_key      = var.range_key
+ 
+  attribute {
+    name = var.hash_key
+    type = "S"
   }
-  role         = aws_iam_role.lambda_role.arn
-  runtime      = "python3.9"
-  handler      = "lambda_function.lambda_handler"
-  package_type = "Zip"
 
-  #s3_bucket         = aws_s3_bucket.bucket.id
-  #s3_key            = "lambda/lambda_function.zip"  
-  s3_bucket         = module.lambda-s3.id
-  s3_key            = "lambda/lambda_function.zip" 
-}
+  dynamic "attribute" {
+    for_each = var.range_key != null ? [1] : []
+    content {
+      name = var.range_key != null ? var.range_key : null
+      type = var.range_key != null ? "S" : null
+    }
+  }
 
-resource "aws_lambda_event_source_mapping" "dynamodb_stream_lambda_mapping" {
-  
-  event_source_arn       = var.dynamodb_arn
-  function_name          = aws_lambda_function.lambda_dynamodb_stream.arn
-  maximum_retry_attempts = var.cloudsearch_stream_maximum_retry_attempts
-  starting_position      = "LATEST"
-}
-
-module "lambda-s3" {
-  source      = "../aws-common/s3"
-
-  bucket_name = "${var.platform}-${var.env}-dynamodb_stream"
-}
-
-rror: Unsupported attribute
-│
-│   on lambda.tf line 21, in resource "aws_lambda_function" "lambda_dynamodb_stream":
-│   21:   s3_bucket         = module.lambda-s3.bucket_name
-│     ├────────────────
-│     │ module.lambda-s3 is a object, known only after apply
-│
-│ This object does not have an attribute named "bucket_name".
-╵
-time=2023-09-21T10:50:24+05:30 level=error msg=Terraform invocation failed in C:/.terragrunt-cache/4EjCFoLUepVr4mMWBW-pKLhmKTw/3i_WC85hFbG0RGQjdTVce7dxmn4/platform-backend prefix=[C:\Users\umababy.kannan\OneDrive - HCL Technologies Ltd\Documents\Star CAP\clone\platform-infra\platform-infra\live\dev2\eu-west-1\platform-backend]
-
-time=2023-09-21T10:50:32+05:30 level=info msg=
- Error: Unsupported attribute
-│
-│   on lambda.tf line 21, in resource "aws_lambda_function" "lambda_dynamodb_stream":
-│   21:   s3_bucket         = module.lambda-s3.id
-│     ├────────────────
-│     │ module.lambda-s3 is a object, known only after apply
-│
-│ This object does not have an attribute named "id".
+  dynamic "ttl" {
+    for_each = var.ttl_attribute_name != null ? [1] : []
+    content {
+      attribute_name  = var.ttl_attribute_name != null ? var.ttl_attribute_name : null
+      enabled         = var.ttl_attribute_name != null ? true : null
+    }
+  }
+  stream_enabled   = var.stream_enabled ? true : false 
+  stream_view_type = var.stream_view_type ? "NEW_AND_OLD_IMAGES" : null 
+  tags             = var.tags
+  }
