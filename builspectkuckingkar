@@ -108,3 +108,14 @@ module "platform_dynamodb_table" {
   stream_view_type = var.stream_view_type ? "NEW_AND_OLD_IMAGES" : null 
   tags             = var.tags
   }
+
+
+time=2023-09-21T16:54:32+05:30 level=info msg=╷
+│ Error: Unsupported attribute
+│
+│   on outputs.tf line 2, in output "data_ingress_table_arn":
+│    2:     value = module.platform_dynamodb_table["DataIngress"].table_arn
+│     ├────────────────
+│     │ module.platform_dynamodb_table["DataIngress"] is a object, known only after apply
+│
+│ This object does not have an attribute named "table_arn".
