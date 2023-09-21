@@ -1,7 +1,46 @@
+##########################
+# creating Lambda Function
+###########################
+
+
+resource "aws_lambda_function" "lambda_dynamodb_stream" {
+  function_name = var.lambda_function_name
+  description   = "Dynamodb stream"
+  memory_size   = "512"
+  timeout       = "300"
+  ephemeral_storage {
+    size = "2048"
+  }
+  role         = aws_iam_role.lambda_role.arn
+  runtime      = "python3.9"
+  handler      = "lambda_function.lambda_handler"
+  package_type = "Zip"
+
+  #s3_bucket         = aws_s3_bucket.bucket.id
+  #s3_key            = "lambda/lambda_function.zip"  
+  s3_bucket         = module.lambda-s3.id
+  s3_key            = "lambda/lambda_function.zip" 
+}
+
 resource "aws_lambda_event_source_mapping" "dynamodb_stream_lambda_mapping" {
   
-  event_source_arn       = var.stream_cloud_dynamodb_stream_arn
+  event_source_arn       = var.dynamodb_arn
   function_name          = aws_lambda_function.lambda_dynamodb_stream.arn
   maximum_retry_attempts = var.cloudsearch_stream_maximum_retry_attempts
   starting_position      = "LATEST"
 }
+
+module "lambda-s3" {
+  source      = "../aws-common/s3"
+
+  bucket_name = "${var.platform}-${var.env}-dynamodb_stream"
+}
+
+ Error: Unsupported attribute
+│
+│   on lambda.tf line 21, in resource "aws_lambda_function" "lambda_dynamodb_stream":
+│   21:   s3_bucket         = module.lambda-s3.id
+│     ├────────────────
+│     │ module.lambda-s3 is a object, known only after apply
+│
+│ This object does not have an attribute named "id".
