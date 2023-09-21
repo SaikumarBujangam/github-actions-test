@@ -1,13 +1,77 @@
-time=2023-09-21T17:05:49+05:30 level=error msg=Module C:/Users/umababy.kannan/OneDrive - HCL Technologies Ltd/Documents/Star CAP/platform-infra/live/dev/eu-central-1/platform-datastore has finished with an error: 1 error occurred:
-        * exit status 1
+locals { 
+  tables = [
+      {
+          name      = "Organisation",
+          hash_key  = "org_key"
+          
+      },
+      {
+          name      = "PlatformConfig",
+          hash_key  = "item_name"
+          range_key = "item_type",
+          
+      },
+      {
+          name      = "Project",
+          hash_key  = "project_key"
+          range_key = "org_key",
+          
+      },
+      {
+          name      = "User",
+          hash_key  = "id"
+          range_key = null,
+          
+      },
+      {
+          name      = "UserRoleDetails",
+          hash_key  = "user_id"
+          range_key = "role_hashkey",
+          
+      },
+      {
+          name      = "UserTrainingDetails",
+          hash_key  = "id"
+          
+          
+      },
+      {
+          name      = "DataIngress",
+          hash_key  = "project_key"
+          range_key = "composed_key",
+          stream_enabled = true
+          stream_view_type = true
+          
+          
+      },
+      {
+          name                  = "UserLoginDetails",
+          hash_key              = "user_email"
+          ttl_attribute_name    = "expiry_time"
+      },
+      {
+          name      = "ProjectInfraDetails",
+          hash_key  = "project_key"
+          range_key = "resource_key",
+          
+      },
+      {
+          name      = "RoleDetails",
+          hash_key  = "role_id"
+          
+      }
+  ]
+}
 
- prefix=[C:\Users\umababy.kannan\OneDrive - HCL Technologies Ltd\Documents\Star CAP\platform-infra\live\dev\eu-central-1\platform-datastore]
-time=2023-09-21T17:05:49+05:30 level=info msg=╷
-│ Error: Unsupported attribute
-│
-│   on outputs.tf line 2, in output "data_ingress_table_arn":
-│    2:     value = local.tables[6].arn
-│     ├────────────────
-│     │ local.tables[6] is object with 5 attributes
-│
-│ This object does not have an attribute named "arn".
+# Creation of platform dynamodb tables
+module "platform_dynamodb_table" {
+  source      = "../aws-common/dynamodb"
+
+  for_each              = { for table in local.tables : table.name => merge(var.default_table_attributes, table)  }
+  table_name            = each.key
+  hash_key              = each.value.hash_key
+  range_key             = each.value.range_key
+  ttl_attribute_name    = each.value.ttl_attribute_name
+  stream_enabled        = each.value.stream_enabled
+  stream_view_type      = each.value.stream_view_type
+}
