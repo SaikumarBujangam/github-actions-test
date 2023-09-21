@@ -1,14 +1,13 @@
-Note: You didn't use the -out option to save this plan, so Terraform can't
-guarantee to take exactly these actions if you run "terraform apply" now.
-Releasing state lock. This may take a few moments...
-time=2023-09-21T17:02:04+05:30 level=info msg=╷
-│ Error: Invalid index
+time=2023-09-21T17:05:49+05:30 level=error msg=Module C:/Users/umababy.kannan/OneDrive - HCL Technologies Ltd/Documents/Star CAP/platform-infra/live/dev/eu-central-1/platform-datastore has finished with an error: 1 error occurred:
+        * exit status 1
+
+ prefix=[C:\Users\umababy.kannan\OneDrive - HCL Technologies Ltd\Documents\Star CAP\platform-infra\live\dev\eu-central-1\platform-datastore]
+time=2023-09-21T17:05:49+05:30 level=info msg=╷
+│ Error: Unsupported attribute
 │
 │   on outputs.tf line 2, in output "data_ingress_table_arn":
-│    2:     value = local.tables["DataIngress"].arn
+│    2:     value = local.tables[6].arn
 │     ├────────────────
-│     │ local.tables is tuple with 10 elements
+│     │ local.tables[6] is object with 5 attributes
 │
-│ The given key does not identify an element in this collection value: a
-│ number is required.
-╵
+│ This object does not have an attribute named "arn".
