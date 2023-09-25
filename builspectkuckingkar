@@ -11,4 +11,115 @@ C:\Users\umababy.kannan\OneDrive - HCL Technologies Ltd\Documents\Star CAP\proje
 │ Inappropriate value for attribute "subnet_id": string required.
 ╵
 
-C:\Users\umababy.kannan\OneDrive - HCL Technologies Ltd\Documents\Star CAP\project-infra-provisioning-services\terraform-init>
+#####################################
+# Project On Demand JUPYTER Instance
+#####################################
+
+resource "aws_sagemaker_notebook_instance" "starcap_jupyter" {
+  
+  name                  = var.jupyter_notebook_name
+  instance_type         = var.jupyter_instance_type
+  role_arn              = aws_iam_role.sagemaker_role.arn
+  subnet_id             = var.subnet_ids
+  #security_groups       = [data.aws_security_group.ondemand_sg.id]
+  lifecycle_config_name = aws_sagemaker_notebook_instance_lifecycle_configuration.jupyter_lc.id
+  root_access           = "Disabled"
+  tags                  = var.tags
+  # Production Bug for Jupyter not spinning starts
+  # platform_identifier = var.platform_identifier
+  # Production Bug for Jupyter not spinning ends
+  depends_on = [
+    aws_sagemaker_notebook_instance_lifecycle_configuration.jupyter_lc
+  ]
+}
+
+resource "aws_sagemaker_notebook_instance_lifecycle_configuration" "jupyter_lc" {
+  name  = "${var.platform}-${var.jupyter_notebook_name}-policy"
+  
+  on_start = base64encode(templatefile("${path.module}/templates/on_start_mount.tpl", {
+        proj_raw_fsx_mount      = var.raw_fsx_mount,
+        proj_raw_fsx_dns        = var.raw_fsx_dns,
+        proj_scratch_fsx_dns    = var.scratch_fsx_dns,
+        proj_scratch_fsx_mount  = var.scratch_fsx_mount
+      }))
+}
+variable "platform" {
+  description = "Environment Name to be used as identifier"
+  type        = string
+  default     = "starcap"
+}
+
+variable "jupyter_notebook_name" {
+  description = "The name of the jupyter notebook"
+  type        = string
+  default     = "test"
+}
+variable "vpc_id" {
+  description = "The VPC ID of the Project"
+  type        = string
+}
+
+variable "subnet_ids" {
+  description = "A list of subnet ids inside the VPC to create the EC2 instance"
+  type        = list(string)
+  default     = []
+
+}
+variable "project_uid" {
+  description = "Project Unique ID"
+  type        = string
+  default   ="1234"
+}
+
+variable "project_userid" {
+  description = "Project User ID"
+  type        = string
+  default = ""
+}
+
+variable "raw_fsx_mount" {
+  description = "Raw FSX Mount"
+  type        = string
+  default = ""
+}
+
+variable "raw_fsx_dns" {
+  description = "Raw FSX DNS Name"
+  type        = string
+  default = ""
+}
+variable "scratch_fsx_dns" {
+  description = "Scratch FSX DNS Name"
+  type        = string
+  default = ""
+}
+
+variable "scratch_fsx_mount" {
+  description = "Scratch FSX Mount"
+  type        = string
+  default = ""
+}
+
+
+variable "jupyter_instance_type" {
+  description = "The sagemaker notebook instance type"
+  type        = string
+  default = "ml.t2.medium"
+}
+
+variable "region" {
+  description = "The Region Name "
+  type        = string
+   default  = "us-east-1"
+}
+
+variable "tags" {
+  description = "A map of tags"
+  type        = map(string)
+  default     = {}
+}
+module "_vpc" {
+  source                 = "../terraform-script/compute-module/jupyter_notebook"
+  vpc_id                 = "192.168.64.0/21"
+  subnet_ids             = ["192.168.65.0/25", "192.168.65.128/25"]
+}
