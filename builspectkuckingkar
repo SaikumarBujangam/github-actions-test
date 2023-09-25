@@ -1,24 +1,30 @@
-kubectl_manifest.ingress: Refreshing state... [id=/apis/networking.k8s.io/v1/namespaces/backend/ingresses/ingress-alb]
-kubectl_manifest.logging: Refreshing state... [id=/api/v1/namespaces/aws-observability/configmaps/aws-logging]
-Releasing state lock. This may take a few moments...
-time=2023-09-22T13:34:32+05:30 level=error msg=Module C:/Users/umababy.kannan/OneDrive - HCL Technologies Ltd/Documents/Star CAP/clone/platform-infra/platform-infra/live/dev2/eu-west-1/platform-backend has finished with an error: 1 error occurred:
-        * exit status 1
 
- prefix=[C:\Users\umababy.kannan\OneDrive - HCL Technologies Ltd\Documents\Star CAP\clone\platform-infra\platform-infra\live\dev2\eu-west-1\platform-backend]
-time=2023-09-22T13:34:32+05:30 level=info msg=╷
-│ Error: Failed to identify fetch peer certificates
-│
-│   with module.eks.data.tls_certificate.this[0],
-│   on .terraform\modules\eks\main.tf line 223, in data "tls_certificate" "this":
-│  223: data "tls_certificate" "this" {
-│
-│ failed to fetch certificates from URL 'https': Get
-│ "https://oidc.eks.eu-west-1.amazonaws.com:443/id/802F4164470C115C52B9FE092C93369C":
-│ dial tcp: lookup oidc.eks.eu-west-1.amazonaws.com: getaddrinfow: This is
-│ usually a temporary error during hostname resolution and means that the
-│ local server did not receive a response from an authoritative server.
-╵
-time=2023-09-22T13:34:32+05:30 level=error msg=Terraform invocation failed in C:/.terragrunt-cache/4EjCFoLUepVr4mMWBW-pKLhmKTw/3i_WC85hFbG0RGQjdTVce7dxmn4/platform-backend prefix=[C:\Users\umababy.kannan\OneDrive - HCL Technologies Ltd\Documents\Star CAP\clone\platform-infra\platform-infra\live\dev2\eu-west-1\platform-backend]
+C:\Users\umababy.kannan\OneDrive - HCL Technologies Ltd\Documents\Star CAP\project-infra-provisioning-services\terraform-script\compute-module\project-vpc>terraform init
 
-time=2023-09-22T13:34:32+05:30 level=info msg=
 Initializing the backend...
+
+Initializing provider plugins...
+- Finding latest version of hashicorp/aws...
+- Using hashicorp/aws v5.17.0 from the shared cache directory
+╷
+│ Error: Failed to install provider from shared cache
+│
+│ Error while importing hashicorp/aws v5.17.0 from the shared cache directory: after linking
+│ registry.terraform.io/hashicorp/aws from provider cache at
+│ C:\Users\umababy.kannan\terraform_1.0.10_windows_amd64\plugin-cache it is still not detected in the target directory;
+│ this is a bug in Terraform.
+╵
+
+
+C:\Users\umababy.kannan\OneDrive - HCL Technologies Ltd\Documents\Star CAP\project-infra-provisioning-services\terraform-script\compute-module\project-vpc>terraform init
+
+Initializing the backend...
+
+Initializing provider plugins...
+- Finding latest version of hashicorp/aws...
+- Using hashicorp/aws v5.17.0 from the shared cache directory
+╷
+│ Error: Failed to install provider from shared cache
+│
+│ Error while importing hashicorp/aws v5.17.0 from the shared cache directory: after linking registry.terraform.io/hashicorp/aws from provider cache at
+│ C:\Users\umababy.kannan\terraform_1.0.10_windows_amd64\plugin-cache it is still not detected in the target directory; this is a bug in Terraform.
