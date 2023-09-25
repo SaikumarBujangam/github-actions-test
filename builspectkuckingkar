@@ -1,30 +1,28 @@
 
-C:\Users\umababy.kannan\OneDrive - HCL Technologies Ltd\Documents\Star CAP\project-infra-provisioning-services\terraform-script\compute-module\project-vpc>terraform init
+Note: You didn't use the -out option to save this plan, so Terraform can't guarantee to take exactly these actions if you run "terraform apply" now.
 
-Initializing the backend...
-
-Initializing provider plugins...
-- Finding latest version of hashicorp/aws...
-- Using hashicorp/aws v5.17.0 from the shared cache directory
+C:\Users\umababy.kannan\OneDrive - HCL Technologies Ltd\Documents\Star CAP\project-infra-provisioning-services\terraform-init>terraform plan
 ╷
-│ Error: Failed to install provider from shared cache
+│ Error: Incorrect attribute value type
 │
-│ Error while importing hashicorp/aws v5.17.0 from the shared cache directory: after linking
-│ registry.terraform.io/hashicorp/aws from provider cache at
-│ C:\Users\umababy.kannan\terraform_1.0.10_windows_amd64\plugin-cache it is still not detected in the target directory;
-│ this is a bug in Terraform.
+│   on ..\terraform-script\compute-module\project-vpc\main.tf line 184, in resource "aws_route" "private_nat_gateway":
+│  184:   route_table_id         = aws_route_table.project_private[count.index]
+│     ├────────────────
+│     │ aws_route_table.project_private is tuple with 1 element
+│     │ count.index is 0
+│
+│ Inappropriate value for attribute "route_table_id": string required.
+╵
+╷
+│ Error: Incorrect attribute value type
+│
+│   on ..\terraform-script\compute-module\project-vpc\main.tf line 186, in resource "aws_route" "private_nat_gateway":
+│  186:   nat_gateway_id         = aws_nat_gateway.project_nat_gateway[count.index]
+│     ├────────────────
+│     │ aws_nat_gateway.project_nat_gateway is tuple with 1 element
+│     │ count.index is 0
+│
+│ Inappropriate value for attribute "nat_gateway_id": string required.
 ╵
 
-
-C:\Users\umababy.kannan\OneDrive - HCL Technologies Ltd\Documents\Star CAP\project-infra-provisioning-services\terraform-script\compute-module\project-vpc>terraform init
-
-Initializing the backend...
-
-Initializing provider plugins...
-- Finding latest version of hashicorp/aws...
-- Using hashicorp/aws v5.17.0 from the shared cache directory
-╷
-│ Error: Failed to install provider from shared cache
-│
-│ Error while importing hashicorp/aws v5.17.0 from the shared cache directory: after linking registry.terraform.io/hashicorp/aws from provider cache at
-│ C:\Users\umababy.kannan\terraform_1.0.10_windows_amd64\plugin-cache it is still not detected in the target directory; this is a bug in Terraform.
+C:\Users\umababy.kannan\OneDrive - HCL Technologies Ltd\Documents\Star CAP\project-infra-provisioning-services\terraform-init>
