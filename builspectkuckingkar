@@ -3,15 +3,16 @@ resource "aws_sagemaker_notebook_instance" "starcap_jupyter" {
   name                  = var.jupyter_notebook_name
   instance_type         = var.jupyter_instance_type
   role_arn              = aws_iam_role.sagemaker_role.arn
-  subnet_id             = var.subnet_ids[0]
   security_groups       = [aws_security_group.notebook_security_group.id]
   lifecycle_config_name = "default"
   root_access           = "Disabled"
   tags                  = var.tags
  
-  # platform_identifier = var.platform_identifier
-/*
-  depends_on = [
-    aws_sagemaker_notebook_instance_lifecycle_configuration.jupyter_lc
-  ]*/
 }
+
+Error: creating SageMaker Notebook Instance: ValidationException: Check if the subnet id is specified
+│       status code: 400, request id: 6f8098d5-9b35-4e99-a99a-0c08bba15ce1
+│
+│   with aws_sagemaker_notebook_instance.starcap_jupyter,
+│   on main.tf line 5, in resource "aws_sagemaker_notebook_instance" "starcap_jupyter":
+│    5: resource "aws_sagemaker_notebook_instance" "starcap_jupyter" {
