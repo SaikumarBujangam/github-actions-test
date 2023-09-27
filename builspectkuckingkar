@@ -1,60 +1,23 @@
-#####################################
-# Project On Demand JUPYTER Instance
-#####################################
+# This is a sample terraform.tfvars file
 
-resource "aws_sagemaker_notebook_instance" "starcap_jupyter" {
-  
-  name                  = var.jupyter_notebook_name
-  instance_type         = var.jupyter_instance_type
-  role_arn              = aws_iam_role.sagemaker_role.arn
-  subnet_id             = var.subnet_ids[0]
-  security_groups       = [aws_security_group.notebook_security_group.id]
-  lifecycle_config_name = aws_sagemaker_notebook_instance_lifecycle_configuration.jupyter_lc.id
-  root_access           = "Disabled"
-  tags                  = var.tags
- 
-  # platform_identifier = var.platform_identifier
+# AWS Configuration
+aws_access_key = "YOUR_AWS_ACCESS_KEY"
+aws_secret_key = "YOUR_AWS_SECRET_KEY"
+aws_region     = "us-west-2"  # Change this to your desired AWS region
 
-  depends_on = [
-    aws_sagemaker_notebook_instance_lifecycle_configuration.jupyter_lc
-  ]
-}
+# VPC Configuration
+vpc_cidr = "10.0.0.0/16"
 
-resource "aws_sagemaker_notebook_instance_lifecycle_configuration" "jupyter_lc" {
-  name  = "${var.platform}-${var.jupyter_notebook_name}-policy"
-  
-  on_start = base64encode(templatefile("${path.module}/templates/on_start_mount.tpl", {
-        proj_raw_fsx_mount      = var.raw_fsx_mount,
-        proj_raw_fsx_dns        = var.raw_fsx_dns,
-        proj_scratch_fsx_dns    = var.scratch_fsx_dns,
-        proj_scratch_fsx_mount  = var.scratch_fsx_mount
-      }))
-}
+# Subnet Configuration
+public_subnets_cidr = ["10.0.1.0/24", "10.0.2.0/24"]
+hcp_subnet = ["10.0.3.0/24"]
+data_analytical_subnet = ["10.0.4.0/24"]
 
-resource "aws_security_group" "notebook_security_group" {
-  name        = "notebook-security-group"
-  description = "Security group for Amazon SageMaker Notebook Instance"
+# Environment Configuration
+env       = "dev"
+platform  = "starcap"
 
-  ingress {
-    from_port   = 22
-    to_port     = 22
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]  
-  }
-
-  ingress {
-    from_port   = 443
-    to_port     = 443
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]  
-  }
-
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"  
-    cidr_blocks = ["0.0.0.0/0"] 
-  }
-}
-
-
+# Boolean Flags
+create_vpc          = true
+create_igw          = true
+enable_nat_gateway  = true
