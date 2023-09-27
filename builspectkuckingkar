@@ -1,23 +1,17 @@
-# This is a sample terraform.tfvars file
-
-# AWS Configuration
-aws_access_key = "YOUR_AWS_ACCESS_KEY"
-aws_secret_key = "YOUR_AWS_SECRET_KEY"
-aws_region     = "us-west-2"  # Change this to your desired AWS region
-
-# VPC Configuration
-vpc_cidr = "10.0.0.0/16"
-
-# Subnet Configuration
-public_subnets_cidr = ["10.0.1.0/24", "10.0.2.0/24"]
-hcp_subnet = ["10.0.3.0/24"]
-data_analytical_subnet = ["10.0.4.0/24"]
-
-# Environment Configuration
-env       = "dev"
-platform  = "starcap"
-
-# Boolean Flags
-create_vpc          = true
-create_igw          = true
-enable_nat_gateway  = true
+resource "aws_sagemaker_notebook_instance" "starcap_jupyter" {
+  
+  name                  = var.jupyter_notebook_name
+  instance_type         = var.jupyter_instance_type
+  role_arn              = aws_iam_role.sagemaker_role.arn
+  subnet_id             = var.subnet_ids[0]
+  security_groups       = [aws_security_group.notebook_security_group.id]
+  lifecycle_config_name = "default"
+  root_access           = "Disabled"
+  tags                  = var.tags
+ 
+  # platform_identifier = var.platform_identifier
+/*
+  depends_on = [
+    aws_sagemaker_notebook_instance_lifecycle_configuration.jupyter_lc
+  ]*/
+}
