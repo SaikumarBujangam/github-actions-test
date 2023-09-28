@@ -1,18 +1,26 @@
-resource "aws_sagemaker_notebook_instance" "starcap_jupyter" {
-  
-  name                  = var.jupyter_notebook_name
-  instance_type         = var.jupyter_instance_type
-  role_arn              = aws_iam_role.sagemaker_role.arn
-  security_groups       = [aws_security_group.notebook_security_group.id]
-  lifecycle_config_name = "default"
-  root_access           = "Disabled"
-  tags                  = var.tags
- 
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": [
+                "sagemaker:CreatePresignedNotebookInstanceUrl"
+            ],
+            "Resource": "*",
+            "Condition": {
+                "StringLike": {
+                    "sagemaker:resourceTag/redcap:project-id": [
+                        "${projectid}"
+                    ]
+                }
+            }
+        },
+        {
+            "Effect": "Allow",
+            "Action": [
+                "sagemaker:ListNotebookInstances"
+            ],
+            "Resource": "*"
+        }
+    ]
 }
-
-Error: creating SageMaker Notebook Instance: ValidationException: Check if the subnet id is specified
-│       status code: 400, request id: 6f8098d5-9b35-4e99-a99a-0c08bba15ce1
-│
-│   with aws_sagemaker_notebook_instance.starcap_jupyter,
-│   on main.tf line 5, in resource "aws_sagemaker_notebook_instance" "starcap_jupyter":
-│    5: resource "aws_sagemaker_notebook_instance" "starcap_jupyter" {
