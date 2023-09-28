@@ -1,75 +1,44 @@
-#!/bin/bash
-
-# Mount the FSx for Lustre file system
-FSX_DNS_NAME=$(aws ssm get-parameter --name "/your/terraform/output/fsx_dns_name" --query "Parameter.Value" --output text)
-MOUNT_POINT="/home/ec2-user/SageMaker/rawfsx"
-
-sudo mkdir -p $MOUNT_POINT
-sudo mount -t lustre -o noatime,flock $FSX_DNS_NAME@tcp:/your/fsx/mount/point $MOUNT_POINT
-
-# Make sure the directory has appropriate permissions
-sudo chmod go+rw $MOUNT_POINT
-provider "aws" {
-  region = "us-east-1" # Change this to your desired AWS region
-}
-
-# Create an FSx for Lustre file system
-resource "aws_fsx_lustre_file_system" "example" {
-  name            = "example-fsx-lustre"
-  subnet_ids      = ["subnet-12345678", "subnet-abcdefgh"] # Replace with your subnet IDs
-  security_group_ids = ["sg-12345678"] # Replace with your security group ID
-  storage_capacity = 3600
-  deployment_type = "SCRATCH_1"
-  per_unit_storage_throughput = 200
-}
-
-# Create an IAM role for SageMaker notebook instances
-resource "aws_iam_role" "sagemaker_role" {
-  name = "sagemaker-role"
-
-  assume_role_policy = <<EOF
-{
-  "Version": "2012-10-17",
-  "Statement": [
+esource "aws_fsx_lustre_file_system" "bfx_fsx_persistent" {
+  #import_path           = format("%s%s","s3://",var.bfx_fsx_s3_buckets_ids[0])
+  storage_capacity      = 1200
+  subnet_ids            = var.bfx_subnets
+  security_group_ids = var.bfx_security_group_ids
+  #auto_import_policy    = "NEW_CHANGED"
+  #deployment_type = "PERSISTENT_1"
+  deployment_type = "PERSISTENT_2"
+  data_compression_type = var.compression_type
+  per_unit_storage_throughput = local.per_unit_storage_throughput
+  tags = merge(
     {
-      "Action": "sts:AssumeRole",
-      "Principal": {
-        "Service": "sagemaker.amazonaws.com"
-      },
-      "Effect": "Allow",
-      "Sid": ""
+      "Name" = format("%s%s", var.fsx_name_prefix, "bfx-rawfsx")
+    },
+    var.tags,
+  )
+   timeouts {
+    create = "60m"
+    update = "2h"
+    delete = "2h"
+  }
+}
+
+#2675
+resource "aws_fsx_data_repository_association" "bfx_fsx_persistent_data_rep" {
+  file_system_id       = aws_fsx_lustre_file_system.bfx_fsx_persistent.id
+  data_repository_path = "s3://${var.bfx_fsx_s3_buckets_ids[0]}"
+  file_system_path     = "/"
+
+  s3 {
+    auto_export_policy {
+      events = ["NEW", "CHANGED", "DELETED"]
     }
-  ]
-}
-EOF
-}
 
-# Attach an inline policy to the IAM role to allow access to FSx
-resource "aws_iam_policy" "fsx_access_policy" {
-  name        = "fsx-access-policy"
-  description = "Allows access to FSx for Lustre file system"
-
-  policy = <<EOF
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Action": [
-        "fsx:ClientMount",
-        "fsx:ClientWrite"
-      ],
-      "Resource": [
-        "${aws_fsx_lustre_file_system.example.arn}"
-      ]
+    auto_import_policy {
+      events = ["NEW", "CHANGED", "DELETED"]
     }
-  ]
-}
-EOF
-}
-
-# Attach the policy to the IAM role
-resource "aws_iam_role_policy_attachment" "attach_fsx_policy" {
-  policy_arn = aws_iam_policy.fsx_access_policy.arn
-  role       = aws_iam_role.sagemaker_role.name
+  }
+   timeouts {
+    create = "60m"
+    update = "2h"
+    delete = "2h"
+  }
 }
