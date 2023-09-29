@@ -1,23 +1,10 @@
-C:\Users\umababy.kannan\OneDrive - HCL Technologies Ltd\Documents\Star CAP\project-infra-provisioning-services\terraform-init>terraform plan
-╷
-│ Error: Error in function call
-│
-│   on ..\terraform-script\compute-module\test\main.tf line 106, in resource "aws_sagemaker_notebook_instance" "jupyter":
-│  106:   name  = upper(format("%s%s%s%", local.jup_resource_name_prefix, local.jup_resource_vpc_name, var.jupyter_count, "-JUPYTER-ONDEMAND"))
-│     ├────────────────
-│     │ local.jup_resource_name_prefix is "DEFAULT-"
-│     │ local.jup_resource_vpc_name is "1234-"
-│     │ var.jupyter_count is "1"
-│
-│ Call to function "format" failed: invalid format string starting at offset 7.
-
 locals {
   
   environment          = terraform.workspace
   resource_name_prefix = upper(format("%s%s", local.environment, "_"))
-  jup_resource_name_prefix = upper(format("%s%s", local.environment, "-"))
+  jup_resource_name_prefix = upper(format("%s%s", local.environment, "_"))
   resource_vpc_name      = upper(format("%s%s", var.project_uid, "_"))
-  jup_resource_vpc_name      = upper(format("%s%s", var.project_uid, "-"))
+  jup_resource_vpc_name      = upper(format("%s%s", var.project_uid, "_"))
   create_project_ds_role = true
 
   tags = {
