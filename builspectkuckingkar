@@ -1,4 +1,48 @@
-resource "aws_sagemaker_notebook_instance" "jupyter" {
-  name  = upper(format("%s%s%s%", local.jup_resource_name_prefix, local.jup_resource_vpc_name, var.jupyter_count, "_JUPYTER_ONDEMAND"))
-  # ...
+C:\Users\umababy.kannan\OneDrive - HCL Technologies Ltd\Documents\Star CAP\project-infra-provisioning-services\terraform-init>terraform plan
+╷
+│ Error: Error in function call
+│
+│   on ..\terraform-script\compute-module\test\main.tf line 107, in resource "aws_sagemaker_notebook_instance" "jupyter":
+│  107:   name  = upper(format("%s%s%s%", local.jup_resource_name_prefix, local.jup_resource_vpc_name, var.jupyter_count, "_JUPYTER_ONDEMAND"))
+│     ├────────────────
+│     │ local.jup_resource_name_prefix is "DEFAULT_"
+│     │ local.jup_resource_vpc_name is "1234_"
+│     │ var.jupyter_count is "1"
+│
+│ Call to function "format" failed: invalid format string starting at offset 7.
+╵
+
+  
+  environment          = terraform.workspace
+  resource_name_prefix = upper(format("%s%s", local.environment, "_"))
+  jup_resource_name_prefix = upper(format("%s%s", local.environment, "_"))
+  resource_vpc_name      = upper(format("%s%s", var.project_uid, "_"))
+  jup_resource_vpc_name      = upper(format("%s%s", var.project_uid, "_"))
+  create_project_ds_role = true
+
+  tags = {
+    terraform                = "true"
+    "redcap:project-id"      = var.project_uid 
+  }
 }
+
+##################################
+# Project On Demand JUPYTER Instance
+##################################
+
+resource "aws_sagemaker_notebook_instance" "jupyter" {
+  
+  #name  = upper(format("%s%s%s%", local.jup_resource_name_prefix, local.jup_resource_vpc_name, var.jupyter_count, "-JUPYTER-ONDEMAND"))
+  name  = upper(format("%s%s%s%", local.jup_resource_name_prefix, local.jup_resource_vpc_name, var.jupyter_count, "_JUPYTER_ONDEMAND"))
+  
+  instance_type = var.jupyter_instance_type
+  role_arn = aws_iam_role.sagemaker_role.arn
+  subnet_id = var.subnet_ids[0]
+  security_groups = [aws_security_group.notebook_security_group.id]
+  lifecycle_config_name = "default"
+  root_access = "Disabled"
+  tags  = local.tags
+  
+}
+
+
