@@ -2,39 +2,27 @@ C:\Users\umababy.kannan\OneDrive - HCL Technologies Ltd\Documents\Star CAP\proje
 ╷
 │ Error: Error in function call
 │
-│   on ..\terraform-script\compute-module\test\main.tf line 34, in resource "aws_sagemaker_notebook_instance" "jupyter":
-│   34:   name  = upper(format("%s%s%s%", local.jup_resource_name_prefix, local.jup_resource_vpc_name, var.jupyter_count, "-JUPYTER-ONDEMAND"))
+│   on ..\terraform-script\compute-module\test\main.tf line 106, in resource "aws_sagemaker_notebook_instance" "jupyter":
+│  106:   name  = upper(format("%s%s%s%", local.jup_resource_name_prefix, local.jup_resource_vpc_name, var.jupyter_count, "-JUPYTER-ONDEMAND"))
 │     ├────────────────
 │     │ local.jup_resource_name_prefix is "DEFAULT-"
 │     │ local.jup_resource_vpc_name is "1234-"
 │     │ var.jupyter_count is "1"
 │
 │ Call to function "format" failed: invalid format string starting at offset 7.
-╵
+
 locals {
-  #azs                  = data.aws_availability_zones.available.names[0]
+  
   environment          = terraform.workspace
   resource_name_prefix = upper(format("%s%s", local.environment, "_"))
   jup_resource_name_prefix = upper(format("%s%s", local.environment, "-"))
-  #region_name = split("-",var.region)
-  #region_short_name =  upper(format("%s%s%s%s", local.region_name[0] ,substr(local.region_name[1], 0, 1),substr(local.region_name[2], 0, 1), "_"))
   resource_vpc_name      = upper(format("%s%s", var.project_uid, "_"))
   jup_resource_vpc_name      = upper(format("%s%s", var.project_uid, "-"))
-  #ondemand_jupyter_role_name = upper(format("%s%s%s%s%s", "R", local.region_short_name, local.resource_vpc_name, var.ondemand_instance_workspace , "_JUPYTER"))
-  #ondemand_security_group_name = format("%s%s%s%s", local.resource_name_prefix, local.resource_vpc_name, var.ondemand_instance_workspace, "_FSX_SG")
-  #proj_admin_role_name =   format("%s%s%s%s", "R", local.region_short_name, upper(var.project_uid), "_PROJECTADMIN")
-  #proj_users_role_name =   format("%s%s%s%s", "R",local.region_short_name, upper(var.project_uid), "_PROJECTUSER")
-
   create_project_ds_role = true
 
   tags = {
     terraform                = "true"
-    #"navify:product-name"    = var.product_name
-    # "navify:costcenter"      = var.proj_costcenter
-    #"navify:stack-name"      = var.region
-    #"#navify:env-designation" = local.environment
-    "redcap:project-id"      = var.project_uid
-    #"redcap:project-userid"  = var.project_userid
+    "redcap:project-id"      = var.project_uid 
   }
 }
 
@@ -52,45 +40,6 @@ resource "aws_sagemaker_notebook_instance" "jupyter" {
   lifecycle_config_name = "default"
   root_access = "Disabled"
   tags  = local.tags
-  #lifecycle_config_name = aws_sagemaker_notebook_instance_lifecycle_configuration.jupyter_lc.name
-  /*# Production Bug for Jupyter not spinning starts
-  platform_identifier = var.platform_identifier
-  # Production Bug for Jupyter not spinning ends
-  depends_on = [
-    aws_sagemaker_notebook_instance_lifecycle_configuration.jupyter_lc
-  ]*/
-}
-
-/*resource "aws_sagemaker_notebook_instance_lifecycle_configuration" "jupyter_lc" {
-  name  = upper(format("%s%s%s%s%s", local.jup_resource_name_prefix, local.jup_resource_vpc_name, var.ondemand_instance_workspace,var.jupyter_count, "-JUPYTER-LC"))
   
-  #Domain Join
-  on_start = base64encode(templatefile("${path.module}/templates/on_start_mount.tpl", {
-        proj_raw_fsx_mount      = var.raw_fsx_mount,
-        proj_raw_fsx_dns        = var.raw_fsx_dns,
-        proj_scratch_fsx_dns    = var.scratch_fsx_dns,
-        proj_scratch_fsx_mount  = var.scratch_fsx_mount
-      }))
 }
 
-#Project sagemaker notebook access - User Story 2503
-resource "aws_iam_role_policy" "project_admin_jupyter_policy" {
-  role = data.aws_iam_role.project_admin_roles.name
-  name = upper(format("%s%s%s%s", "P", local.region_short_name, upper(local.resource_vpc_name), "JUPYTER"))
-  policy = templatefile("${path.module}/templates/policy_proj_jupyter.tpl", {
-      region = var.region ,
-      projectid = var.project_uid,
-      username = var.project_userid
-      })
-}
-
-#Project sagemaker notebook access - User Story 2503
-resource "aws_iam_role_policy" "project_user_jupyter_policy" {
-  role = data.aws_iam_role.project_user_roles.name
-  name = upper(format("%s%s%s%s", "P", local.region_short_name, upper(local.resource_vpc_name), "JUPYTER"))
-  policy = templatefile("${path.module}/templates/policy_proj_jupyter.tpl", {
-      region = var.region ,
-      projectid = var.project_uid,
-      username = var.project_userid
-      })
-}*/
