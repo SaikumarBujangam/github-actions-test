@@ -1,28 +1,11 @@
-locals {
-  environment          = terraform.workspace
-  resource_name_prefix = upper(format("%s%s", local.environment, "_"))
-  jup_resource_name_prefix = upper(format("%s%s", local.environment, "_"))
-  resource_vpc_name      = upper(format("%s%s", var.project_uid, "_"))
-  jup_resource_vpc_name      = upper(format("%s%s", var.project_uid, "_"))
-  create_project_ds_role = true
+╷
+│ Error: only alphanumeric characters and hyphens allowed in "name": "DEFAULT_1234_1_JUPYTER_ONDEMAND"
+│
+│   with module.test.aws_sagemaker_notebook_instance.jupyter,
+│   on ..\terraform-script\compute-module\test\main.tf line 104, in resource "aws_sagemaker_notebook_instance" "jupyter":
+│  104:   name  = upper(format("%s%s%s%s", local.jup_resource_name_prefix, local.jup_resource_vpc_name, var.jupyter_count, "_JUPYTER_ONDEMAND"))
+│
+╵
 
-  tags = {
-    terraform                = "true"
-    "redcap:project-id"      = var.project_uid 
-  }
-}
+C:\Users\umababy.kannan\OneDrive - HCL Technologies Ltd\Documents\Star CAP\project-infra-provisioning-services\terraform-init>
 
-##################################
-# Project On Demand JUPYTER Instance
-##################################
-
-resource "aws_sagemaker_notebook_instance" "jupyter" {
-  name  = upper(format("%s%s%s%s", local.jup_resource_name_prefix, local.jup_resource_vpc_name, var.jupyter_count, "_JUPYTER_ONDEMAND"))
-  instance_type = var.jupyter_instance_type
-  role_arn = aws_iam_role.sagemaker_role.arn
-  subnet_id = var.subnet_ids[0]
-  security_groups = [aws_security_group.notebook_security_group.id]
-  lifecycle_config_name = "default"
-  root_access = "Disabled"
-  tags  = local.tags
-}
