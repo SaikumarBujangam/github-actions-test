@@ -3,14 +3,14 @@ C:\Users\umababy.kannan\OneDrive - HCL Technologies Ltd\Documents\Star CAP\proje
 │ Error: Error in function call
 │
 │   on ..\terraform-script\compute-module\test\main.tf line 34, in resource "aws_sagemaker_notebook_instance" "jupyter":
-│   34:   name  = upper(format("%s%s%s%s%", local.jup_resource_name_prefix, local.jup_resource_vpc_name, var.jupyter_count, "-JUPYTER-ONDEMAND"))
+│   34:   name  = upper(format("%s%s%s%", local.jup_resource_name_prefix, local.jup_resource_vpc_name, var.jupyter_count, "-JUPYTER-ONDEMAND"))
 │     ├────────────────
 │     │ local.jup_resource_name_prefix is "DEFAULT-"
 │     │ local.jup_resource_vpc_name is "1234-"
 │     │ var.jupyter_count is "1"
 │
-│ Call to function "format" failed: invalid format string starting at offset 9.
-
+│ Call to function "format" failed: invalid format string starting at offset 7.
+╵
 locals {
   #azs                  = data.aws_availability_zones.available.names[0]
   environment          = terraform.workspace
