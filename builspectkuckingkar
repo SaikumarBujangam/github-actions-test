@@ -1,9 +1,1 @@
-Error: creating SageMaker Notebook Instance: InvalidSignatureException: Signature expired: 20231003T091721Z is now earlier than 20231003T091721Z (20231003T092221Z - 5 min.)
-│       status code: 400, request id: 59bbd1ab-0fcd-4eaa-8856-98a1e6d5afee
-│
-│   with aws_sagemaker_notebook_instance.jupyter,
-│   on main.tf line 19, in resource "aws_sagemaker_notebook_instance" "jupyter":
-│   19: resource "aws_sagemaker_notebook_instance" "jupyter" {
-│
-╵
-Releasing state lock. This may take a few moments...
+I consistently demonstrated strong proficiency in accurate project estimations, contributing to on-time project deliveries. Additionally, my adept risk management strategies effectively mitigated potential challenges, ensuring smooth project execution throughout the appraisal period.
