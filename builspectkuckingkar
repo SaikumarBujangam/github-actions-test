@@ -1,10 +1,10 @@
-Description:
-As a Admin
-I want to create a user profile in sagemaker domain with access to sagemaker studio or canvas or Rstudio through an api
-So that user can use those apps and do analytics on data.
-
-Items to be created:
-
-User profile to be created by kamino API with the name as (projectid-username).
-
-Project IAM role with S3 bucket access in prefix needs to be added to user profile.
+{
+            "Effect": "Allow",
+            "Action": [
+                "license-manager:CheckoutLicense",
+                "license-manager:CheckInLicense",
+                "license-manager:ExtendLicenseConsumption",
+                "license-manager:GetLicense",
+                "license-manager:ListReceivedLicenses"
+            ],
+            "Resource": "*"
