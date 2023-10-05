@@ -1,26 +1,10 @@
-locals {
-   region_name          = split("-",var.region)
-   environment          = terraform.workspace
-   region_short_name    = upper(format("%s%s%s%s", local.region_name[0] ,substr(local.region_name[1], 0, 1),substr(local.region_name[2], 0, 1), "_"))
-   resource_vpc_name    = upper(format("%s%s", var.project_uid, "_"))
-   rstudio_user_da_role = upper(format("%s%s%s%s", "R", local.region_short_name, local.resource_vpc_name, "DA_RSTUDIO"))
-  
-   tags = {
-        terraform                = "true"
-        "navify:product-name"    = "REDCAP Platform"
-        "navify:costcenter"      = var.proj_costcenter
-        "navify:stack-name"      = var.region
-        "navify:env-designation" = local.environment
-        "redcap:project-id"      = var.project_uid
-        "redcap:project-userid"  = var.project_userid
-      }
- }
+Description:
+As a Admin
+I want to create a user profile in sagemaker domain with access to sagemaker studio or canvas or Rstudio through an api
+So that user can use those apps and do analytics on data.
 
-resource "aws_sagemaker_user_profile" "sagemaker_user_profile" {
-  user_profile_name         = var.rstudio_user_name
-  domain_id                 = var.sagemaker_domain_id
-  user_settings {
-    execution_role = data.aws_iam_role.rstudio_user_da_role.arn
-    }
-  tags = local.tags
-}
+Items to be created:
+
+User profile to be created by kamino API with the name as (projectid-username).
+
+Project IAM role with S3 bucket access in prefix needs to be added to user profile.
