@@ -532,3 +532,22 @@ resource "aws_iam_user_policy_attachment" "ecr_user_policy_attach" {
   user       = aws_iam_user.cc_user.name
   policy_arn = aws_iam_policy.cc_user_policy.arn
 }
+There are some problems with the configuration, described below.
+
+The Terraform configuration must be valid before initialization so that
+Terraform can determine which modules and providers need to be installed.
+╷
+│ Error: Missing newline after block definition
+│
+│ On iam.tf line 45: A block definition must end with a newline.
+╵
+
+time=2023-10-09T11:04:11+05:30 level=error msg=Terraform invocation failed in C:/.terragrunt-cache/sSdP1qzV4X1VYPQCozOYEsytnvc/3i_WC85hFbG0RGQjdTVce7dxmn4/platform-nextflow prefix=[C:\Users\umababy.kannan\OneDrive - HCL Technologies Ltd\Documents\Star CAP\clone\platform-infra\platform-infra\live\dev\eu-central-1\platform-nextflow]
+time=2023-10-09T11:04:11+05:30 level=error msg=Module C:/Users/umababy.kannan/OneDrive - HCL Technologies Ltd/Documents/Star CAP/clone/platform-infra/platform-infra/live/dev/eu-central-1/platform-nextflow has finished with an error: 1 error occurred:
+        * exit status 1
+
+ prefix=[C:\Users\umababy.kannan\OneDrive - HCL Technologies Ltd\Documents\Star CAP\clone\platform-infra\platform-infra\live\dev\eu-central-1\platform-nextflow]
+time=2023-10-09T11:04:11+05:30 level=error msg=1 error occurred:
+        * exit status 1
+
+
