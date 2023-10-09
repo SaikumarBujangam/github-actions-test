@@ -1,10 +1,534 @@
-I have a case where I have to create the below two repos using terraform
+# Role
+data "aws_iam_policy_document" "ec2_assume_role" {
 
-Ecr repo
-code commit repo
+  statement {
+    actions = ["sts:AssumeRole"]
 
-I have three cases. I need to create the repos under organisation level, project 1 level and project 2 level.
+    principals {
+      type        = "Service"
+      identifiers = ["ec2.amazonaws.com"]
+    }
 
-People who are part of project 1 should access only project 1 repos and in the same way people who are part of project 2 should access only project 2 repo. But people who are from both projects should access organisation level repos.
+    sid    = "ec2AssumeRole"
+    effect = "Allow"
+  }
+}
 
-help me in creating the terraform for the same.
+resource "aws_iam_role" "ec2" {
+  name               = upper("r${local.region_short_name}-${var.platform}-nextflow-ec2")
+  assume_role_policy = data.aws_iam_policy_document.ec2_assume_role.json
+}
+
+# Policy
+data "aws_iam_policy_document" "ec2" {
+  statement {
+    actions = [
+      "ssm:DescribeAssociation",
+      "ssm:GetDeployablePatchSnapshotForInstance",
+      "ssm:GetDocument",
+      "ssm:DescribeDocument",
+      "ssm:GetManifest",
+      "ssm:GetParameter",
+      "ssm:GetParameters",
+      "ssm:ListAssociations",
+      "ssm:ListInstanceAssociations",
+      "ssm:PutInventory",
+      "ssm:PutComplianceItems",
+      "ssm:PutConfigurePackageResult",
+      "ssm:UpdateAssociationStatus",
+      "ssm:UpdateInstanceAssociationStatus",
+      "ssm:UpdateInstanceInformation"
+    ]
+    sid       = "ec2Policy01"
+    effect    = "Allow"
+    resources = "*"
+  },
+  statement {
+    actions = [
+      "ssmmessages:CreateControlChannel",
+      "ssmmessages:CreateDataChannel",
+      "ssmmessages:OpenControlChannel",
+      "ssmmessages:OpenDataChannel"
+    ]
+    sid       = "ec2Policy02"
+    effect    = "Allow"
+    resources = "*"
+  },
+  statement {
+    actions = [
+      "ec2messages:AcknowledgeMessage",
+      "ec2messages:DeleteMessage",
+      "ec2messages:FailMessage",
+      "ec2messages:GetEndpoint",
+      "ec2messages:GetMessages",
+      "ec2messages:SendReply"
+    ]
+    sid       = "ec2Policy03"
+    effect    = "Allow"
+    resources = "*"
+  }
+}
+
+resource "aws_iam_role_policy" "ec2" {
+  name   = upper("p${local.region_short_name}-${var.platform}-nextflow-ec2")
+  role   = aws_iam_role.ec2.id
+  policy = data.aws_iam_policy_document.ec2.json
+}
+
+# Policy
+data "aws_iam_policy_document" "ecr" {
+  statement {
+    actions   = ["ecr:*"]
+    sid       = "ecrPolicy01"
+    effect    = "Allow"
+    resources = "*"
+  }
+}
+
+resource "aws_iam_role_policy" "ecr" {
+  name   = upper("p${local.region_short_name}-${var.platform}-nextflow-ecr")
+  role   = aws_iam_role.ec2.id
+  policy = data.aws_iam_policy_document.ecr.json
+}
+
+# AWS policy attach
+resource "aws_iam_role_policy_attachment" "ec2_policy_attach" {
+  for_each   = toset([
+                  "arn:aws:iam::aws:policy/AWSCodeCommitPowerUser",
+                  "arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy",
+                  "arn:aws:iam::297036008099:policy/np-hardened-ami-policy"
+                ])
+  role       = aws_iam_role.ec2.name
+  policy_arn = each.value
+  depends_on = [aws_iam_role.ec2]
+}
+
+# Instance Profile
+resource "aws_iam_instance_profile" "profile" {
+  role  = aws_iam_role.ec2.name
+  name  = aws_iam_role.ec2.name
+}
+
+# Role
+data "aws_iam_policy_document" "batch_assume_role" {
+
+  statement {
+    actions = ["sts:AssumeRole"]
+
+    principals {
+      type        = "Service"
+      identifiers = ["batch.amazonaws.com"]
+    }
+
+    sid    = "batchAssumeRole"
+    effect = "Allow"
+  },
+  statement {
+    actions = ["sts:AssumeRole"]
+
+    principals {
+      type        = "AWS"
+      identifiers = ["arn:aws:iam::${var.kamino_account_id}:root"]
+    }
+
+    sid    = "kaminoAccountAssumeRole"
+    effect = "Allow"
+  }
+}
+
+resource "aws_iam_role" "batch" {
+  name               = upper("r${local.region_short_name}-${var.platform}-nextflow-batch")
+  assume_role_policy = data.aws_iam_policy_document.batch_assume_role.json
+}
+
+# Policy
+data "aws_iam_policy_document" "batch" {
+  statement {
+    actions = [
+      "ssm:GetParameters",
+      "iam:CreateInstanceProfile",
+      "iam:DeleteInstanceProfile",
+      "iam:GetRole",
+      "iam:RemoveRoleFromInstanceProfile",
+      "iam:CreateRole",
+      "iam:DeleteRole",
+      "iam:AttachRolePolicy",
+      "iam:PutRolePolicy",
+      "iam:AddRoleToInstanceProfile",
+      "iam:PassRole",
+      "iam:DetachRolePolicy",
+      "iam:ListAttachedRolePolicies",
+      "iam:DeleteRolePolicy",
+      "iam:ListRolePolicies",
+      "iam:TagRole",
+      "iam:TagInstanceProfile",
+      "batch:CreateComputeEnvironment",
+      "batch:DescribeComputeEnvironments",
+      "batch:CreateJobQueue",
+      "batch:DescribeJobQueues",
+      "batch:UpdateComputeEnvironment",
+      "batch:DeleteComputeEnvironment",
+      "batch:UpdateJobQueue",
+      "batch:DeleteJobQueue",
+      "batch:TagResource",
+      "fsx:DeleteFileSystem",
+      "fsx:DescribeFileSystems",
+      "fsx:CreateFileSystem",
+      "fsx:TagResource",
+      "ec2:DescribeSecurityGroups",
+      "ec2:DescribeAccountAttributes",
+      "ec2:DescribeSubnets",
+      "ec2:DescribeLaunchTemplates",
+      "ec2:DescribeLaunchTemplateVersions",
+      "ec2:CreateLaunchTemplate",
+      "ec2:DeleteLaunchTemplate",
+      "ec2:DescribeKeyPairs",
+      "ec2:DescribeVpcs",
+      "ec2:DescribeInstanceTypeOfferings",
+      "ec2:GetEbsEncryptionByDefault",
+      "elasticfilesystem:DescribeMountTargets",
+      "elasticfilesystem:CreateMountTarget",
+      "elasticfilesystem:CreateFileSystem",
+      "elasticfilesystem:DescribeFileSystems",
+      "elasticfilesystem:DeleteMountTarget",
+      "elasticfilesystem:DeleteFileSystem",
+      "elasticfilesystem:UpdateFileSystem",
+      "elasticfilesystem:PutLifecycleConfiguration",
+      "elasticfilesystem:TagResource"
+    ]
+    sid       = "batchPolicy01"
+    effect    = "Allow"
+    resources = "*"
+  },
+  statement {
+    actions = [
+      "s3:Get*",
+      "s3:List*",
+      "batch:DescribeJobQueues",
+      "batch:CancelJob",
+      "batch:SubmitJob",
+      "batch:ListJobs",
+      "batch:DescribeComputeEnvironments",
+      "batch:TerminateJob",
+      "batch:DescribeJobs",
+      "batch:RegisterJobDefinition",
+      "batch:DescribeJobDefinitions",
+      "ecs:DescribeTasks",
+      "ec2:DescribeInstances",
+      "ec2:DescribeInstanceTypes",
+      "ec2:DescribeInstanceAttribute",
+      "ecs:DescribeContainerInstances",
+      "ec2:DescribeInstanceStatus",
+      "ec2:DescribeImages",
+      "logs:Describe*",
+      "logs:Get*",
+      "logs:List*",
+      "logs:StartQuery",
+      "logs:StopQuery",
+      "logs:TestMetricFilter",
+      "logs:FilterLogEvents"
+    ]
+    sid       = "batchPolicy02"
+    effect    = "Allow"
+    resources = "*"
+  }
+}
+
+resource "aws_iam_role_policy" "batch" {
+  name   = upper("p${local.region_short_name}-${var.platform}-nextflow-batch")
+  role   = aws_iam_role.batch.id
+  policy = data.aws_iam_policy_document.batch.json
+}
+
+data "aws_iam_policy_document" "s3" {
+  statement {
+    actions = ["s3:ListBucket"]
+    sid       = "s3Policy01"
+    effect    = "Allow"
+    resources = "*"
+  },
+  statement {
+    actions = ["s3:*Object"]
+    sid       = "s3Policy02"
+    effect    = "Allow"
+    resources = "*"
+  }
+}
+
+resource "aws_iam_role_policy" "s3" {
+  name   = upper("p${local.region_short_name}-${var.platform}-s3")
+  role   = aws_iam_role.batch.id
+  policy = data.aws_iam_policy_document.batch.json
+}
+
+# AWS policy attach
+resource "aws_iam_role_policy_attachment" "batch_policy_attach" {
+  for_each   = toset([
+                  "arn:aws:iam::aws:policy/service-role/AWSBatchServiceRole"
+                ])
+  role       = aws_iam_role.batch.name
+  policy_arn = each.value
+  depends_on = [aws_iam_role.batch]
+}
+
+#################
+# SMTP IAM USER
+#################
+resource "aws_iam_user" "smtp_user" {
+  name = "${var.env}-${var.platform}-nextflow-smtp"
+  tags = merge(
+    {
+      "Name"      = "${var.env}-${var.platform}-nextflow-smtp"
+      "Terraform" = true
+    },
+  )
+}
+
+resource "aws_iam_access_key" "smtp_user_key" {
+  user    = aws_iam_user.smtp_user.name
+}
+
+# User Policy
+data "aws_iam_policy_document" "ses" {
+  statement {
+    actions   = ["ses:SendRawEmail"]
+    sid       = "sesPolicy01"
+    effect    = "Allow"
+    resources = "*"
+  }
+}
+
+resource "aws_iam_policy" "smtp_user_policy" {
+  name   = upper("p${local.region_short_name}-${var.platform}-smtp-user")
+  policy = data.aws_iam_policy_document.ses.json
+}
+
+resource "aws_iam_user_policy_attachment" "smtp_user_policy_attach" {
+  user       = aws_iam_user.smtp_user.name
+  policy_arn = aws_iam_policy.smtp_user_policy.arn
+}
+
+####################
+# NextFlow IAM USER
+####################
+resource "aws_iam_user" "user" {
+  name = "${var.env}-${var.platform}-nextflow-user"
+  tags = merge(
+    {
+      "Name"      = "${var.env}-${var.platform}-nextflow-user"
+      "Terraform" = true
+    },
+  )
+}
+
+resource "aws_iam_access_key" "user_key" {
+  user    = aws_iam_user.user.name
+}
+
+# User Policy
+data "aws_iam_policy_document" "user" {
+  statement {
+    actions   = ["sts:AssumeRole"]
+    sid       = "stsPolicy01"
+    effect    = "Allow"
+    resources = "${aws_iam_role.batch.arn}"
+  }
+}
+
+resource "aws_iam_policy" "user_policy" {
+  name   = upper("p${local.region_short_name}-${var.platform}-user")
+  policy = data.aws_iam_policy_document.user.json
+}
+
+resource "aws_iam_user_policy_attachment" "user_policy_attach" {
+  user       = aws_iam_user.user.name
+  policy_arn = aws_iam_policy.user_policy.arn
+}
+
+#################
+# ECR IAM USER
+#################
+resource "aws_iam_user" "ecr_user" {
+  name = "${var.env}-${var.platform}-nextflow-ecr"
+  tags = merge(
+    {
+      "Name"      = "${var.env}-${var.platform}-nextflow-ecr"
+      "Terraform" = true
+    },
+  )
+}
+
+resource "aws_iam_access_key" "ecr_user_key" {
+  user    = aws_iam_user.ecr_user.name
+}
+
+# User Policy
+data "aws_iam_policy_document" "ecr" {
+  statement {
+    actions   = [
+        "ecr:GetAuthorizationToken",
+        "ecr:BatchCheckLayerAvailability",
+        "ecr:GetDownloadUrlForLayer",
+        "ecr:GetRepositoryPolicy",
+        "ecr:DescribeRepositories",
+        "ecr:ListImages",
+        "ecr:DescribeImages",
+        "ecr:BatchGetImage",
+        "ecr:GetLifecyclePolicy",
+        "ecr:GetLifecyclePolicyPreview",
+        "ecr:ListTagsForResource",
+        "ecr:DescribeImageScanFindings"
+    ]
+    sid       = "ecrPolicy01"
+    effect    = "Allow"
+    resources = "*"
+  }
+}
+
+resource "aws_iam_policy" "ecr_user_policy" {
+  name   = upper("p${local.region_short_name}-${var.platform}-ecr-user")
+  policy = data.aws_iam_policy_document.ecr.json
+}
+
+resource "aws_iam_user_policy_attachment" "ecr_user_policy_attach" {
+  user       = aws_iam_user.ecr_user.name
+  policy_arn = aws_iam_policy.smtp_user_policy.arn
+}
+
+######################
+# CodeCommit IAM USER
+#####################
+resource "aws_iam_user" "cc_user" {
+  name = "${var.env}-${var.platform}-nextflow-cc"
+  tags = merge(
+    {
+      "Name"      = "${var.env}-${var.platform}-nextflow-cc"
+      "Terraform" = true
+    },
+  )
+}
+
+resource "aws_iam_access_key" "cc_user_key" {
+  user    = aws_iam_user.cc_user.name
+}
+
+# User Policy
+data "aws_iam_policy_document" "codecommit" {
+  statement {
+    actions   = [
+        "codecommit:BatchGet*",
+        "codecommit:BatchDescribe*",
+        "codecommit:Describe*",
+        "codecommit:EvaluatePullRequestApprovalRules",
+        "codecommit:Get*",
+        "codecommit:List*",
+        "codecommit:GitPull"
+    ]
+    sid       = "codecommitPolicy01"
+    effect    = "Allow"
+    resources = "*"
+  },
+  statement {
+    actions   = [
+        "events:DescribeRule",
+        "events:ListTargetsByRule"
+    ]
+    sid       = "codecommitPolicy02"
+    effect    = "Allow"
+    resources = "arn:aws:events:*:*:rule/codecommit*"
+  },
+  statement {
+    actions   = [
+        "sns:ListTopics",
+        "sns:ListSubscriptionsByTopic",
+        "sns:GetTopicAttributes"
+    ]
+    sid       = "codecommitPolicy03"
+    effect    = "Allow"
+    resources = "*"
+  },
+  statement {
+    actions   = [
+        "lambda:ListFunctions"
+    ]
+    sid       = "codecommitPolicy04"
+    effect    = "Allow"
+    resources = "*"
+  },
+  statement {
+    actions   = [
+        "iam:ListUsers"
+    ]
+    sid       = "codecommitPolicy05"
+    effect    = "Allow"
+    resources = "*"
+  },
+  statement {
+    actions   = [
+        "iam:ListSSHPublicKeys",
+        "iam:ListServiceSpecificCredentials",
+        "iam:ListAccessKeys",
+        "iam:GetSSHPublicKey"
+    ]
+    sid       = "codecommitPolicy06"
+    effect    = "Allow"
+    resources = "${aws_iam_user.cc_user.arn}"
+  },
+  statement {
+    actions   = [
+          "codestar-connections:ListConnections",
+          "codestar-connections:GetConnection"
+    ]
+    sid       = "codecommitPolicy07"
+    effect    = "Allow"
+    resources = "arn:aws:codestar-connections:*:*:connection/*"
+  },
+  statement {
+    actions   = [
+          "codestar-notifications:DescribeNotificationRule"
+    ]
+    sid       = "codecommitPolicy08"
+    effect    = "Allow"
+    resources = "*"
+
+    condition {
+      test     = "StringLike"
+      variable = "codestar-notifications:NotificationsForResource"
+
+      values = [
+        "arn:aws:codecommit:*"
+      ]
+    }
+  },
+  statement {
+    actions   = [
+          "codestar-notifications:ListNotificationRules",
+          "codestar-notifications:ListEventTypes",
+          "codestar-notifications:ListTargets"
+    ]
+    sid       = "codecommitPolicy09"
+    effect    = "Allow"
+    resources = "*"
+  },
+  statement {
+    actions   = [
+          "codeguru-reviewer:DescribeRepositoryAssociation",
+          "codeguru-reviewer:ListRepositoryAssociations",
+          "codeguru-reviewer:DescribeCodeReview",
+          "codeguru-reviewer:ListCodeReviews"
+    ]
+    sid       = "codecommitPolicy10"
+    effect    = "Allow"
+    resources = "*"
+  }
+}
+
+resource "aws_iam_policy" "cc_user_policy" {
+  name   = upper("p${local.region_short_name}-${var.platform}-cc-user")
+  policy = data.aws_iam_policy_document.codecommit.json
+}
+
+resource "aws_iam_user_policy_attachment" "ecr_user_policy_attach" {
+  user       = aws_iam_user.cc_user.name
+  policy_arn = aws_iam_policy.cc_user_policy.arn
+}
