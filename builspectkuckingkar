@@ -1,553 +1,331 @@
-# Role
-data "aws_iam_policy_document" "ec2_assume_role" {
+$ terragrunt run-all plan --terragrunt-non-interactive
+time=2023-10-10T20:33:37+05:30 level=error msg=failed to get console mode: The handle is invalid.
 
-  statement {
-    actions = ["sts:AssumeRole"]
+time=2023-10-10T20:33:37+05:30 level=error msg=failed to get console mode: The handle is invalid.
 
-    principals {
-      type        = "Service"
-      identifiers = ["ec2.amazonaws.com"]
-    }
+time=2023-10-10T20:33:37+05:30 level=error msg=failed to get console mode: The handle is invalid.
 
-    sid    = "ec2AssumeRole"
-    effect = "Allow"
-  }
-}
+time=2023-10-10T20:33:37+05:30 level=info msg=The stack at C:/Users/umababy.kannan/OneDrive - HCL Technologies Ltd/Documents/Star CAP/clone/platform-infra/platform-infra/live/dev/eu-central-1/platform-nextflow will be processed in the following order for command plan:
+Group 1
+- Module C:/Users/umababy.kannan/OneDrive - HCL Technologies Ltd/Documents/Star CAP/clone/platform-infra/platform-infra/live/dev/eu-central-1/platform-nextflow
 
-resource "aws_iam_role" "ec2" {
-  name               = upper("r${local.region_short_name}-${var.platform}-nextflow-ec2")
-  assume_role_policy = data.aws_iam_policy_document.ec2_assume_role.json
-}
 
-# Policy
-data "aws_iam_policy_document" "ec2" {
-  statement {
-    actions = [
-      "ssm:DescribeAssociation",
-      "ssm:GetDeployablePatchSnapshotForInstance",
-      "ssm:GetDocument",
-      "ssm:DescribeDocument",
-      "ssm:GetManifest",
-      "ssm:GetParameter",
-      "ssm:GetParameters",
-      "ssm:ListAssociations",
-      "ssm:ListInstanceAssociations",
-      "ssm:PutInventory",
-      "ssm:PutComplianceItems",
-      "ssm:PutConfigurePackageResult",
-      "ssm:UpdateAssociationStatus",
-      "ssm:UpdateInstanceAssociationStatus",
-      "ssm:UpdateInstanceInformation"
-    ]
-    sid       = "ec2Policy01"
-    effect    = "Allow"
-    resources = "*"
-  },
-  statement {
-    actions = [
-      "ssmmessages:CreateControlChannel",
-      "ssmmessages:CreateDataChannel",
-      "ssmmessages:OpenControlChannel",
-      "ssmmessages:OpenDataChannel"
-    ]
-    sid       = "ec2Policy02"
-    effect    = "Allow"
-    resources = "*"
-  },
-  statement {
-    actions = [
-      "ec2messages:AcknowledgeMessage",
-      "ec2messages:DeleteMessage",
-      "ec2messages:FailMessage",
-      "ec2messages:GetEndpoint",
-      "ec2messages:GetMessages",
-      "ec2messages:SendReply"
-    ]
-    sid       = "ec2Policy03"
-    effect    = "Allow"
-    resources = "*"
-  }
-}
-
-resource "aws_iam_role_policy" "ec2" {
-  name   = upper("p${local.region_short_name}-${var.platform}-nextflow-ec2")
-  role   = aws_iam_role.ec2.id
-  policy = data.aws_iam_policy_document.ec2.json
-}
-
-# Policy
-data "aws_iam_policy_document" "ecr" {
-  statement {
-    actions   = ["ecr:*"]
-    sid       = "ecrPolicy01"
-    effect    = "Allow"
-    resources = "*"
-  }
-}
-
-resource "aws_iam_role_policy" "ecr" {
-  name   = upper("p${local.region_short_name}-${var.platform}-nextflow-ecr")
-  role   = aws_iam_role.ec2.id
-  policy = data.aws_iam_policy_document.ecr.json
-}
-
-# AWS policy attach
-resource "aws_iam_role_policy_attachment" "ec2_policy_attach" {
-  for_each   = toset([
-                  "arn:aws:iam::aws:policy/AWSCodeCommitPowerUser",
-                  "arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy",
-                  "arn:aws:iam::297036008099:policy/np-hardened-ami-policy"
-                ])
-  role       = aws_iam_role.ec2.name
-  policy_arn = each.value
-  depends_on = [aws_iam_role.ec2]
-}
-
-# Instance Profile
-resource "aws_iam_instance_profile" "profile" {
-  role  = aws_iam_role.ec2.name
-  name  = aws_iam_role.ec2.name
-}
-
-# Role
-data "aws_iam_policy_document" "batch_assume_role" {
-
-  statement {
-    actions = ["sts:AssumeRole"]
-
-    principals {
-      type        = "Service"
-      identifiers = ["batch.amazonaws.com"]
-    }
-
-    sid    = "batchAssumeRole"
-    effect = "Allow"
-  },
-  statement {
-    actions = ["sts:AssumeRole"]
-
-    principals {
-      type        = "AWS"
-      identifiers = ["arn:aws:iam::${var.kamino_account_id}:root"]
-    }
-
-    sid    = "kaminoAccountAssumeRole"
-    effect = "Allow"
-  }
-}
-
-resource "aws_iam_role" "batch" {
-  name               = upper("r${local.region_short_name}-${var.platform}-nextflow-batch")
-  assume_role_policy = data.aws_iam_policy_document.batch_assume_role.json
-}
-
-# Policy
-data "aws_iam_policy_document" "batch" {
-  statement {
-    actions = [
-      "ssm:GetParameters",
-      "iam:CreateInstanceProfile",
-      "iam:DeleteInstanceProfile",
-      "iam:GetRole",
-      "iam:RemoveRoleFromInstanceProfile",
-      "iam:CreateRole",
-      "iam:DeleteRole",
-      "iam:AttachRolePolicy",
-      "iam:PutRolePolicy",
-      "iam:AddRoleToInstanceProfile",
-      "iam:PassRole",
-      "iam:DetachRolePolicy",
-      "iam:ListAttachedRolePolicies",
-      "iam:DeleteRolePolicy",
-      "iam:ListRolePolicies",
-      "iam:TagRole",
-      "iam:TagInstanceProfile",
-      "batch:CreateComputeEnvironment",
-      "batch:DescribeComputeEnvironments",
-      "batch:CreateJobQueue",
-      "batch:DescribeJobQueues",
-      "batch:UpdateComputeEnvironment",
-      "batch:DeleteComputeEnvironment",
-      "batch:UpdateJobQueue",
-      "batch:DeleteJobQueue",
-      "batch:TagResource",
-      "fsx:DeleteFileSystem",
-      "fsx:DescribeFileSystems",
-      "fsx:CreateFileSystem",
-      "fsx:TagResource",
-      "ec2:DescribeSecurityGroups",
-      "ec2:DescribeAccountAttributes",
-      "ec2:DescribeSubnets",
-      "ec2:DescribeLaunchTemplates",
-      "ec2:DescribeLaunchTemplateVersions",
-      "ec2:CreateLaunchTemplate",
-      "ec2:DeleteLaunchTemplate",
-      "ec2:DescribeKeyPairs",
-      "ec2:DescribeVpcs",
-      "ec2:DescribeInstanceTypeOfferings",
-      "ec2:GetEbsEncryptionByDefault",
-      "elasticfilesystem:DescribeMountTargets",
-      "elasticfilesystem:CreateMountTarget",
-      "elasticfilesystem:CreateFileSystem",
-      "elasticfilesystem:DescribeFileSystems",
-      "elasticfilesystem:DeleteMountTarget",
-      "elasticfilesystem:DeleteFileSystem",
-      "elasticfilesystem:UpdateFileSystem",
-      "elasticfilesystem:PutLifecycleConfiguration",
-      "elasticfilesystem:TagResource"
-    ]
-    sid       = "batchPolicy01"
-    effect    = "Allow"
-    resources = "*"
-  },
-  statement {
-    actions = [
-      "s3:Get*",
-      "s3:List*",
-      "batch:DescribeJobQueues",
-      "batch:CancelJob",
-      "batch:SubmitJob",
-      "batch:ListJobs",
-      "batch:DescribeComputeEnvironments",
-      "batch:TerminateJob",
-      "batch:DescribeJobs",
-      "batch:RegisterJobDefinition",
-      "batch:DescribeJobDefinitions",
-      "ecs:DescribeTasks",
-      "ec2:DescribeInstances",
-      "ec2:DescribeInstanceTypes",
-      "ec2:DescribeInstanceAttribute",
-      "ecs:DescribeContainerInstances",
-      "ec2:DescribeInstanceStatus",
-      "ec2:DescribeImages",
-      "logs:Describe*",
-      "logs:Get*",
-      "logs:List*",
-      "logs:StartQuery",
-      "logs:StopQuery",
-      "logs:TestMetricFilter",
-      "logs:FilterLogEvents"
-    ]
-    sid       = "batchPolicy02"
-    effect    = "Allow"
-    resources = "*"
-  }
-}
-
-resource "aws_iam_role_policy" "batch" {
-  name   = upper("p${local.region_short_name}-${var.platform}-nextflow-batch")
-  role   = aws_iam_role.batch.id
-  policy = data.aws_iam_policy_document.batch.json
-}
-
-data "aws_iam_policy_document" "s3" {
-  statement {
-    actions = ["s3:ListBucket"]
-    sid       = "s3Policy01"
-    effect    = "Allow"
-    resources = "*"
-  },
-  statement {
-    actions = ["s3:*Object"]
-    sid       = "s3Policy02"
-    effect    = "Allow"
-    resources = "*"
-  }
-}
-
-resource "aws_iam_role_policy" "s3" {
-  name   = upper("p${local.region_short_name}-${var.platform}-s3")
-  role   = aws_iam_role.batch.id
-  policy = data.aws_iam_policy_document.batch.json
-}
-
-# AWS policy attach
-resource "aws_iam_role_policy_attachment" "batch_policy_attach" {
-  for_each   = toset([
-                  "arn:aws:iam::aws:policy/service-role/AWSBatchServiceRole"
-                ])
-  role       = aws_iam_role.batch.name
-  policy_arn = each.value
-  depends_on = [aws_iam_role.batch]
-}
-
-#################
-# SMTP IAM USER
-#################
-resource "aws_iam_user" "smtp_user" {
-  name = "${var.env}-${var.platform}-nextflow-smtp"
-  tags = merge(
-    {
-      "Name"      = "${var.env}-${var.platform}-nextflow-smtp"
-      "Terraform" = true
-    },
-  )
-}
-
-resource "aws_iam_access_key" "smtp_user_key" {
-  user    = aws_iam_user.smtp_user.name
-}
-
-# User Policy
-data "aws_iam_policy_document" "ses" {
-  statement {
-    actions   = ["ses:SendRawEmail"]
-    sid       = "sesPolicy01"
-    effect    = "Allow"
-    resources = "*"
-  }
-}
-
-resource "aws_iam_policy" "smtp_user_policy" {
-  name   = upper("p${local.region_short_name}-${var.platform}-smtp-user")
-  policy = data.aws_iam_policy_document.ses.json
-}
-
-resource "aws_iam_user_policy_attachment" "smtp_user_policy_attach" {
-  user       = aws_iam_user.smtp_user.name
-  policy_arn = aws_iam_policy.smtp_user_policy.arn
-}
-
-####################
-# NextFlow IAM USER
-####################
-resource "aws_iam_user" "user" {
-  name = "${var.env}-${var.platform}-nextflow-user"
-  tags = merge(
-    {
-      "Name"      = "${var.env}-${var.platform}-nextflow-user"
-      "Terraform" = true
-    },
-  )
-}
-
-resource "aws_iam_access_key" "user_key" {
-  user    = aws_iam_user.user.name
-}
-
-# User Policy
-data "aws_iam_policy_document" "user" {
-  statement {
-    actions   = ["sts:AssumeRole"]
-    sid       = "stsPolicy01"
-    effect    = "Allow"
-    resources = "${aws_iam_role.batch.arn}"
-  }
-}
-
-resource "aws_iam_policy" "user_policy" {
-  name   = upper("p${local.region_short_name}-${var.platform}-user")
-  policy = data.aws_iam_policy_document.user.json
-}
-
-resource "aws_iam_user_policy_attachment" "user_policy_attach" {
-  user       = aws_iam_user.user.name
-  policy_arn = aws_iam_policy.user_policy.arn
-}
-
-#################
-# ECR IAM USER
-#################
-resource "aws_iam_user" "ecr_user" {
-  name = "${var.env}-${var.platform}-nextflow-ecr"
-  tags = merge(
-    {
-      "Name"      = "${var.env}-${var.platform}-nextflow-ecr"
-      "Terraform" = true
-    },
-  )
-}
-
-resource "aws_iam_access_key" "ecr_user_key" {
-  user    = aws_iam_user.ecr_user.name
-}
-
-# User Policy
-data "aws_iam_policy_document" "ecr" {
-  statement {
-    actions   = [
-        "ecr:GetAuthorizationToken",
-        "ecr:BatchCheckLayerAvailability",
-        "ecr:GetDownloadUrlForLayer",
-        "ecr:GetRepositoryPolicy",
-        "ecr:DescribeRepositories",
-        "ecr:ListImages",
-        "ecr:DescribeImages",
-        "ecr:BatchGetImage",
-        "ecr:GetLifecyclePolicy",
-        "ecr:GetLifecyclePolicyPreview",
-        "ecr:ListTagsForResource",
-        "ecr:DescribeImageScanFindings"
-    ]
-    sid       = "ecrPolicy01"
-    effect    = "Allow"
-    resources = "*"
-  }
-}
-
-resource "aws_iam_policy" "ecr_user_policy" {
-  name   = upper("p${local.region_short_name}-${var.platform}-ecr-user")
-  policy = data.aws_iam_policy_document.ecr.json
-}
-
-resource "aws_iam_user_policy_attachment" "ecr_user_policy_attach" {
-  user       = aws_iam_user.ecr_user.name
-  policy_arn = aws_iam_policy.smtp_user_policy.arn
-}
-
-######################
-# CodeCommit IAM USER
-#####################
-resource "aws_iam_user" "cc_user" {
-  name = "${var.env}-${var.platform}-nextflow-cc"
-  tags = merge(
-    {
-      "Name"      = "${var.env}-${var.platform}-nextflow-cc"
-      "Terraform" = true
-    },
-  )
-}
-
-resource "aws_iam_access_key" "cc_user_key" {
-  user    = aws_iam_user.cc_user.name
-}
-
-# User Policy
-data "aws_iam_policy_document" "codecommit" {
-  statement {
-    actions   = [
-        "codecommit:BatchGet*",
-        "codecommit:BatchDescribe*",
-        "codecommit:Describe*",
-        "codecommit:EvaluatePullRequestApprovalRules",
-        "codecommit:Get*",
-        "codecommit:List*",
-        "codecommit:GitPull"
-    ]
-    sid       = "codecommitPolicy01"
-    effect    = "Allow"
-    resources = "*"
-  },
-  statement {
-    actions   = [
-        "events:DescribeRule",
-        "events:ListTargetsByRule"
-    ]
-    sid       = "codecommitPolicy02"
-    effect    = "Allow"
-    resources = "arn:aws:events:*:*:rule/codecommit*"
-  },
-  statement {
-    actions   = [
-        "sns:ListTopics",
-        "sns:ListSubscriptionsByTopic",
-        "sns:GetTopicAttributes"
-    ]
-    sid       = "codecommitPolicy03"
-    effect    = "Allow"
-    resources = "*"
-  },
-  statement {
-    actions   = [
-        "lambda:ListFunctions"
-    ]
-    sid       = "codecommitPolicy04"
-    effect    = "Allow"
-    resources = "*"
-  },
-  statement {
-    actions   = [
-        "iam:ListUsers"
-    ]
-    sid       = "codecommitPolicy05"
-    effect    = "Allow"
-    resources = "*"
-  },
-  statement {
-    actions   = [
-        "iam:ListSSHPublicKeys",
-        "iam:ListServiceSpecificCredentials",
-        "iam:ListAccessKeys",
-        "iam:GetSSHPublicKey"
-    ]
-    sid       = "codecommitPolicy06"
-    effect    = "Allow"
-    resources = "${aws_iam_user.cc_user.arn}"
-  },
-  statement {
-    actions   = [
-          "codestar-connections:ListConnections",
-          "codestar-connections:GetConnection"
-    ]
-    sid       = "codecommitPolicy07"
-    effect    = "Allow"
-    resources = "arn:aws:codestar-connections:*:*:connection/*"
-  },
-  statement {
-    actions   = [
-          "codestar-notifications:DescribeNotificationRule"
-    ]
-    sid       = "codecommitPolicy08"
-    effect    = "Allow"
-    resources = "*"
-
-    condition {
-      test     = "StringLike"
-      variable = "codestar-notifications:NotificationsForResource"
-
-      values = [
-        "arn:aws:codecommit:*"
-      ]
-    }
-  },
-  statement {
-    actions   = [
-          "codestar-notifications:ListNotificationRules",
-          "codestar-notifications:ListEventTypes",
-          "codestar-notifications:ListTargets"
-    ]
-    sid       = "codecommitPolicy09"
-    effect    = "Allow"
-    resources = "*"
-  },
-  statement {
-    actions   = [
-          "codeguru-reviewer:DescribeRepositoryAssociation",
-          "codeguru-reviewer:ListRepositoryAssociations",
-          "codeguru-reviewer:DescribeCodeReview",
-          "codeguru-reviewer:ListCodeReviews"
-    ]
-    sid       = "codecommitPolicy10"
-    effect    = "Allow"
-    resources = "*"
-  }
-}
-
-resource "aws_iam_policy" "cc_user_policy" {
-  name   = upper("p${local.region_short_name}-${var.platform}-cc-user")
-  policy = data.aws_iam_policy_document.codecommit.json
-}
-
-resource "aws_iam_user_policy_attachment" "ecr_user_policy_attach" {
-  user       = aws_iam_user.cc_user.name
-  policy_arn = aws_iam_policy.cc_user_policy.arn
-}
-There are some problems with the configuration, described below.
-
-The Terraform configuration must be valid before initialization so that
-Terraform can determine which modules and providers need to be installed.
-╷
-│ Error: Missing newline after block definition
-│
-│ On iam.tf line 45: A block definition must end with a newline.
-╵
-
-time=2023-10-09T11:04:11+05:30 level=error msg=Terraform invocation failed in C:/.terragrunt-cache/sSdP1qzV4X1VYPQCozOYEsytnvc/3i_WC85hFbG0RGQjdTVce7dxmn4/platform-nextflow prefix=[C:\Users\umababy.kannan\OneDrive - HCL Technologies Ltd\Documents\Star CAP\clone\platform-infra\platform-infra\live\dev\eu-central-1\platform-nextflow]
-time=2023-10-09T11:04:11+05:30 level=error msg=Module C:/Users/umababy.kannan/OneDrive - HCL Technologies Ltd/Documents/Star CAP/clone/platform-infra/platform-infra/live/dev/eu-central-1/platform-nextflow has finished with an error: 1 error occurred:
+Acquiring state lock. This may take a few moments...
+Releasing state lock. This may take a few moments...
+time=2023-10-10T20:33:56+05:30 level=error msg=Module C:/Users/umababy.kannan/OneDrive - HCL Technologies Ltd/Documents/Star CAP/clone/platform-infra/platform-infra/live/dev/eu-central-1/platform-nextflow has finished with an error: 1 error occurred:
         * exit status 1
 
  prefix=[C:\Users\umababy.kannan\OneDrive - HCL Technologies Ltd\Documents\Star CAP\clone\platform-infra\platform-infra\live\dev\eu-central-1\platform-nextflow]
-time=2023-10-09T11:04:11+05:30 level=error msg=1 error occurred:
+time=2023-10-10T20:33:56+05:30 level=info msg=╷
+│ Error: Error in function call
+│
+│   on main.tf line 472, in resource "local_file" "init":
+│  472:   content = templatefile("${path.module}/init.tpl", {
+│  473:     repository_url          = var.repository_url,
+│  474:     backend_tag             = var.backend_tag,
+│  475:     rds_endpoint            = aws_db_instance.this.endpoint,
+│  476:     db_name                 = "${var.env}-${var.platform}-nextflow",
+│  477:     frontend_tag            = var.frontend_tag,
+│  478:     route_name              = var.routename,
+│  479:     tower_contact_email     = var.tower_contact_email,
+│  480:     tower_jwt_secret        = var.tower_jwt_secret,
+│  481:     tower_crypto_secretkey  = var.tower_crypto_secretkey,
+│  482:     tower_license           = var.tower_license,
+│  483:     tower_root_users        = var.tower_root_users,
+│  484:     tower_db_user           = var.tower_db_user,
+│  485:     tower_db_password       = var.tower_db_password,
+│  486:     tower_smtp_host         = var.tower_smtp_host,
+│  487:     tower_smtp_port         = var.tower_smtp_port,
+│  488:     tower_smtp_user         = aws_iam_access_key.smtp_user_key.secret,
+│  489:     tower_smtp_password     = aws_iam_access_key.smtp_user_key.ses_smtp_password_v4,
+│  490:     tower_enable_wave       = var.tower_enable_wave,
+│  491:     tower_ssl_version       = var.tower_ssl_version,
+│  492:     tower_auth_flag         = var.tower_auth_flag,
+│  493:     tower_starttls_flag     = var.tower_starttls_flag,
+│  494:     tower_starttls_req_flag = var.tower_starttls_req_flag
+│  495:   })
+│     ├────────────────
+│     │ aws_db_instance.this.endpoint will be known only after apply
+│     │ aws_iam_access_key.smtp_user_key.secret will be known only after apply
+│     │ aws_iam_access_key.smtp_user_key.ses_smtp_password_v4 will be known only after apply
+│     │ path.module is "."
+│     │ var.backend_tag is a string, known only after apply
+│     │ var.env is a string, known only after apply
+│     │ var.frontend_tag is a string, known only after apply
+│     │ var.platform is a string, known only after apply
+│     │ var.repository_url has a sensitive value
+│     │ var.routename is a string, known only after apply
+│     │ var.tower_auth_flag is a bool, known only after apply
+│     │ var.tower_contact_email is a string, known only after apply
+│     │ var.tower_crypto_secretkey has a sensitive value
+│     │ var.tower_db_password has a sensitive value
+│     │ var.tower_db_user has a sensitive value
+│     │ var.tower_enable_wave is a bool, known only after apply
+│     │ var.tower_jwt_secret has a sensitive value
+│     │ var.tower_license has a sensitive value
+│     │ var.tower_root_users is a string, known only after apply
+│     │ var.tower_smtp_host is a string, known only after apply
+│     │ var.tower_smtp_port is a number, known only after apply
+│     │ var.tower_ssl_version is a string, known only after apply
+│     │ var.tower_starttls_flag is a bool, known only after apply
+│     │ var.tower_starttls_req_flag is a bool, known only after apply
+│
+│ Call to function "templatefile" failed: ./init.tpl:169,38-39: Extra
+│ characters after interpolation expression; Template interpolation doesn't
+│ expect a colon at this location. Did you intend this to be a literal
+│ sequence to be processed as part of another language? If so, you can escape
+│ it by starting with "$${" instead of just "${"..
+╵
+time=2023-10-10T20:33:56+05:30 level=error msg=Terraform invocation failed in C:/.terragrunt-cache/sSdP1qzV4X1VYPQCozOYEsytnvc/3i_WC85hFbG0RGQjdTVce7dxmn4/platform-nextflow prefix=[C:\Users\umababy.kannan\OneDrive - HCL Technologies Ltd\Documents\Star CAP\clone\platform-infra\platform-infra\live\dev\eu-central-1\platform-nextflow]
+
+time=2023-10-10T20:33:56+05:30 level=error msg=1 error occurred:
         * exit status 1
 
 
+
+umababy.kannan@LP-5CG2311RDH MINGW64 ~/OneDrive - HCL Technologies Ltd/Documents/Star CAP/clone/platform-infra/platform-infra/live/dev/eu-central-1/platform-nextflow (feature/dev-main-platform-update)
+$
+resource "local_file" "init" {
+  content = templatefile("${path.module}/init.tpl", {
+    repository_url          = var.repository_url,
+    backend_tag             = var.backend_tag,
+    rds_endpoint            = aws_db_instance.this.endpoint,
+    db_name                 = "${var.env}-${var.platform}-nextflow",
+    frontend_tag            = var.frontend_tag,
+    route_name              = var.routename,
+    tower_contact_email     = var.tower_contact_email,
+    tower_jwt_secret        = var.tower_jwt_secret,
+    tower_crypto_secretkey  = var.tower_crypto_secretkey,
+    tower_license           = var.tower_license,
+    tower_root_users        = var.tower_root_users,
+    tower_db_user           = var.tower_db_user,
+    tower_db_password       = var.tower_db_password,
+    tower_smtp_host         = var.tower_smtp_host,
+    tower_smtp_port         = var.tower_smtp_port,
+    tower_smtp_user         = aws_iam_access_key.smtp_user_key.secret,
+    tower_smtp_password     = aws_iam_access_key.smtp_user_key.ses_smtp_password_v4,
+    tower_enable_wave       = var.tower_enable_wave,
+    tower_ssl_version       = var.tower_ssl_version,
+    tower_auth_flag         = var.tower_auth_flag,
+    tower_starttls_flag     = var.tower_starttls_flag,
+    tower_starttls_req_flag = var.tower_starttls_req_flag
+  })
+   filename = "${path.module}/init.tpl"
+}
+
+Content-Type: multipart/mixed; boundary="//"
+MIME-Version: 1.0
+
+--//
+Content-Type: text/cloud-config; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: attachment; filename="cloud-config.txt"
+
+#cloud-config
+cloud_final_modules:
+- [scripts-user, always]
+
+--//
+Content-Type: text/x-shellscript; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: attachment; filename="userdata.txt"
+
+#! /bin/bash
+
+# Install docker
+sudo apt-get update
+sudo apt-get install -y apt-transport-https ca-certificates curl software-properties-common
+sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+sudo add-apt-repository \
+   "deb [arch=amd64] https://download.docker.com/linux/ubuntu \
+   $(lsb_release -cs) \
+   stable"
+sudo apt-get update
+sudo apt-get install -y docker-ce
+sudo usermod -aG docker ubuntu
+
+# Install docker-compose
+sudo curl -L https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m) -o /usr/local/bin/docker-compose
+sudo chmod +x /usr/local/bin/docker-compose
+sudo mv /usr/local/bin/docker-compose /bin/docker-compose
+cp -p /bin/docker-compose /usr/bin/docker-compose
+
+# Install NFTower Image
+sudo docker login -u 'robot$private+roche-scr-token' -p 'Hst3dQtRWwjyg4v7BAmUZ4kdi5UIXdhH' cr.seqera.io
+sudo docker pull cr.seqera.io/private/nf-tower-enterprise/backend:v23.1.3
+sudo docker pull cr.seqera.io/private/nf-tower-enterprise/frontend:v23.1.3
+
+# Delete old directories
+sudo rm -rf /home/ubuntu/nfpoc
+sudo rm -rf /home/ubuntu/nftower
+
+# Create Tower Env file
+sudo mkdir -p /home/ubuntu/nftower
+sudo chmod -R 755 /home/ubuntu/nftower
+
+sudo touch -p /home/ubuntu/nftower/docker-compose.yml
+sudo chmod 755 /home/ubuntu/nftower/docker-compose.yml
+
+# Configuring docker-compose.yml file manually
+sudo cat << EOF >> /home/ubuntu/nftower/docker-compose.yml
+version: "3"
+services:
+  redis:
+    image: cr.seqera.io/public/redis:5.0.8
+    networks:
+      - backend
+    volumes:
+      - \$HOME/.tower/db/redis:/data
+    expose:
+      - 6379
+    command: --appendonly yes
+    restart: always
+  cron:
+    image: ${repository_url}/backend:${backend_tag}
+    command: -c '/wait-for-it.sh ${rds_endpoint} -t 60; /migrate-db.sh; /tower.sh'
+    networks:
+      - frontend
+      - backend
+    volumes:
+      - \$PWD/tower.yml:/tower.yml
+    env_file:
+      - tower.env
+    environment:
+      - MICRONAUT_ENVIRONMENTS=prod,redis,cron
+    restart: always
+    depends_on:
+      - redis
+  backend:
+    image: ${repository_url}/backend:${backend_tag}
+    command: -c '/wait-for-it.sh ${rds_endpoint} -t 60; /tower.sh'
+    networks:
+      - frontend
+      - backend
+    expose:
+      - 8080
+    volumes:
+      - \$PWD/tower.yml:/tower.yml
+    env_file:
+      - tower.env
+    environment:
+      - MICRONAUT_ENVIRONMENTS=prod,redis,ha
+    restart: always
+    depends_on:
+      - redis
+      - cron
+  frontend:
+    image: ${repository_url}/frontend:${frontend_tag}
+    networks:
+      - frontend
+    ports:
+      - 8000:80
+    restart: always
+    depends_on:
+      - backend
+networks:
+  frontend: {}
+  backend: {}
+EOF
+
+sudo chmod 755 /home/ubuntu/nftower/docker-compose.yml
+
+sudo touch -p /home/ubuntu/nftower/tower.env
+sudo chmod 755 /home/ubuntu/nftower/tower.env
+
+# Configuring tower.env file manually
+sudo cat << EOF >> /home/ubuntu/nftower/tower.env
+ TOWER_SERVER_URL=https://${route_name}
+ TOWER_CONTACT_EMAIL=${tower_contact_email}
+ TOWER_JWT_SECRET=${tower_jwt_secret}
+ TOWER_CRYPTO_SECRETKEY=${tower_crypto_secretkey}
+ TOWER_LICENSE=${tower_license}
+
+ # Tower Admins
+ TOWER_ROOT_USERS=${tower_root_users}
+ # Compute environment settings
+ TOWER_ENABLE_PLATFORMS=awsbatch-platform,k8s-platform,slurm-platform
+
+ # DB settings
+ TOWER_DB_URL=jdbc:mysql://${rds_endpoint}/${db_name}
+ TOWER_DB_DRIVER=org.mariadb.jdbc.Driver
+ TOWER_DB_DIALECT=io.seqera.util.MySQL55DialectCollateBin
+ TOWER_DB_USER=${tower_db_user}
+ TOWER_DB_PASSWORD=${tower_db_password}
+ FLYWAY_LOCATIONS=classpath:db-schema/mysql
+
+ # SMTP settings
+ TOWER_SMTP_HOST=${tower_smtp_host}
+ TOWER_SMTP_PORT=${tower_smtp_port}
+ TOWER_SMTP_USER=${tower_smtp_user}
+ TOWER_SMTP_PASSWORD=${tower_smtp_password}
+
+ #Tower Update
+ TOWER_ENABLE_WAVE=${tower_enable_wave}
+ WAVE_SERVER_URL=https://wave.seqera.io
+EOF
+
+sudo chmod 755 /home/ubuntu/nftower/tower.env
+
+sudo touch -p /home/ubuntu/nftower/tower.yml
+sudo chmod 755 /home/ubuntu/nftower/tower.yml
+
+# Configuring tower.yml file manually
+sudo cat << EOF >> /home/ubuntu/nftower/tower.yml
+ # e.g.  Configure a local SMTP server
+ # DO NOT USE IN PRODUCTION ENVIRONMENT
+ #
+ # Replace these settings with a SMTP server
+ # provided by your cloud vendor
+
+ tower:
+   admin:
+     root-users: '\$${TOWER_ROOT_USERS:[]}'
+   trustedEmails:
+     - 'victor.sankarlingam@roche.com'
+     - 'juan_luis.canales@roche.com'
+     - 'sonat.denizciler@roche.com'
+     - 'pascal.gautschi@roche.com'
+     - 'global.redcap@roche.com'
+     - 'fasih.baig@roche.com'
+
+ mail:
+   from: "\$${TOWER_CONTACT_EMAIL}"
+   smtp:
+     host: \$${TOWER_SMTP_HOST}
+     port: \$${TOWER_SMTP_PORT}
+     user: \$${TOWER_SMTP_USER}
+     password: \$${TOWER_SMTP_PASSWORD}
+     # \`auth\` and \`starttls\` should be enabled
+     # with a production SMTP host
+     auth: ${tower_auth_flag}
+     starttls:
+       enable: ${tower_starttls_flag}
+       required: ${tower_starttls_req_flag}
+     ssl:
+      protocols: "${tower_ssl_version}"
+EOF
+
+sudo chmod 755 /home/ubuntu/nftower/tower.yml
+
+#Script to kill any existing service and bring up new one
+sudo touch /home/ubuntu/nftower/nftower_service.sh
+sudo chmod 755 /home/ubuntu/nftower/nftower_service.sh
+
+sudo cat << EOF >> /home/ubuntu/nftower/nftower_service.sh
+
+ #!/bin/bash
+ cd /home/ubuntu/nftower
+
+ #killing unwanted containers
+ /usr/bin/docker kill nfpoc_redis_1 nfpoc_frontend_1 nfpoc_backend_1 nfpoc_cron_1
+
+ #ensuring nf tower containers are bringing down
+ /usr/bin/docker-compose down
+
+ #bringing up nf tower resources
+ nohup /usr/bin/docker-compose up &
+EOF
+
+sudo sh /home/ubuntu/nftower/nftower_service.sh
