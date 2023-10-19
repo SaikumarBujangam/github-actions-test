@@ -1,8 +1,46 @@
+resource "aws_fsx_lustre_file_system" "bfx_fsx_scratch" {
+  #import_path           = format("%s%s","s3://",var.bfx_fsx_s3_buckets_ids[1])
+  #export_path = format("%s%s%s","s3://",var.bfx_fsx_s3_buckets_ids[1], "/output")
+  storage_capacity      = 1200
+  subnet_ids            = var.bfx_subnets
+  security_group_ids = var.bfx_security_group_ids
+  #2675
+  #auto_import_policy    = "NEW_CHANGED"
+  #deployment_type = "PERSISTENT_1"
+  deployment_type = "PERSISTENT_2"
+  data_compression_type = var.compression_type
+  per_unit_storage_throughput = local.per_unit_storage_throughput
+  tags = merge(
+    {
+            "Name" = format("%s%s", var.fsx_name_prefix, "bfx-scratchfsx")
+    },
+    var.tags,
+  )
+    timeouts {
+    create = "60m"
+    update = "2h"
+    delete = "2h"
+  }
+}
 
-│ Error: creating ELBv2 Listener (arn:aws:elasticloadbalancing:eu-central-1:745252665765:loadbalancer/app/dev-starcap-nextflow-alb/15dd7225fd90e7e2): UnsupportedCertificate: The certificate 'arn:aws:acm:eu-central-1:745252665765:certificate/93e29d63-3b53-4024-ab38-61db87b8906e' must have a fully-qualified domain name, a supported signature, and a supported key size.
-│       status code: 400, request id: 06340f0b-e4f6-4fe4-9e90-9234bc131069
-│
-│   with aws_lb_listener.listener[0],
-│   on main.tf line 581, in resource "aws_lb_listener" "listener":
-│  581: resource "aws_lb_listener" "listener" {
-│
+#2675
+resource "aws_fsx_data_repository_association" "bfx_fsx_scratch_data_rep" {
+  file_system_id       = aws_fsx_lustre_file_system.bfx_fsx_scratch.id
+  data_repository_path = "s3://${var.bfx_fsx_s3_buckets_ids[1]}"
+  file_system_path     = "/"
+
+  s3 {
+    auto_export_policy {
+      events = ["NEW", "CHANGED", "DELETED"]
+    }
+
+    auto_import_policy {
+      events = ["NEW", "CHANGED", "DELETED"]
+    }
+  }
+    timeouts {
+    create = "60m"
+    update = "2h"
+    delete = "2h"
+  }
+}
