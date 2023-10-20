@@ -1,46 +1,223 @@
-resource "aws_fsx_lustre_file_system" "bfx_fsx_scratch" {
-  #import_path           = format("%s%s","s3://",var.bfx_fsx_s3_buckets_ids[1])
-  #export_path = format("%s%s%s","s3://",var.bfx_fsx_s3_buckets_ids[1], "/output")
-  storage_capacity      = 1200
-  subnet_ids            = var.bfx_subnets
-  security_group_ids = var.bfx_security_group_ids
-  #2675
-  #auto_import_policy    = "NEW_CHANGED"
-  #deployment_type = "PERSISTENT_1"
-  deployment_type = "PERSISTENT_2"
-  data_compression_type = var.compression_type
-  per_unit_storage_throughput = local.per_unit_storage_throughput
-  tags = merge(
-    {
-            "Name" = format("%s%s", var.fsx_name_prefix, "bfx-scratchfsx")
-    },
-    var.tags,
-  )
-    timeouts {
-    create = "60m"
-    update = "2h"
-    delete = "2h"
-  }
-}
+Skip to Main Content
 
-#2675
-resource "aws_fsx_data_repository_association" "bfx_fsx_scratch_data_rep" {
-  file_system_id       = aws_fsx_lustre_file_system.bfx_fsx_scratch.id
-  data_repository_path = "s3://${var.bfx_fsx_s3_buckets_ids[1]}"
-  file_system_path     = "/"
+Services
+Search
+[Alt+S]
 
-  s3 {
-    auto_export_policy {
-      events = ["NEW", "CHANGED", "DELETED"]
-    }
 
-    auto_import_policy {
-      events = ["NEW", "CHANGED", "DELETED"]
-    }
-  }
-    timeouts {
-    create = "60m"
-    update = "2h"
-    delete = "2h"
-  }
-}
+
+
+Frankfurt
+
+StarCapEngineering/uma_baby.kannan@businesspartner.roche.com ...
+
+S3
+
+VPC
+
+EC2
+
+IAM
+
+CodeCommit
+
+CodeArtifact
+
+Developer Tools
+CodePipeline
+
+Source
+CodeCommit
+
+Artifacts
+CodeArtifact
+
+Build
+CodeBuild
+
+Deploy
+CodeDeploy
+
+Pipeline
+CodePipeline
+Getting started
+Pipelines
+Pipeline
+History
+Settings
+
+Settings
+Go to resource
+Feedback
+Developer Tools
+CodePipeline
+Pipelines
+dev-lambda-services-pipeline
+dev-lambda-services-pipeline
+Release change
+Clone pipeline
+Stop execution
+Edit
+
+ Notify
+Source
+Succeeded
+Pipeline execution ID:37e8d5d5-2545-46d1-980d-e9c0dc70c0f7
+Source
+
+AWS CodeCommit
+Succeeded
+-4 minutes agoChange 4 minutes ago to UTC+5:30 time formatChange 4 minutes ago to UTC+5:30 time format
+2ad0295a
+2ad0295aSource: Merge branch 'feature/ingresslambda' into 'develop'
+Disable transition
+Build-and-Deploy
+Failed
+Pipeline execution ID:37e8d5d5-2545-46d1-980d-e9c0dc70c0f7
+Retry stage
+Retry failed actions
+lambda-services-Build-and-Deploy
+
+AWS CodeBuild
+Failed
+-3 minutes agoChange 3 minutes ago to UTC+5:30 time formatChange 3 minutes ago to UTC+5:30 time format
+
+Action execution failed
+View in CodeBuild
+View logs
+2ad0295aSource: Merge branch 'feature/ingresslambda' into 'develop'
+Logs
+
+Failed
+Start time: 4 minutes agoChange 4 minutes ago to UTC+5:30 time formatChange 4 minutes ago to UTC+5:30 time format
+Current phase: COMPLETED
+Showing the last 115 lines of the build log. View entire log
+
+Show previous logs
+[Container] 2023/10/20 10:58:51 Waiting for agent ping
+[Container] 2023/10/20 10:58:52 Waiting for DOWNLOAD_SOURCE
+[Container] 2023/10/20 10:58:53 Phase is DOWNLOAD_SOURCE
+[Container] 2023/10/20 10:58:53 CODEBUILD_SRC_DIR=/codebuild/output/src2820832545/src
+[Container] 2023/10/20 10:58:53 YAML location is /codebuild/readonly/buildspec.yml
+[Container] 2023/10/20 10:58:53 Setting HTTP client timeout to higher timeout for S3 source
+[Container] 2023/10/20 10:58:53 Processing environment variables
+[Container] 2023/10/20 10:58:53 Selecting 'docker' runtime version '20' based on manual selections...
+[Container] 2023/10/20 10:58:53 Running command echo "Specifying docker version in buildspec is deprecated. Using docker $DOCKER_VERSION"
+Specifying docker version in buildspec is deprecated. Using docker 20.10.24
+
+[Container] 2023/10/20 10:58:53 Moving to directory /codebuild/output/src2820832545/src
+[Container] 2023/10/20 10:58:53 Unable to initialize cache download: no paths specified to be cached
+[Container] 2023/10/20 10:58:53 Configuring ssm agent with target id: codebuild:cc5ae787-eec9-4071-ad59-0340124453cd
+[Container] 2023/10/20 10:58:53 Successfully updated ssm agent configuration
+[Container] 2023/10/20 10:58:53 Registering with agent
+[Container] 2023/10/20 10:58:53 Phases found in YAML: 3
+[Container] 2023/10/20 10:58:53  PRE_BUILD: 3 commands
+[Container] 2023/10/20 10:58:53  BUILD: 3 commands
+[Container] 2023/10/20 10:58:53  INSTALL: 2 commands
+[Container] 2023/10/20 10:58:53 Phase complete: DOWNLOAD_SOURCE State: SUCCEEDED
+[Container] 2023/10/20 10:58:53 Phase context status code:  Message: 
+[Container] 2023/10/20 10:58:53 Entering phase INSTALL
+[Container] 2023/10/20 10:58:53 Running command nohup /usr/local/bin/dockerd --host=unix:///var/run/docker.sock --host=tcp://127.0.0.1:2375 --storage-driver=overlay2&
+
+[Container] 2023/10/20 10:58:53 Running command timeout 15 sh -c "until docker info; do echo .; sleep 1; done"
+time="2023-10-20T10:58:53.661395637Z" level=info msg="Starting up"
+failed to start daemon: pid file found, ensure docker is not running or delete /var/run/docker.pid
+Client:
+ Context:    default
+ Debug Mode: false
+
+Server:
+ Containers: 0
+  Running: 0
+  Paused: 0
+  Stopped: 0
+ Images: 0
+ Server Version: 20.10.24
+ Storage Driver: overlay2
+  Backing Filesystem: xfs
+  Supports d_type: true
+  Native Overlay Diff: true
+  userxattr: false
+ Logging Driver: json-file
+ Cgroup Driver: cgroupfs
+ Cgroup Version: 1
+ Plugins:
+  Volume: local
+  Network: bridge host ipvlan macvlan null overlay
+  Log: awslogs fluentd gcplogs gelf journald json-file local logentries splunk syslog
+ Swarm: inactive
+ Runtimes: runc io.containerd.runc.v2 io.containerd.runtime.v1.linux
+ Default Runtime: runc
+ Init Binary: docker-init
+ containerd version: 2806fc1057397dbaeefbea0e4e17bddfbd388f38
+ runc version: v1.1.5-0-gf19387a6
+ init version: de40ad0
+ Security Options:
+  seccomp
+   Profile: default
+ Kernel Version: 4.14.291-218.527.amzn2.x86_64
+ Operating System: Amazon Linux 2 (containerized)
+ OSType: linux
+ Architecture: x86_64
+ CPUs: 2
+ Total Memory: 3.644GiB
+ Name: b488835a9d9e
+ ID: LK3E:MWWY:3ABC:DU45:BRFG:KWP2:W6HE:N767:RFIM:6EAX:PBZM:XYRE
+ Docker Root Dir: /var/lib/docker
+ Debug Mode: false
+ Registry: https://index.docker.io/v1/
+ Labels:
+ Experimental: false
+ Insecure Registries:
+  127.0.0.0/8
+ Live Restore Enabled: false
+ Product License: Community Engine
+
+WARNING: API is accessible on http://127.0.0.1:2375 without encryption.
+         Access to the remote API is equivalent to root access on the host. Refer
+         to the 'Docker daemon attack surface' section in the documentation for
+         more information: https://docs.docker.com/go/attack-surface/
+WARNING: bridge-nf-call-iptables is disabled
+WARNING: bridge-nf-call-ip6tables is disabled
+
+[Container] 2023/10/20 10:58:53 Phase complete: INSTALL State: SUCCEEDED
+[Container] 2023/10/20 10:58:53 Phase context status code:  Message: 
+[Container] 2023/10/20 10:58:53 Entering phase PRE_BUILD
+[Container] 2023/10/20 10:58:53 Running command aws --version
+aws-cli/1.29.8 Python/3.9.17 Linux/4.14.291-218.527.amzn2.x86_64 exec-env/AWS_ECS_EC2 botocore/1.31.8
+
+[Container] 2023/10/20 10:59:07 Running command aws configure set region $TARGET_REGION --profile dev-account
+
+[Container] 2023/10/20 10:59:07 Running command aws configure set role_arn arn:aws:iam::745252665765:role/InfraBuildRole --profile dev-account
+
+[Container] 2023/10/20 10:59:08 Phase complete: PRE_BUILD State: SUCCEEDED
+[Container] 2023/10/20 10:59:08 Phase context status code:  Message: 
+[Container] 2023/10/20 10:59:08 Entering phase BUILD
+[Container] 2023/10/20 10:59:08 Running command cd audit
+
+[Container] 2023/10/20 10:59:08 Running command zip -r lambda_function.zip *
+  adding: ingress_streams_processing_lambda.py (deflated 68%)
+
+[Container] 2023/10/20 10:59:08 Running command aws lambda update-function-code --function-name  ingress-streams-processing-lambda --zip-file lambda_function.zip --profile dev-account
+
+--zip-file must be a zip file with the fileb:// prefix.
+Example usage:  --zip-file fileb://path/to/file.zip
+
+[Container] 2023/10/20 10:59:09 Command did not exit successfully aws lambda update-function-code --function-name  ingress-streams-processing-lambda --zip-file lambda_function.zip --profile dev-account exit status 255
+[Container] 2023/10/20 10:59:09 Phase complete: BUILD State: FAILED
+[Container] 2023/10/20 10:59:09 Phase context status code: COMMAND_EXECUTION_ERROR Message: Error while executing command: aws lambda update-function-code --function-name  ingress-streams-processing-lambda --zip-file lambda_function.zip --profile dev-account. Reason: exit status 255
+[Container] 2023/10/20 10:59:09 Entering phase POST_BUILD
+[Container] 2023/10/20 10:59:09 Phase complete: POST_BUILD State: SUCCEEDED
+[Container] 2023/10/20 10:59:09 Phase context status code:  Message: 
+
+Close
+
+
+
+
+CloudShell
+Feedback
+© 2023, Amazon Web Services, Inc. or its affiliates.
+Privacy
+Terms
+Cookie preferences
