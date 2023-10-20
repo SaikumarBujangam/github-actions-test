@@ -1,1 +1,123 @@
-aws lambda update-function-code --function-name ingress-streams-processing-lambda --zip-file "fileb://$CODEBUILD_SRC_DIR/audit/lambda_function.zip" --profile dev-account
+
+[Container] 2023/10/20 11:23:40 Waiting for agent ping
+[Container] 2023/10/20 11:23:41 Waiting for DOWNLOAD_SOURCE
+[Container] 2023/10/20 11:23:42 Phase is DOWNLOAD_SOURCE
+[Container] 2023/10/20 11:23:42 CODEBUILD_SRC_DIR=/codebuild/output/src1204165336/src
+[Container] 2023/10/20 11:23:42 YAML location is /codebuild/readonly/buildspec.yml
+[Container] 2023/10/20 11:23:42 Setting HTTP client timeout to higher timeout for S3 source
+[Container] 2023/10/20 11:23:42 Processing environment variables
+[Container] 2023/10/20 11:23:42 Selecting 'docker' runtime version '20' based on manual selections...
+[Container] 2023/10/20 11:23:42 Running command echo "Specifying docker version in buildspec is deprecated. Using docker $DOCKER_VERSION"
+Specifying docker version in buildspec is deprecated. Using docker 20.10.24
+
+[Container] 2023/10/20 11:23:42 Moving to directory /codebuild/output/src1204165336/src
+[Container] 2023/10/20 11:23:42 Unable to initialize cache download: no paths specified to be cached
+[Container] 2023/10/20 11:23:42 Configuring ssm agent with target id: codebuild:0fa84c98-793c-475d-ba9a-02ca6c37b557
+[Container] 2023/10/20 11:23:43 Successfully updated ssm agent configuration
+[Container] 2023/10/20 11:23:43 Registering with agent
+[Container] 2023/10/20 11:23:43 Phases found in YAML: 3
+[Container] 2023/10/20 11:23:43  BUILD: 5 commands
+[Container] 2023/10/20 11:23:43  INSTALL: 2 commands
+[Container] 2023/10/20 11:23:43  PRE_BUILD: 3 commands
+[Container] 2023/10/20 11:23:43 Phase complete: DOWNLOAD_SOURCE State: SUCCEEDED
+[Container] 2023/10/20 11:23:43 Phase context status code:  Message: 
+[Container] 2023/10/20 11:23:43 Entering phase INSTALL
+[Container] 2023/10/20 11:23:43 Running command nohup /usr/local/bin/dockerd --host=unix:///var/run/docker.sock --host=tcp://127.0.0.1:2375 --storage-driver=overlay2&
+
+[Container] 2023/10/20 11:23:43 Running command timeout 15 sh -c "until docker info; do echo .; sleep 1; done"
+Client:
+ Context:    default
+ Debug Mode: false
+
+Server:
+ Containers: 0
+  Running: 0
+  Paused: 0
+  Stopped: 0
+ Images: 0
+ Server Version: 20.10.24
+ Storage Driver: overlay2
+  Backing Filesystem: xfs
+  Supports d_type: true
+  Native Overlay Diff: true
+  userxattr: false
+ Logging Driver: json-file
+ Cgroup Driver: cgroupfs
+ Cgroup Version: 1
+ Plugins:
+  Volume: local
+  Network: bridge host ipvlan macvlan null overlay
+  Log: awslogs fluentd gcplogs gelf journald json-file local logentries splunk syslog
+ Swarm: inactive
+ Runtimes: io.containerd.runc.v2 io.containerd.runtime.v1.linux runc
+ Default Runtime: runc
+ Init Binary: docker-init
+ containerd version: 2806fc1057397dbaeefbea0e4e17bddfbd388f38
+ runc version: v1.1.5-0-gf19387a6
+ init version: de40ad0
+ Security Options:
+  seccomp
+   Profile: default
+ Kernel Version: 4.14.291-218.527.amzn2.x86_64
+ Operating System: Amazon Linux 2 (containerized)
+ OSType: linux
+ Architecture: x86_64
+ CPUs: 2
+ Total Memory: 3.644GiB
+ Name: ce7b559ce09f
+ ID: GLME:HM6G:6QA2:BY7E:EZAV:UA34:4RCS:VRKV:TCGH:ZMEO:LSH7:5WZU
+ Docker Root Dir: /var/lib/docker
+ Debug Mode: false
+ Registry: https://index.docker.io/v1/
+ Labels:
+ Experimental: false
+ Insecure Registries:
+  127.0.0.0/8
+ Live Restore Enabled: false
+ Product License: Community Engine
+
+WARNING: API is accessible on http://127.0.0.1:2375 without encryption.
+         Access to the remote API is equivalent to root access on the host. Refer
+         to the 'Docker daemon attack surface' section in the documentation for
+         more information: https://docs.docker.com/go/attack-surface/
+WARNING: bridge-nf-call-iptables is disabled
+WARNING: bridge-nf-call-ip6tables is disabled
+
+[Container] 2023/10/20 11:23:43 Phase complete: INSTALL State: SUCCEEDED
+[Container] 2023/10/20 11:23:43 Phase context status code:  Message: 
+time="2023-10-20T11:23:43.181786369Z" level=info msg="Starting up"
+failed to start daemon: pid file found, ensure docker is not running or delete /var/run/docker.pid
+[Container] 2023/10/20 11:23:43 Entering phase PRE_BUILD
+[Container] 2023/10/20 11:23:43 Running command aws --version
+aws-cli/1.29.8 Python/3.9.17 Linux/4.14.291-218.527.amzn2.x86_64 exec-env/AWS_ECS_EC2 botocore/1.31.8
+
+[Container] 2023/10/20 11:23:57 Running command aws configure set region $TARGET_REGION --profile dev-account
+
+[Container] 2023/10/20 11:23:57 Running command aws configure set role_arn arn:aws:iam::745252665765:role/InfraBuildRole --profile dev-account
+
+[Container] 2023/10/20 11:23:58 Phase complete: PRE_BUILD State: SUCCEEDED
+[Container] 2023/10/20 11:23:58 Phase context status code:  Message: 
+[Container] 2023/10/20 11:23:58 Entering phase BUILD
+[Container] 2023/10/20 11:23:58 Running command cd audit
+
+[Container] 2023/10/20 11:23:58 Running command zip -r lambda_function.zip *
+  adding: ingress_streams_processing_lambda.py (deflated 68%)
+
+[Container] 2023/10/20 11:23:58 Running command pwd
+/codebuild/output/src1204165336/src/audit
+
+[Container] 2023/10/20 11:23:58 Running command ls -ltr
+total 8
+-rw-r--r-- 1 root root 3508 Oct 20 11:23 ingress_streams_processing_lambda.py
+-rw-r--r-- 1 root root 1331 Oct 20 11:23 lambda_function.zip
+
+[Container] 2023/10/20 11:23:58 Running command aws lambda update-function-code --function-name ingress-streams-processing-lambda --zip-file fileb://$CODEBUILD_SRC_DIR/audit/lambda_function.zip --profile dev-account
+
+Partial credentials found in assume-role, missing: source_profile or credential_source
+
+[Container] 2023/10/20 11:23:59 Command did not exit successfully aws lambda update-function-code --function-name ingress-streams-processing-lambda --zip-file fileb://$CODEBUILD_SRC_DIR/audit/lambda_function.zip --profile dev-account exit status 255
+[Container] 2023/10/20 11:23:59 Phase complete: BUILD State: FAILED
+[Container] 2023/10/20 11:23:59 Phase context status code: COMMAND_EXECUTION_ERROR Message: Error while executing command: aws lambda update-function-code --function-name ingress-streams-processing-lambda --zip-file fileb://$CODEBUILD_SRC_DIR/audit/lambda_function.zip --profile dev-account. Reason: exit status 255
+[Container] 2023/10/20 11:23:59 Entering phase POST_BUILD
+[Container] 2023/10/20 11:23:59 Phase complete: POST_BUILD State: SUCCEEDED
+[Container] 2023/10/20 11:23:59 Phase context status code:  Message: 
