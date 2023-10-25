@@ -1,55 +1,37 @@
+resource "aws_fsx_lustre_file_system" "fsx_scratch" {
 
-data "aws_vpc" "project_vpc" {
-   filter {
-    name    = "tag:Name"
-    values  =["proje1697521250559-vpc"]
+  storage_capacity            = 1200
+  subnet_ids                  = var.subnet_ids
+  security_group_ids          = var.security_groups
+  deployment_type             = "PERSISTENT_2"
+  data_compression_type       = var.compression_type 
+  per_unit_storage_throughput = var.per_unit_storage_throughput 
+  tags = var.tags
+    timeouts {
+    create = "60m"
+    update = "2h"
+    delete = "2h"
   }
 }
 
-data "aws_subnets" "project_subnets" {
-  
-  filter {
-    name   = "vpc-id"
-    values = [data.aws_vpc.project_vpc.id]
+
+resource "aws_fsx_data_repository_association" "bfx_fsx_scratch_data_rep" {
+  file_system_id       = aws_fsx_lustre_file_system.fsx_scratch.id
+  data_repository_path = "s3://${var.fsx_s3_bucket}"
+  file_system_path     = "/"
+
+  s3 {
+    auto_export_policy {
+      events = ["NEW", "CHANGED", "DELETED"]
+    }
+
+    auto_import_policy {
+      events = ["NEW", "CHANGED", "DELETED"]
+    }
   }
-  
-  tags = {
-      type = "private-subnet"
+    timeouts {
+    create = "60m"
+    update = "2h"
+    delete = "2h"
   }
-} 
-
-data "aws_security_group" "notebook_sg" {
-  name = "proje1697521250559-common-sg"
 }
-
-data "aws_iam_role" "project_role" {
-  name = "proje1697521250559-common-project-role"
-}
-
-module "fsx" {
-  source                 = "../terraform-modules/terraform-aws-fsx"
-  subnet_ids             =  data.aws_subnets.project_subnets
-  
-  security_groups         = [data.aws_security_group.notebook_sg]
-}
-
-
-C:\Users\umababy.kannan\OneDrive - HCL Technologies Ltd\Documents\Star CAP\project-infra-provisioning-services\infra-scripts\terraform-init>terraform plan
-╷
-│ Error: no matching EC2 VPC found
-│
-│   with data.aws_vpc.project_vpc,
-│   on main.tf line 18, in data "aws_vpc" "project_vpc":
-│   18: data "aws_vpc" "project_vpc" {
-│
-╵
-╷
-│ Error: no matching EC2 Security Group found
-│
-│   with data.aws_security_group.notebook_sg,
-│   on main.tf line 37, in data "aws_security_group" "notebook_sg":
-│   37: data "aws_security_group" "notebook_sg" {
-│
-╵
-
-C:\Users\umababy.kannan\OneDrive - HCL Technologies Ltd\Documents\Star CAP\project-infra-provisioning-services\infra-scripts\terraform-init>
