@@ -1,35 +1,6 @@
-
-C:\Users\umababy.kannan\OneDrive - HCL Technologies Ltd\Documents\Star CAP\project-infra-provisioning-services\infra-scripts\terraform-init>terraform plan
-╷
-│ Error: Provider configuration not present
-│
-│ To work with module.fsx.aws_fsx_data_repository_association.bfx_fsx_scratch_data_rep its original provider configuration at
-│ module.fsx.provider["registry.terraform.io/hashicorp/aws"].endor is required, but it has been removed. This occurs when a provider configuration is removed while objects
-│ created by that provider still exist in the state. Re-add the provider configuration to destroy module.fsx.aws_fsx_data_repository_association.bfx_fsx_scratch_data_rep,
-│ after which you can remove the provider configuration again.
-
-
-terraform {
-  required_providers {
-    aws = {
-      source  = "hashicorp/aws"
-      version = "~> 4.0"
-    }
-  }
-}
-
-# Configure the AWS Provider
-provider "aws" {
-  region  = "eu-central-1"
- 
-}
-
-provider "aws" {
-  region = var.region
-  alias = "endor"
-  assume_role {
-    role_arn     = "arn:aws:iam::${var.endor_account_id}:role/${local.infra_build_role}"
-    session_name = "INFRA_BUILD"
-  }
-}
-
+> git push origin feature/scratch-fsx:feature/scratch-fsx
+remote: fatal: pack exceeds maximum allowed size        
+error: remote unpack failed: unpack-objects abnormal exit
+To https://code.roche.com/starcap/platform/project-infra-provisioning-services.git
+ ! [remote rejected] feature/scratch-fsx -> feature/scratch-fsx (unpacker error)
+error: failed to push some refs to 'https://code.roche.com/starcap/platform/project-infra-provisioning-services.git'
