@@ -1,37 +1,12 @@
-resource "aws_fsx_lustre_file_system" "fsx_scratch" {
+resource "aws_ecr_repository" "ecr_repository" {
+  name                 = var.repository_name
+  image_tag_mutability = var.image_tag_mutability
 
-  storage_capacity            = 1200
-  subnet_ids                  = var.subnet_ids
-  security_group_ids          = var.security_groups
-  deployment_type             = "PERSISTENT_2"
-  data_compression_type       = var.compression_type 
-  per_unit_storage_throughput = var.per_unit_storage_throughput 
+  image_scanning_configuration {
+    scan_on_push = var.scan_on_push
+  }
+  encryption_configuration {
+    encryption_type = "AES256"
+  }
   tags = var.tags
-    timeouts {
-    create = "60m"
-    update = "2h"
-    delete = "2h"
-  }
-}
-
-
-resource "aws_fsx_data_repository_association" "bfx_fsx_scratch_data_rep" {
-  file_system_id       = aws_fsx_lustre_file_system.fsx_scratch.id
-  data_repository_path = "s3://${var.fsx_s3_bucket}"
-  file_system_path     = "/"
-
-  s3 {
-    auto_export_policy {
-      events = ["NEW", "CHANGED", "DELETED"]
-    }
-
-    auto_import_policy {
-      events = ["NEW", "CHANGED", "DELETED"]
-    }
-  }
-    timeouts {
-    create = "60m"
-    update = "2h"
-    delete = "2h"
-  }
 }
