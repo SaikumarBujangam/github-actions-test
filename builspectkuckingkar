@@ -1,41 +1,40 @@
-version: 0.2
-env:
-  variables:
-    TARGET_REGION: "eu-central-1"
-    BUCKET_NAME: "lambda-source-code"
-phases:
-  install:
-    runtime-versions:
-        docker: 20     
-    commands: 
-      - nohup /usr/local/bin/dockerd --host=unix:///var/run/docker.sock --host=tcp://127.0.0.1:2375 --storage-driver=overlay2&
-      - timeout 15 sh -c "until docker info; do echo .; sleep 1; done"
-  pre_build:
-    commands:
-      - echo "Tag value is ${TAG}"
-      - git checkout ${TAG}
-      - aws --version
-      - aws configure set region $TARGET_REGION --profile qa-account
-      - aws configure set role_arn arn:aws:iam::231719417377:role/InfraBuildRole --profile qa-account
-      - aws configure set credential_source EcsContainer --profile qa-account
-      
-  build:
-    commands:
-      - cd audit
-      - zip -r lambda_function_$TAG.zip * 
-      - aws s3 cp lambda_function_$TAG.zip s3://$BUCKET_NAME/audit/
+data "aws_codecommit_repository" "repo" {
+  repository_name = var.repository_name
+}
 
- prefix=[C:\Users\umababy.kannan\OneDrive - HCL Technologies Ltd\Documents\Star CAP\devops-infra\live\devops\eu-central-1\pipelines-qa]
-time=2023-10-27T20:52:06+05:30 level=info msg=╷
-│ Error: failed to render : <template_file>:15,30-33: Unknown variable; There is no variable named "TAG"., and 1 other diagnostic(s)
-│
-│   with module.lambda_service_build_pipeline.module.lambda_service_build.data.template_file.build_spec_template,
-│   on ..\aws-common\codebuild\main.tf line 1, in data "template_file" "build_spec_template":
-│    1: data "template_file" "build_spec_template" {
-│
-╵
-time=2023-10-27T20:52:06+05:30 level=error msg=Terraform invocation failed in C:/.terragrunt-cache/dWuwgzhRMnw_GiaqpDyx2i1hwjE/Xd3worWQ1ige-pHfmIDhnYcFAvo/pipelines-qa prefix=[C:\Users\umababy.kannan\OneDrive - HCL Technologies Ltd\Documents\Star CAP\devops-infra\live\devops\eu-central-1\pipelines-qa]
+#####################################################
+# Creating cloudwatch-event-rule to trigger build
+#####################################################
+resource "aws_cloudwatch_event_rule" "trigger_build_on_repo_updates" {
 
-time=2023-10-27T20:52:06+05:30 level=error msg=1 error occurred:
-        * exit status 1
+  name        = "${var.environment}-${var.repository_name}-${var.default_branch}-build-rule"
+  description = "Amazon CloudWatch Events rule to automatically start the build when a change occurs in the ${var.repository_name} repository and ${var.default_branch} branch. "
 
+  event_pattern = <<EOF
+{
+  "source": ["aws.codecommit"],
+  "detail-type": ["CodeCommit Repository State Change"],
+  "resources": ["${data.aws_codecommit_repository.repo.arn}"],
+  "detail": {
+    "event": ["referenceCreated", "referenceUpdated"],
+    "referenceType": ["tag"],
+    "repositoryName": ["${data.aws_codecommit_repository.repo.repository_name}"]
+  }
+}
+EOF
+}
+
+resource "aws_cloudwatch_event_target" "codebuild" {
+
+  rule      = aws_cloudwatch_event_rule.trigger_build_on_repo_updates.name
+  target_id = "TriggerBuild"
+  arn       = module.lambda_service_build.codebuild_project_arn
+  role_arn  = var.cloudwatch_event_role_arn
+
+  input_transformer {
+    input_paths = {
+      git_tag = "$.detail.referenceName"
+    }
+    input_template = "{ \"environmentVariablesOverride\": [ { \"name\": \"TAG\", \"value\": <git_tag> } ]}"
+  }
+}
