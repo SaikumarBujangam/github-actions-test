@@ -1,26 +1,3 @@
-#####################################################
-# Creating cloudwatch-event-rule to trigger build
-#####################################################
-resource "aws_cloudwatch_event_rule" "trigger_build_on_repo_updates" {
-
-  name        = "${var.environment}-${var.repository_name}-${var.default_branch}-build-rule"
-  description = "Amazon CloudWatch Events rule to automatically start the build when a change occurs in the ${var.repository_name} repository and ${var.default_branch} branch. "
-
-  event_pattern = <<EOF
-{
-  "source": ["aws.codecommit"],
-  "detail-type": ["CodeCommit Repository State Change"],
-  "resources": ["${data.aws_codecommit_repository.repo.arn}"],
-  "detail": {
-    "event": ["referenceCreated", "referenceUpdated"],
-    "referenceType": ["tag"],
-    "repositoryName": ["${data.aws_codecommit_repository.repo.repository_name}"]
-  }
-}
-EOF
-}
-
-
 resource "aws_cloudwatch_event_target" "codebuild" {
   rule      = aws_cloudwatch_event_rule.trigger_build_on_repo_updates.name
   target_id = "TriggerBuild"
@@ -31,6 +8,6 @@ resource "aws_cloudwatch_event_target" "codebuild" {
     input_paths = {
       git_tag = "$.detail.referenceName"
     }
-    input_template = "{ \"environmentVariablesOverride\": [ { \"name\": \"TAG\", \"value\": <git_tag> } ]}"
+    input_template = "{ \"environmentVariablesOverride\": [ { \"name\": \"TAG\", \"value\": \"$.detail.referenceName\" } ]}"
   }
 }
