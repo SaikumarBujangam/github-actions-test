@@ -8,6 +8,6 @@ resource "aws_cloudwatch_event_target" "codebuild" {
     input_paths = {
       git_tag = "$.detail.referenceName"
     }
-    input_template = "{ \"environmentVariablesOverride\": [ { \"name\": \"TAG\", \"value\": \"$.detail.referenceName\" } ]}"
+    input_template = "{ \"environmentVariablesOverride\": [ { \"name\": \"TAG\", \"value\": \"<git_tag>\" } ]}"
   }
 }
