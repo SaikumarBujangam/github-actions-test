@@ -1,8 +1,13 @@
-input_template = "{ \"environmentVariablesOverride\": [ { \"name\": \"TAG\", \"value\": \"<git_tag>\" } ]}"
+resource "aws_cloudwatch_event_target" "codebuild" {
+  rule      = aws_cloudwatch_event_rule.trigger_build_on_repo_updates.name
+  target_id = "TriggerBuild"
+  arn       = module.lambda_service_build.codebuild_project_arn
+  role_arn  = var.cloudwatch_event_role_arn
 
-input_transformer {
-  input_paths = {
-    git_tag = "$.detail.referenceName"
+  input_transformer {
+    input_paths = {
+      git_tag = "$.detail.referenceName"
+    }
+    input_template = "{ \"environmentVariablesOverride\": [ { \"name\": \"TAG\", \"value\": <git_tag> } ]}"
   }
-  input_template = "{ \"environmentVariablesOverride\": [ { \"name\": \"TAG\", \"value\": \"<git_tag>\" } ]}"
 }
