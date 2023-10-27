@@ -1,40 +1,41 @@
-resource "aws_fsx_lustre_file_system" "fsx_scratch" {
+version: 0.2
+env:
+  variables:
+    TARGET_REGION: "eu-central-1"
+    BUCKET_NAME: "lambda-source-code"
+phases:
+  install:
+    runtime-versions:
+        docker: 20     
+    commands: 
+      - nohup /usr/local/bin/dockerd --host=unix:///var/run/docker.sock --host=tcp://127.0.0.1:2375 --storage-driver=overlay2&
+      - timeout 15 sh -c "until docker info; do echo .; sleep 1; done"
+  pre_build:
+    commands:
+      - echo "Tag value is ${TAG}"
+      - git checkout ${TAG}
+      - aws --version
+      - aws configure set region $TARGET_REGION --profile qa-account
+      - aws configure set role_arn arn:aws:iam::231719417377:role/InfraBuildRole --profile qa-account
+      - aws configure set credential_source EcsContainer --profile qa-account
+      
+  build:
+    commands:
+      - cd audit
+      - zip -r lambda_function_$TAG.zip * 
+      - aws s3 cp lambda_function_$TAG.zip s3://$BUCKET_NAME/audit/
 
-  storage_capacity            = 1200
-  subnet_ids                  = var.subnet_ids
-  security_group_ids          = var.security_groups
-  deployment_type             = "PERSISTENT_2"
-  data_compression_type       = var.compression_type 
-  per_unit_storage_throughput = var.per_unit_storage_throughput 
-  kms_key_id                  = var.kms_key_id
-  tags = var.tags
-    timeouts {
-    create = "60m"
-    update = "2h"
-    delete = "2h"
-  }
-}
+ prefix=[C:\Users\umababy.kannan\OneDrive - HCL Technologies Ltd\Documents\Star CAP\devops-infra\live\devops\eu-central-1\pipelines-qa]
+time=2023-10-27T20:52:06+05:30 level=info msg=╷
+│ Error: failed to render : <template_file>:15,30-33: Unknown variable; There is no variable named "TAG"., and 1 other diagnostic(s)
+│
+│   with module.lambda_service_build_pipeline.module.lambda_service_build.data.template_file.build_spec_template,
+│   on ..\aws-common\codebuild\main.tf line 1, in data "template_file" "build_spec_template":
+│    1: data "template_file" "build_spec_template" {
+│
+╵
+time=2023-10-27T20:52:06+05:30 level=error msg=Terraform invocation failed in C:/.terragrunt-cache/dWuwgzhRMnw_GiaqpDyx2i1hwjE/Xd3worWQ1ige-pHfmIDhnYcFAvo/pipelines-qa prefix=[C:\Users\umababy.kannan\OneDrive - HCL Technologies Ltd\Documents\Star CAP\devops-infra\live\devops\eu-central-1\pipelines-qa]
 
+time=2023-10-27T20:52:06+05:30 level=error msg=1 error occurred:
+        * exit status 1
 
-resource "aws_fsx_data_repository_association" "bfx_fsx_scratch_data_rep" {
-  
-  provider = aws.endor
-  file_system_id       = var.file_system_id 
-  data_repository_path = "s3://${var.fsx_s3_bucket}"
-  file_system_path     = "/" 
-
-  s3 {
-    auto_export_policy {
-      events = ["NEW", "CHANGED", "DELETED"]
-    }
-
-    auto_import_policy {
-      events = ["NEW", "CHANGED", "DELETED"]
-    }
-  }
-    timeouts {
-    create = "60m"
-    update = "2h"
-    delete = "2h"
-  }
-}
