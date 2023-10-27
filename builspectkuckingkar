@@ -1,8 +1,40 @@
+resource "aws_fsx_lustre_file_system" "fsx_scratch" {
 
-module.fsx.aws_fsx_data_repository_association.bfx_fsx_scratch_data_rep: Creating...
-╷
-│ Error: creating FSx Lustre Data Repository Association: BadRequest: File system 'fs-0b76c9d1e617f8341' does not exist.
-│
-│   with module.fsx.aws_fsx_data_repository_association.bfx_fsx_scratch_data_rep,
-│   on ..\terraform-modules\terraform-aws-fsx\main.tf line 19, in resource "aws_fsx_data_repository_association" "bfx_fsx_scratch_data_rep":
-│   19: resource "aws_fsx_data_repository_association" "bfx_fsx_scratch_data_rep" {
+  storage_capacity            = 1200
+  subnet_ids                  = var.subnet_ids
+  security_group_ids          = var.security_groups
+  deployment_type             = "PERSISTENT_2"
+  data_compression_type       = var.compression_type 
+  per_unit_storage_throughput = var.per_unit_storage_throughput 
+  kms_key_id                  = var.kms_key_id
+  tags = var.tags
+    timeouts {
+    create = "60m"
+    update = "2h"
+    delete = "2h"
+  }
+}
+
+
+resource "aws_fsx_data_repository_association" "bfx_fsx_scratch_data_rep" {
+  
+  provider = aws.endor
+  file_system_id       = var.file_system_id 
+  data_repository_path = "s3://${var.fsx_s3_bucket}"
+  file_system_path     = "/" 
+
+  s3 {
+    auto_export_policy {
+      events = ["NEW", "CHANGED", "DELETED"]
+    }
+
+    auto_import_policy {
+      events = ["NEW", "CHANGED", "DELETED"]
+    }
+  }
+    timeouts {
+    create = "60m"
+    update = "2h"
+    delete = "2h"
+  }
+}
