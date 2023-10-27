@@ -1,52 +1,8 @@
-data "aws_codecommit_repository" "repo" {
-  repository_name = var.repository_name
-}
+input_template = "{ \"environmentVariablesOverride\": [ { \"name\": \"TAG\", \"value\": \"<git_tag>\" } ]}"
 
-#####################################################
-# Creating cloudwatch-event-rule to trigger build
-#####################################################
-resource "aws_cloudwatch_event_rule" "trigger_build_on_repo_updates" {
-
-  name        = "${var.environment}-${var.repository_name}-${var.default_branch}-build-rule"
-  description = "Amazon CloudWatch Events rule to automatically start the build when a change occurs in the ${var.repository_name} repository and ${var.default_branch} branch. "
-
-  event_pattern = <<EOF
-{
-  "source": ["aws.codecommit"],
-  "detail-type": ["CodeCommit Repository State Change"],
-  "resources": ["${data.aws_codecommit_repository.repo.arn}"],
-  "detail": {
-    "event": ["referenceCreated", "referenceUpdated"],
-    "referenceType": ["tag"],
-    "repositoryName": ["${data.aws_codecommit_repository.repo.repository_name}"]
+input_transformer {
+  input_paths = {
+    git_tag = "$.detail.referenceName"
   }
-}
-EOF
-}
-
-resource "aws_cloudwatch_event_target" "codebuild" {
-
-  rule      = aws_cloudwatch_event_rule.trigger_build_on_repo_updates.name
-  target_id = "TriggerBuild"
-  arn       = module.lambda_service_build.codebuild_project_arn
-  role_arn  = var.cloudwatch_event_role_arn
-
-  input_transformer {
-    input_paths = {
-      git_tag = "$.detail.referenceName"
-    }
-    input_template = "{ \"environmentVariablesOverride\": [ { \"name\": \"TAG\", \"value\": <git_tag> } ]}"
-  }
-}
-module "lambda_service_build" {
-  source = "../../aws-common/codebuild"
-
-  build_project_name              = "${var.repository_name}-build"
-  build_spec_file                 = "${path.cwd}/build_spec/lambda-service-build.yml"
-  codebuild_role_arn              = var.codebuild_role_arn
-  artifact_encryption_key_arn     = var.artifact_encryption_key_arn     
-  codebuild_artifacts_bucket_name = var.codebuild_artifacts_bucket_name
-  build_image                     = "aws/codebuild/amazonlinux2-x86_64-standard:4.0"
-  build_trigger                   = "CODECOMMIT"
-  source_location                 = data.aws_codecommit_repository.repo.clone_url_http
+  input_template = "{ \"environmentVariablesOverride\": [ { \"name\": \"TAG\", \"value\": \"<git_tag>\" } ]}"
 }
