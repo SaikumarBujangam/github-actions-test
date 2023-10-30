@@ -1,14 +1,1 @@
- prefix=[C:\Users\umababy.kannan\OneDrive - HCL Technologies Ltd\Documents\Star CAP\devops-infra\live\devops\eu-central-1\pipelines-qa]
-time=2023-10-27T21:31:11+05:30 level=info msg=╷
-│ Error: failed to render : <template_file>:15,30-33: Unknown variable; There is no variable named "TAG"., and 1 other diagnostic(s)
-│
-│   with module.lambda_service_build_pipeline.module.lambda_service_build.data.template_file.build_spec_template,
-│   on ..\aws-common\codebuild\main.tf line 1, in data "template_file" "build_spec_template":
-│    1: data "template_file" "build_spec_template" {
-│
-╵
-time=2023-10-27T21:31:11+05:30 level=error msg=Terraform invocation failed in C:/.terragrunt-cache/dWuwgzhRMnw_GiaqpDyx2i1hwjE/Xd3worWQ1ige-pHfmIDhnYcFAvo/pipelines-qa prefix=[C:\Users\umababy.kannan\OneDrive - HCL Technologies Ltd\Documents\Star CAP\devops-infra\live\devops\eu-central-1\pipelines-qa]
-
-time=2023-10-27T21:31:11+05:30 level=error msg=1 error occurred:
-        * exit status 1
-
+https://d-r2eanto2eded.studio.eu-central-1.sagemaker.aws/rstudio/default/s/57ea13c286bd33c286bd3/workspaces/
