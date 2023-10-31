@@ -1,22 +1,168 @@
-2023-10-31T01:52:44 ERROR [codedeploy-agent(8861)]: InstanceAgent::Plugins::CodeDeployPlugin::CommandPoller: Error during perform: InstanceAgent::Plugins::CodeDeployPlugin::ScriptError - Script at specified location: hookscripts/afterinstall.sh failed to complete in 300 seconds - /opt/codedeploy-agent/lib/instance_agent/plugins/codedeploy/hook_executor.rb:144:in `rescue in block (2 levels) in execute'
-/opt/codedeploy-agent/lib/instance_agent/plugins/codedeploy/hook_executor.rb:141:in `block (2 levels) in execute'
-/opt/codedeploy-agent/lib/instance_agent/plugins/codedeploy/hook_executor.rb:130:in `each'
-/opt/codedeploy-agent/lib/instance_agent/plugins/codedeploy/hook_executor.rb:130:in `block in execute'
-/opt/codedeploy-agent/lib/instance_agent/plugins/codedeploy/hook_executor.rb:221:in `create_script_log_file_if_needed'
-/opt/codedeploy-agent/lib/instance_agent/plugins/codedeploy/hook_executor.rb:128:in `execute'
-/opt/codedeploy-agent/lib/instance_agent/plugins/codedeploy/command_executor.rb:195:in `block (3 levels) in map'
-/opt/codedeploy-agent/lib/instance_agent/plugins/codedeploy/command_executor.rb:193:in `each'
-/opt/codedeploy-agent/lib/instance_agent/plugins/codedeploy/command_executor.rb:193:in `block (2 levels) in map'
-/opt/codedeploy-agent/lib/instance_agent/plugins/codedeploy/command_executor.rb:115:in `execute_command'
-/opt/codedeploy-agent/lib/instance_agent/plugins/codedeploy/command_poller.rb:137:in `process_command'
-/opt/codedeploy-agent/lib/instance_agent/plugins/codedeploy/command_poller.rb:119:in `acknowledge_and_process_command'
-/opt/codedeploy-agent/lib/instance_agent/plugins/codedeploy/command_poller.rb:99:in `block in perform'
-/opt/codedeploy-agent/vendor/gems/concurrent-ruby-1.1.9/lib/concurrent-ruby/concurrent/executor/ruby_thread_pool_executor.rb:363:in `call'
-/opt/codedeploy-agent/vendor/gems/concurrent-ruby-1.1.9/lib/concurrent-ruby/concurrent/executor/ruby_thread_pool_executor.rb:363:in `run_task'
-/opt/codedeploy-agent/vendor/gems/concurrent-ruby-1.1.9/lib/concurrent-ruby/concurrent/executor/ruby_thread_pool_executor.rb:352:in `block (3 levels) in create_worker'
-/opt/codedeploy-agent/vendor/gems/concurrent-ruby-1.1.9/lib/concurrent-ruby/concurrent/executor/ruby_thread_pool_executor.rb:335:in `loop'
-/opt/codedeploy-agent/vendor/gems/concurrent-ruby-1.1.9/lib/concurrent-ruby/concurrent/executor/ruby_thread_pool_executor.rb:335:in `block (2 levels) in create_worker'
-/opt/codedeploy-agent/vendor/gems/concurrent-ruby-1.1.9/lib/concurrent-ruby/concurrent/executor/ruby_thread_pool_executor.rb:334:in `catch'
-/opt/codedeploy-agent/vendor/gems/concurrent-ruby-1.1.9/lib/concurrent-ruby/concurrent/executor/ruby_thread_pool_executor.rb:334:in `block in create_worker'
-/opt/codedeploy-agent/vendor/gems/logging-2.2.2/lib/logging/diagnostic_context.rb:474:in `call'
-/opt/codedeploy-agent/vendor/gems/logging-2.2.2/lib/logging/diagnostic_context.rb:474:in `block in create_with_logging_context'
+
+
+#!/bin/bash
+chown adl_qc_all_mig_svc:adl_all_mig /apps/dataproduct/cases
+chmod -R 755 /apps/dataproduct/cases
+chown -R adl_qc_all_mig_svc:adl_all_mig /apps/dataproduct/cases/adl-cases-hrxassist-etl
+
+ls -al /apps/dataproduct/cases/adl-cases-hrxassist-etl
+sudo -i -u adl_qc_all_mig_svc mkdir /apps/dataproduct/cases/adl-cases-hrxassist-etl/1.0.58
+sudo -i -u adl_qc_all_mig_svc mkdir -p /apps/dataproduct/cases/adl-cases-hrxassist-etl/land/stage
+sudo -i -u adl_qc_all_mig_svc tar -xvf /apps/dataproduct/cases/adl-cases-hrxassist-etl/land/adl-cases-hrxassist-etl-1.0.58.tar --directory /apps/dataproduct/cases/adl-cases-hrxassist-etl/land/stage
+AUTO_INFLATE_FLAG=True
+if [[ ${AUTO_INFLATE_FLAG} != "True" ]]
+then
+  exit 0
+else
+  cd /apps/dataproduct/cases/adl-cases-hrxassist-etl/land/stage
+  # CI/CD should not create the top-level directories, this needs to be done at EC2 provisioning time..
+  if [[ -d "/apps/edh/prod" && -d "/apps/ben" ]]
+  then
+      ls -al /apps/dataproduct/cases/adl-cases-hrxassist-etl/land/stage
+
+      for install_path in $(find . -type f)
+      do
+        # Separate the TAR entry into its file name and file path parts.
+        install_file=$(echo ${install_path##*/})
+        install_directory=$(echo ${install_path%/*} | cut -c3- )
+        # Create the subdirectory where the file will be copied. Create all required
+        # parent directories, and exit if there is an error in directory creation
+        # create the directories as the migration id, NOT as root, which yields a default 755 permission set.
+        echo $install_path
+        echo "ceating this directory /apps/$install_directory"
+        echo "sudo -i -u adl_qc_all_mig_svc mkdir -p /apps/${install_directory}"
+        sudo -i -u adl_qc_all_mig_svc mkdir -p /apps/${install_directory}
+        chmod -R 755 /apps/${install_directory}
+        if [[ $? -ne "0" ]]
+        then
+          echo "Could not create directory: /apps/${install_directory}"
+          exit 1
+        fi
+	update_grp_dir="/apps"
+        # Split the created directory into its distinct directory parts, as
+        # as each of these nested directories will need to have its
+        # group updated to the migration id's group. By default the group is not the correct migration id's group.
+        for subdir in $(echo ${install_directory} | tr "/" " ")
+        do
+          if [[ ${update_grp_dir} == "" ]]
+          then
+            update_grp_dir=${subdir}
+          else
+            update_grp_dir=${update_grp_dir}/${subdir}
+          fi
+          # Skip if the directory part is one of the base directories.
+          if [[ ${update_grp_dir} == "/apps" || ${update_grp_dir} == "/apps/edh" || ${update_grp_dir} == "/apps/edh/prod" || ${update_grp_dir} == "/apps/ben" ]]
+          then
+            echo "Base Directories, no action"
+          else
+            chgrp adl_all_mig ${update_grp_dir}
+            if [[ $? -ne "0" ]]
+            then
+              echo "Could not chgrp to: adl_all_mig on ${update_grp_dir}"
+              exit 1
+            fi
+          fi
+        done
+
+        # Copy the file into its target directory, update the group on the new file.
+        sudo -i -u adl_qc_all_mig_svc cp /apps/dataproduct/cases/adl-cases-hrxassist-etl/land/stage/${install_directory}/${install_file} /apps/${install_directory}/${install_file} && \
+          chgrp adl_all_mig /apps/${install_directory}/${install_file} && \
+          chmod 755 /apps/${install_directory}/${install_file}
+        if [[ $? -ne "0" ]]
+        then
+          echo "Could not write file to: /apps/${install_directory}/${install_file}"
+          exit 1
+        fi
+        # If the target directory contains either bin or scripts, make the copied file executable
+        if [[ ${install_path} == *"bin/"* || ${install_path} == *"scripts/"* ]]
+        then
+          sudo -i -u adl_qc_all_mig_svc chmod +x /apps/${install_directory}/${install_file}
+
+        fi
+      done
+      cd /apps/dataproduct/cases/adl-cases-hrxassist-etl/land
+      rm -rf stage
+      cp -i /opt/codedeploy-agent/deployment-root/deployment-logs/codedeploy-agent-deployments.log /tmp/codedeploy-agent-deployments.log
+      chmod 755 /tmp/codedeploy-agent-deployments.log
+      chown  adl_qc_all_mig_svc:adl_all_mig /tmp/codedeploy-agent-deployments.log
+  else
+    echo "Error: Required top level directories, /apps and /apps/edh/prod, do not exist. Please review the setup of the instance on which this deployment was attemmpted."
+    exit 1
+  fi
+fi
+
+
+
+cannot paste whole log of the above script. So pasting little
+
+2023-10-31 03:39:23 [stdout]edh/prod/reporting/ciba/bin/load_edh_reporting_sla_assist_case_timeliness_detail.sh
+2023-10-31 03:39:23 [stdout]total 12
+2023-10-31 03:39:23 [stdout]drwxr-xr-x. 3 adl_qc_all_mig_svc adl_qc_all_mig_svc 6144 Oct 31 03:39 .
+2023-10-31 03:39:23 [stdout]drwxr-xr-x. 3 adl_qc_all_mig_svc adl_all_mig        6144 Oct 31 03:39 ..
+2023-10-31 03:39:23 [stdout]drwxr-xr-x. 3 adl_qc_all_mig_svc adl_qc_all_mig_svc 6144 Oct 31 03:39 edh
+2023-10-31 03:39:23 [stdout]./edh/prod/discovery/operational_event/bin/load_edh_discovery_case_detail_assist_data_union_parallel.sh
+2023-10-31 03:39:23 [stdout]ceating this directory /apps/edh/prod/discovery/operational_event/bin
+2023-10-31 03:39:23 [stdout]sudo -i -u adl_qc_all_mig_svc mkdir -p /apps/edh/prod/discovery/operational_event/bin
+2023-10-31 03:39:52 [stdout]Base Directories, no action
+2023-10-31 03:39:52 [stdout]Base Directories, no action
+2023-10-31 03:39:52 [stdout]./edh/prod/discovery/operational_event/bin/HPEDSLAEXCLMFW.sh
+2023-10-31 03:39:52 [stdout]ceating this directory /apps/edh/prod/discovery/operational_event/bin
+2023-10-31 03:39:52 [stdout]sudo -i -u adl_qc_all_mig_svc mkdir -p /apps/edh/prod/discovery/operational_event/bin
+2023-10-31 03:40:23 [stdout]Base Directories, no action
+2023-10-31 03:40:23 [stdout]Base Directories, no action
+2023-10-31 03:40:23 [stdout]./edh/prod/discovery/operational_event/bin/load_edh_discovery_assist_case_summary.jar
+2023-10-31 03:40:23 [stdout]ceating this directory /apps/edh/prod/discovery/operational_event/bin
+2023-10-31 03:40:23 [stdout]sudo -i -u adl_qc_all_mig_svc mkdir -p /apps/edh/prod/discovery/operational_event/bin
+2023-10-31 03:41:02 [stdout]Base Directories, no action
+2023-10-31 03:41:02 [stdout]Base Directories, no action
+2023-10-31 03:41:02 [stdout]./edh/prod/discovery/operational_event/bin/load_edh_discovery_assist_attribute_detail_parallel_1.scala
+2023-10-31 03:41:02 [stdout]ceating this directory /apps/edh/prod/discovery/operational_event/bin
+2023-10-31 03:41:02 [stdout]sudo -i -u adl_qc_all_mig_svc mkdir -p /apps/edh/prod/discovery/operational_event/bin
+2023-10-31 03:41:32 [stdout]Base Directories, no action
+2023-10-31 03:41:32 [stdout]Base Directories, no action
+2023-10-31 03:41:32 [stdout]./edh/prod/discovery/operational_event/bin/HPEDHCSDTLSCAE.sh
+2023-10-31 03:41:32 [stdout]ceating this directory /apps/edh/prod/discovery/operational_event/bin
+2023-10-31 03:41:32 [stdout]sudo -i -u adl_qc_all_mig_svc mkdir -p /apps/edh/prod/discovery/operational_event/bin
+2023-10-31 03:42:00 [stdout]Base Directories, no action
+2023-10-31 03:42:00 [stdout]Base Directories, no action
+2023-10-31 03:42:00 [stdout]./edh/prod/discovery/operational_event/bin/create_paralel_tables_2.sh
+2023-10-31 03:42:00 [stdout]ceating this directory /apps/edh/prod/discovery/operational_event/bin
+2023-10-31 03:42:00 [stdout]sudo -i -u adl_qc_all_mig_svc mkdir -p /apps/edh/prod/discovery/operational_event/bin
+2023-10-31 03:42:30 [stdout]Base Directories, no action
+2023-10-31 03:42:30 [stdout]Base Directories, no action
+2023-10-31 03:42:30 [stdout]./edh/prod/discovery/operational_event/bin/HPEDDCSDTL.sh
+2023-10-31 03:42:30 [stdout]ceating this directory /apps/edh/prod/discovery/operational_event/bin
+2023-10-31 03:42:30 [stdout]sudo -i -u adl_qc_all_mig_svc mkdir -p /apps/edh/prod/discovery/operational_event/bin
+2023-10-31 03:42:58 [stdout]Base Directories, no action
+2023-10-31 03:42:58 [stdout]Base Directories, no action
+2023-10-31 03:42:59 [stdout]./edh/prod/discovery/operational_event/bin/load_edh_raw_hrx_assist_platform_mapping.sh
+2023-10-31 03:42:59 [stdout]ceating this directory /apps/edh/prod/discovery/operational_event/bin
+2023-10-31 03:42:59 [stdout]sudo -i -u adl_qc_all_mig_svc mkdir -p /apps/edh/prod/discovery/operational_event/bin
+2023-10-31 03:43:28 [stdout]Base Directories, no action
+2023-10-31 03:43:28 [stdout]Base Directories, no action
+2023-10-31 03:43:28 [stdout]./edh/prod/discovery/operational_event/bin/HPEDHRXACTDTL.sh
+2023-10-31 03:43:28 [stdout]ceating this directory /apps/edh/prod/discovery/operational_event/bin
+2023-10-31 03:43:28 [stdout]sudo -i -u adl_qc_all_mig_svc mkdir -p /apps/edh/prod/discovery/operational_event/bin
+2023-10-31 03:43:57 [stdout]Base Directories, no action
+2023-10-31 03:43:57 [stdout]Base Directories, no action
+2023-10-31 03:43:57 [stdout]./edh/prod/discovery/operational_event/bin/load_edh_discovery_assist_case_detail_parallel.scala
+2023-10-31 03:43:57 [stdout]ceating this directory /apps/edh/prod/discovery/operational_event/bin
+2023-10-31 03:43:57 [stdout]sudo -i -u adl_qc_all_mig_svc mkdir -p /apps/edh/prod/discovery/operational_event/bin
+2023-10-31 03:44:26 [stdout]Base Directories, no action
+2023-10-31 03:44:26 [stdout]Base Directories, no action
+2023-10-31 03:44:26 [stdout]./edh/prod/discovery/operational_event/bin/load_edh_sla_exclusion_mapping_file_watcher.sh
+2023-10-31 03:44:26 [stdout]ceating this directory /apps/edh/prod/discovery/operational_event/bin
+2023-10-31 03:44:26 [stdout]sudo -i -u adl_qc_all_mig_svc mkdir -p /apps/edh/prod/discovery/operational_event/bin
+2023-10-31 03:44:55 [stdout]Base Directories, no action
+2023-10-31 03:44:55 [stdout]Base Directories, no action
+2023-10-31 03:44:55 [stdout]./edh/prod/discovery/operational_event/bin/load_edh_discovery_assist_case_summary_2.scala
+2023-10-31 03:44:55 [stdout]ceating this directory /apps/edh/prod/discovery/operational_event/bin
+2023-10-31 03:44:55 [stdout]sudo -i -u adl_qc_all_mig_svc mkdir -p /apps/edh/prod/discovery/operational_event/bin
+2023-10-31 03:45:24 [stdout]Base Directories, no action
+2023-10-31 03:45:24 [stdout]Base Directories, no action
+2023-10-31 03:45:24 [stdout]./edh/prod/discovery/operational_event/bin/load_edh_discovery_assist_case_detail_test.jar
+2023-10-31 03:45:24 [stdout]ceating this directory /apps/edh/prod/discovery/operational_event/bin
+2023-10-31 03:45:24 [stdout]sudo -i -u adl_qc_all_mig_svc mkdir -p /apps/edh/prod/discovery/operational_event/bin
+2023-10-31 03:45:53 [stdout]Base Directories, no action
+2023-10-31 03:45:53 [stdout]Base Directories, no action
+2023-10-31 03:45:54 [stdout]./edh/prod/discovery/operational_event/bin/load_edh_discovery_assist_attribute_detail_1.scala
