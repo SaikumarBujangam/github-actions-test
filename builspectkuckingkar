@@ -1,92 +1,1000 @@
+locals { 
+  tables = [
+      {
+          name      = "Organisation",
+          hash_key  = "org_key"
+      },
+      {
+          name      = "PlatformConfig",
+          hash_key  = "item_name"
+          range_key = "item_type",
+      },
+      {
+          name      = "Project",
+          hash_key  = "project_key"
+          range_key = "org_key", 
+      },
+      {
+          name      = "User",
+          hash_key  = "id" 
+      },
+      {
+          name      = "UserRoleDetails",
+          hash_key  = "user_id"
+          range_key = "role_hashkey",
+      },
+      {
+          name      = "UserTrainingDetails",
+          hash_key  = "id"  
+      },
+      {
+          name      = "DataIngress",
+          hash_key  = "project_key"
+          range_key = "composed_key",
+          stream_enabled = true 
+      },
+      {
+          name                  = "UserLoginDetails",
+          hash_key              = "user_email"
+          ttl_attribute_name    = "expiry_time"
+      },
+      {
+          name      = "ProjectInfraDetails",
+          hash_key  = "project_key"
+          range_key = "resource_key", 
+      },
+      {
+          name      = "RoleDetails",
+          hash_key  = "role_id" 
+      },
+      {
+          name      = "Audit",
+          hash_key  = "audit_id",
+          range_key = "project_key"  
+      },
+      {
+          name      = "DataIngressLog",
+          hash_key  = "log_id",
+          range_key = "date_time_changed"
+      },
+      {
+          name      = "Sites",
+          hash_key  = "id"
+      },
+      {
+          name      = "ProjectNetworkDetails",
+          hash_key  = "id"
+      },
+      {
+          name      = "OrganisationNetworkDetails",
+          hash_key  = "id"
+      }
+
+  ]
+}
+
+# Creation of platform dynamodb tables
+module "platform_dynamodb_table" {
+  source      = "../aws-common/dynamodb"
+
+  for_each              = { for table in local.tables : table.name => merge(var.default_table_attributes, table)  }
+  table_name            = each.key
+  hash_key              = each.value.hash_key
+  range_key             = each.value.range_key
+  ttl_attribute_name    = each.value.ttl_attribute_name
+  stream_enabled        = each.value.stream_enabled
+}
 
 
-#!/bin/bash
-chown adl_dev_all_mig_svc:adl_all_mig /apps/dataproduct/cases
-chmod -R 755 /apps/dataproduct/cases
-chown -R adl_dev_all_mig_svc:adl_all_mig /apps/dataproduct/cases/adl-cases-hrxassist-etl
+# Creates DynamoDB Table
+  resource "aws_dynamodb_table" "table" {
+  name           = var.table_name
+  billing_mode   = "PAY_PER_REQUEST"
+  hash_key       = var.hash_key
+  range_key      = var.range_key
+ 
+  attribute {
+    name = var.hash_key
+    type = "S"
+  }
 
-ls -al /apps/dataproduct/cases/adl-cases-hrxassist-etl
-sudo -i -u adl_dev_all_mig_svc mkdir /apps/dataproduct/cases/adl-cases-hrxassist-etl/1.0.61
-sudo -i -u adl_dev_all_mig_svc mkdir -p /apps/dataproduct/cases/adl-cases-hrxassist-etl/land/stage
-sudo -i -u adl_dev_all_mig_svc tar -xvf /apps/dataproduct/cases/adl-cases-hrxassist-etl/land/adl-cases-hrxassist-etl-1.0.61.tar --directory /apps/dataproduct/cases/adl-cases-hrxassist-etl/land/stage
-AUTO_INFLATE_FLAG=True
-if [[ ${AUTO_INFLATE_FLAG} != "True" ]]
-then
-  exit 0
-else
-  cd /apps/dataproduct/cases/adl-cases-hrxassist-etl/land/stage
-  # CI/CD should not create the top-level directories, this needs to be done at EC2 provisioning time..
-  if [[ -d "/apps/edh/prod" && -d "/apps/ben" ]]
-  then
-      ls -al /apps/dataproduct/cases/adl-cases-hrxassist-etl/land/stage
+  dynamic "attribute" {
+    for_each = var.range_key != null ? [1] : []
+    content {
+      name = var.range_key != null ? var.range_key : null
+      type = var.range_key != null ? "S" : null
+    }
+  }
 
-      for install_path in $(find . -type f)
-      do
-        # Separate the TAR entry into its file name and file path parts.
-        install_file=$(echo ${install_path##*/})
-        install_directory=$(echo ${install_path%/*} | cut -c3- )
-        # Create the subdirectory where the file will be copied. Create all required
-        # parent directories, and exit if there is an error in directory creation
-        # create the directories as the migration id, NOT as root, which yields a default 755 permission set.
-        echo $install_path
-        echo "ceating this directory /apps/$install_directory"
-        echo "sudo -i -u adl_dev_all_mig_svc mkdir -p /apps/${install_directory}"
-        sudo -i -u adl_dev_all_mig_svc mkdir -p /apps/${install_directory}
-        chmod -R 755 /apps/${install_directory}
-        if [[ $? -ne "0" ]]
-        then
-          echo "Could not create directory: /apps/${install_directory}"
-          exit 1
-        fi
-	update_grp_dir="/apps"
-        # Split the created directory into its distinct directory parts, as
-        # as each of these nested directories will need to have its
-        # group updated to the migration id's group. By default the group is not the correct migration id's group.
-        for subdir in $(echo ${install_directory} | tr "/" " ")
-        do
-          if [[ ${update_grp_dir} == "" ]]
-          then
-            update_grp_dir=${subdir}
-          else
-            update_grp_dir=${update_grp_dir}/${subdir}
-          fi
-          # Skip if the directory part is one of the base directories.
-          if [[ ${update_grp_dir} == "/apps" || ${update_grp_dir} == "/apps/edh" || ${update_grp_dir} == "/apps/edh/prod" || ${update_grp_dir} == "/apps/ben" ]]
-          then
-            echo "Base Directories, no action"
-          else
-            chgrp adl_all_mig ${update_grp_dir}
-            if [[ $? -ne "0" ]]
-            then
-              echo "Could not chgrp to: adl_all_mig on ${update_grp_dir}"
-              exit 1
-            fi
-          fi
-        done
-
-        # Copy the file into its target directory, update the group on the new file.
-        sudo -i -u adl_dev_all_mig_svc cp /apps/dataproduct/cases/adl-cases-hrxassist-etl/land/stage/${install_directory}/${install_file} /apps/${install_directory}/${install_file} && \
-          chgrp adl_all_mig /apps/${install_directory}/${install_file} && \
-          chmod 755 /apps/${install_directory}/${install_file}
-        if [[ $? -ne "0" ]]
-        then
-          echo "Could not write file to: /apps/${install_directory}/${install_file}"
-          exit 1
-        fi
-        # If the target directory contains either bin or scripts, make the copied file executable
-        if [[ ${install_path} == *"bin/"* || ${install_path} == *"scripts/"* ]]
-        then
-          sudo -i -u adl_dev_all_mig_svc chmod +x /apps/${install_directory}/${install_file}
-
-        fi
-      done
-      cd /apps/dataproduct/cases/adl-cases-hrxassist-etl/land
-      rm -rf stage
-      cp -i /opt/codedeploy-agent/deployment-root/deployment-logs/codedeploy-agent-deployments.log /tmp/codedeploy-agent-deployments.log
-      chmod 755 /tmp/codedeploy-agent-deployments.log
-      chown  adl_dev_all_mig_svc:adl_all_mig /tmp/codedeploy-agent-deployments.log
-  else
-    echo "Error: Required top level directories, /apps and /apps/edh/prod, do not exist. Please review the setup of the instance on which this deployment was attemmpted."
-    exit 1
-  fi
-fi
+  dynamic "ttl" {
+    for_each = var.ttl_attribute_name != null ? [1] : []
+    content {
+      attribute_name  = var.ttl_attribute_name != null ? var.ttl_attribute_name : null
+      enabled         = var.ttl_attribute_name != null ? true : null
+    }
+  }
+  stream_enabled   = var.stream_enabled ? true : false 
+  stream_view_type = var.stream_enabled ? "NEW_AND_OLD_IMAGES" : null 
+  tags             = var.tags
+  }
+  
+  {
+  "version": 4,
+  "terraform_version": "1.0.10",
+  "serial": 14,
+  "lineage": "14779479-47c3-2c3c-8cc0-458b36d12943",
+  "outputs": {
+    "data_ingress_table_stream_arn": {
+      "value": "arn:aws:dynamodb:eu-central-1:745252665765:table/DataIngress/stream/2023-10-12T08:32:43.346",
+      "type": "string"
+    }
+  },
+  "resources": [
+    {
+      "module": "module.platform_dynamodb_table",
+      "mode": "managed",
+      "type": "aws_dynamodb_table",
+      "name": "table",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "index_key": "ProjectNetworkDetails",
+          "schema_version": 1,
+          "attributes": {
+            "arn": "arn:aws:dynamodb:eu-central-1:745252665765:table/ProjectNetworkDetails",
+            "attribute": [
+              {
+                "name": "id",
+                "type": "S"
+              }
+            ],
+            "billing_mode": "PROVISIONED",
+            "deletion_protection_enabled": false,
+            "global_secondary_index": [],
+            "hash_key": "id",
+            "id": "ProjectNetworkDetails",
+            "local_secondary_index": [],
+            "name": "ProjectNetworkDetails",
+            "point_in_time_recovery": [
+              {
+                "enabled": false
+              }
+            ],
+            "range_key": null,
+            "read_capacity": 1,
+            "replica": [],
+            "restore_date_time": null,
+            "restore_source_name": null,
+            "restore_to_latest_time": null,
+            "server_side_encryption": [],
+            "stream_arn": "",
+            "stream_enabled": false,
+            "stream_label": "",
+            "stream_view_type": "",
+            "table_class": "STANDARD",
+            "tags": {},
+            "tags_all": {},
+            "timeouts": null,
+            "ttl": [
+              {
+                "attribute_name": "",
+                "enabled": false
+              }
+            ],
+            "write_capacity": 1
+          },
+          "sensitive_attributes": [],
+          "private": "eyJlMmJmYjczMC1lY2FhLTExZTYtOGY4OC0zNDM2M2JjN2M0YzAiOnsiY3JlYXRlIjoxODAwMDAwMDAwMDAwLCJkZWxldGUiOjYwMDAwMDAwMDAwMCwidXBkYXRlIjozNjAwMDAwMDAwMDAwfSwic2NoZW1hX3ZlcnNpb24iOiIxIn0="
+        }
+      ]
+    },
+    {
+      "module": "module.platform_dynamodb_table[\"Audit\"]",
+      "mode": "managed",
+      "type": "aws_dynamodb_table",
+      "name": "table",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "schema_version": 1,
+          "attributes": {
+            "arn": "arn:aws:dynamodb:eu-central-1:745252665765:table/Audit",
+            "attribute": [
+              {
+                "name": "audit_id",
+                "type": "S"
+              },
+              {
+                "name": "project_key",
+                "type": "S"
+              }
+            ],
+            "billing_mode": "PAY_PER_REQUEST",
+            "deletion_protection_enabled": false,
+            "global_secondary_index": [],
+            "hash_key": "audit_id",
+            "id": "Audit",
+            "local_secondary_index": [],
+            "name": "Audit",
+            "point_in_time_recovery": [
+              {
+                "enabled": false
+              }
+            ],
+            "range_key": "project_key",
+            "read_capacity": 0,
+            "replica": [],
+            "restore_date_time": null,
+            "restore_source_name": null,
+            "restore_to_latest_time": null,
+            "server_side_encryption": [],
+            "stream_arn": "",
+            "stream_enabled": false,
+            "stream_label": "",
+            "stream_view_type": "",
+            "table_class": "STANDARD",
+            "tags": {},
+            "tags_all": {
+              "Environment": "dev",
+              "Terraform": "true"
+            },
+            "timeouts": null,
+            "ttl": [
+              {
+                "attribute_name": "",
+                "enabled": false
+              }
+            ],
+            "write_capacity": 0
+          },
+          "sensitive_attributes": [],
+          "private": "eyJlMmJmYjczMC1lY2FhLTExZTYtOGY4OC0zNDM2M2JjN2M0YzAiOnsiY3JlYXRlIjoxODAwMDAwMDAwMDAwLCJkZWxldGUiOjYwMDAwMDAwMDAwMCwidXBkYXRlIjozNjAwMDAwMDAwMDAwfSwic2NoZW1hX3ZlcnNpb24iOiIxIn0="
+        }
+      ]
+    },
+    {
+      "module": "module.platform_dynamodb_table[\"DataIngress\"]",
+      "mode": "managed",
+      "type": "aws_dynamodb_table",
+      "name": "table",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "schema_version": 1,
+          "attributes": {
+            "arn": "arn:aws:dynamodb:eu-central-1:745252665765:table/DataIngress",
+            "attribute": [
+              {
+                "name": "composed_key",
+                "type": "S"
+              },
+              {
+                "name": "project_key",
+                "type": "S"
+              }
+            ],
+            "billing_mode": "PAY_PER_REQUEST",
+            "deletion_protection_enabled": false,
+            "global_secondary_index": [],
+            "hash_key": "project_key",
+            "id": "DataIngress",
+            "local_secondary_index": [],
+            "name": "DataIngress",
+            "point_in_time_recovery": [
+              {
+                "enabled": false
+              }
+            ],
+            "range_key": "composed_key",
+            "read_capacity": 0,
+            "replica": [],
+            "restore_date_time": null,
+            "restore_source_name": null,
+            "restore_to_latest_time": null,
+            "server_side_encryption": [],
+            "stream_arn": "arn:aws:dynamodb:eu-central-1:745252665765:table/DataIngress/stream/2023-10-12T08:32:43.346",
+            "stream_enabled": true,
+            "stream_label": "2023-10-12T08:32:43.346",
+            "stream_view_type": "NEW_AND_OLD_IMAGES",
+            "table_class": "STANDARD",
+            "tags": {},
+            "tags_all": {
+              "Environment": "dev",
+              "Terraform": "true"
+            },
+            "timeouts": null,
+            "ttl": [
+              {
+                "attribute_name": "",
+                "enabled": false
+              }
+            ],
+            "write_capacity": 0
+          },
+          "sensitive_attributes": [],
+          "private": "eyJlMmJmYjczMC1lY2FhLTExZTYtOGY4OC0zNDM2M2JjN2M0YzAiOnsiY3JlYXRlIjoxODAwMDAwMDAwMDAwLCJkZWxldGUiOjYwMDAwMDAwMDAwMCwidXBkYXRlIjozNjAwMDAwMDAwMDAwfSwic2NoZW1hX3ZlcnNpb24iOiIxIn0="
+        }
+      ]
+    },
+    {
+      "module": "module.platform_dynamodb_table[\"DataIngressLog\"]",
+      "mode": "managed",
+      "type": "aws_dynamodb_table",
+      "name": "table",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "schema_version": 1,
+          "attributes": {
+            "arn": "arn:aws:dynamodb:eu-central-1:745252665765:table/DataIngressLog",
+            "attribute": [
+              {
+                "name": "date_time_changed",
+                "type": "S"
+              },
+              {
+                "name": "log_id",
+                "type": "S"
+              }
+            ],
+            "billing_mode": "PAY_PER_REQUEST",
+            "deletion_protection_enabled": false,
+            "global_secondary_index": [],
+            "hash_key": "log_id",
+            "id": "DataIngressLog",
+            "local_secondary_index": [],
+            "name": "DataIngressLog",
+            "point_in_time_recovery": [
+              {
+                "enabled": false
+              }
+            ],
+            "range_key": "date_time_changed",
+            "read_capacity": 0,
+            "replica": [],
+            "restore_date_time": null,
+            "restore_source_name": null,
+            "restore_to_latest_time": null,
+            "server_side_encryption": [],
+            "stream_arn": "",
+            "stream_enabled": false,
+            "stream_label": "",
+            "stream_view_type": "",
+            "table_class": "STANDARD",
+            "tags": {},
+            "tags_all": {
+              "Environment": "dev",
+              "Terraform": "true"
+            },
+            "timeouts": null,
+            "ttl": [
+              {
+                "attribute_name": "",
+                "enabled": false
+              }
+            ],
+            "write_capacity": 0
+          },
+          "sensitive_attributes": [],
+          "private": "eyJlMmJmYjczMC1lY2FhLTExZTYtOGY4OC0zNDM2M2JjN2M0YzAiOnsiY3JlYXRlIjoxODAwMDAwMDAwMDAwLCJkZWxldGUiOjYwMDAwMDAwMDAwMCwidXBkYXRlIjozNjAwMDAwMDAwMDAwfSwic2NoZW1hX3ZlcnNpb24iOiIxIn0="
+        }
+      ]
+    },
+    {
+      "module": "module.platform_dynamodb_table[\"Organisation\"]",
+      "mode": "managed",
+      "type": "aws_dynamodb_table",
+      "name": "table",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "schema_version": 1,
+          "attributes": {
+            "arn": "arn:aws:dynamodb:eu-central-1:745252665765:table/Organisation",
+            "attribute": [
+              {
+                "name": "org_key",
+                "type": "S"
+              }
+            ],
+            "billing_mode": "PAY_PER_REQUEST",
+            "deletion_protection_enabled": false,
+            "global_secondary_index": [],
+            "hash_key": "org_key",
+            "id": "Organisation",
+            "local_secondary_index": [],
+            "name": "Organisation",
+            "point_in_time_recovery": [
+              {
+                "enabled": false
+              }
+            ],
+            "range_key": null,
+            "read_capacity": 0,
+            "replica": [],
+            "restore_date_time": null,
+            "restore_source_name": null,
+            "restore_to_latest_time": null,
+            "server_side_encryption": [],
+            "stream_arn": "",
+            "stream_enabled": false,
+            "stream_label": "",
+            "stream_view_type": "",
+            "table_class": "STANDARD",
+            "tags": {},
+            "tags_all": {
+              "Environment": "dev",
+              "Terraform": "true"
+            },
+            "timeouts": null,
+            "ttl": [
+              {
+                "attribute_name": "",
+                "enabled": false
+              }
+            ],
+            "write_capacity": 0
+          },
+          "sensitive_attributes": [],
+          "private": "eyJlMmJmYjczMC1lY2FhLTExZTYtOGY4OC0zNDM2M2JjN2M0YzAiOnsiY3JlYXRlIjoxODAwMDAwMDAwMDAwLCJkZWxldGUiOjYwMDAwMDAwMDAwMCwidXBkYXRlIjozNjAwMDAwMDAwMDAwfSwic2NoZW1hX3ZlcnNpb24iOiIxIn0="
+        }
+      ]
+    },
+    {
+      "module": "module.platform_dynamodb_table[\"PlatformConfig\"]",
+      "mode": "managed",
+      "type": "aws_dynamodb_table",
+      "name": "table",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "schema_version": 1,
+          "attributes": {
+            "arn": "arn:aws:dynamodb:eu-central-1:745252665765:table/PlatformConfig",
+            "attribute": [
+              {
+                "name": "item_name",
+                "type": "S"
+              },
+              {
+                "name": "item_type",
+                "type": "S"
+              }
+            ],
+            "billing_mode": "PAY_PER_REQUEST",
+            "deletion_protection_enabled": false,
+            "global_secondary_index": [],
+            "hash_key": "item_name",
+            "id": "PlatformConfig",
+            "local_secondary_index": [],
+            "name": "PlatformConfig",
+            "point_in_time_recovery": [
+              {
+                "enabled": false
+              }
+            ],
+            "range_key": "item_type",
+            "read_capacity": 0,
+            "replica": [],
+            "restore_date_time": null,
+            "restore_source_name": null,
+            "restore_to_latest_time": null,
+            "server_side_encryption": [],
+            "stream_arn": "",
+            "stream_enabled": false,
+            "stream_label": "",
+            "stream_view_type": "",
+            "table_class": "STANDARD",
+            "tags": {},
+            "tags_all": {
+              "Environment": "dev",
+              "Terraform": "true"
+            },
+            "timeouts": null,
+            "ttl": [
+              {
+                "attribute_name": "",
+                "enabled": false
+              }
+            ],
+            "write_capacity": 0
+          },
+          "sensitive_attributes": [],
+          "private": "eyJlMmJmYjczMC1lY2FhLTExZTYtOGY4OC0zNDM2M2JjN2M0YzAiOnsiY3JlYXRlIjoxODAwMDAwMDAwMDAwLCJkZWxldGUiOjYwMDAwMDAwMDAwMCwidXBkYXRlIjozNjAwMDAwMDAwMDAwfSwic2NoZW1hX3ZlcnNpb24iOiIxIn0="
+        }
+      ]
+    },
+    {
+      "module": "module.platform_dynamodb_table[\"Project\"]",
+      "mode": "managed",
+      "type": "aws_dynamodb_table",
+      "name": "table",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "schema_version": 1,
+          "attributes": {
+            "arn": "arn:aws:dynamodb:eu-central-1:745252665765:table/Project",
+            "attribute": [
+              {
+                "name": "org_key",
+                "type": "S"
+              },
+              {
+                "name": "project_key",
+                "type": "S"
+              }
+            ],
+            "billing_mode": "PAY_PER_REQUEST",
+            "deletion_protection_enabled": false,
+            "global_secondary_index": [],
+            "hash_key": "project_key",
+            "id": "Project",
+            "local_secondary_index": [],
+            "name": "Project",
+            "point_in_time_recovery": [
+              {
+                "enabled": false
+              }
+            ],
+            "range_key": "org_key",
+            "read_capacity": 0,
+            "replica": [],
+            "restore_date_time": null,
+            "restore_source_name": null,
+            "restore_to_latest_time": null,
+            "server_side_encryption": [],
+            "stream_arn": "",
+            "stream_enabled": false,
+            "stream_label": "",
+            "stream_view_type": "",
+            "table_class": "STANDARD",
+            "tags": {},
+            "tags_all": {
+              "Environment": "dev",
+              "Terraform": "true"
+            },
+            "timeouts": null,
+            "ttl": [
+              {
+                "attribute_name": "",
+                "enabled": false
+              }
+            ],
+            "write_capacity": 0
+          },
+          "sensitive_attributes": [],
+          "private": "eyJlMmJmYjczMC1lY2FhLTExZTYtOGY4OC0zNDM2M2JjN2M0YzAiOnsiY3JlYXRlIjoxODAwMDAwMDAwMDAwLCJkZWxldGUiOjYwMDAwMDAwMDAwMCwidXBkYXRlIjozNjAwMDAwMDAwMDAwfSwic2NoZW1hX3ZlcnNpb24iOiIxIn0="
+        }
+      ]
+    },
+    {
+      "module": "module.platform_dynamodb_table[\"ProjectInfraDetails\"]",
+      "mode": "managed",
+      "type": "aws_dynamodb_table",
+      "name": "table",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "schema_version": 1,
+          "attributes": {
+            "arn": "arn:aws:dynamodb:eu-central-1:745252665765:table/ProjectInfraDetails",
+            "attribute": [
+              {
+                "name": "project_key",
+                "type": "S"
+              },
+              {
+                "name": "resource_key",
+                "type": "S"
+              }
+            ],
+            "billing_mode": "PAY_PER_REQUEST",
+            "deletion_protection_enabled": false,
+            "global_secondary_index": [],
+            "hash_key": "project_key",
+            "id": "ProjectInfraDetails",
+            "local_secondary_index": [],
+            "name": "ProjectInfraDetails",
+            "point_in_time_recovery": [
+              {
+                "enabled": false
+              }
+            ],
+            "range_key": "resource_key",
+            "read_capacity": 0,
+            "replica": [],
+            "restore_date_time": null,
+            "restore_source_name": null,
+            "restore_to_latest_time": null,
+            "server_side_encryption": [],
+            "stream_arn": "",
+            "stream_enabled": false,
+            "stream_label": "",
+            "stream_view_type": "",
+            "table_class": "STANDARD",
+            "tags": {},
+            "tags_all": {
+              "Environment": "dev",
+              "Terraform": "true"
+            },
+            "timeouts": null,
+            "ttl": [
+              {
+                "attribute_name": "",
+                "enabled": false
+              }
+            ],
+            "write_capacity": 0
+          },
+          "sensitive_attributes": [],
+          "private": "eyJlMmJmYjczMC1lY2FhLTExZTYtOGY4OC0zNDM2M2JjN2M0YzAiOnsiY3JlYXRlIjoxODAwMDAwMDAwMDAwLCJkZWxldGUiOjYwMDAwMDAwMDAwMCwidXBkYXRlIjozNjAwMDAwMDAwMDAwfSwic2NoZW1hX3ZlcnNpb24iOiIxIn0="
+        }
+      ]
+    },
+    {
+      "module": "module.platform_dynamodb_table[\"RoleDetails\"]",
+      "mode": "managed",
+      "type": "aws_dynamodb_table",
+      "name": "table",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "schema_version": 1,
+          "attributes": {
+            "arn": "arn:aws:dynamodb:eu-central-1:745252665765:table/RoleDetails",
+            "attribute": [
+              {
+                "name": "role_id",
+                "type": "S"
+              }
+            ],
+            "billing_mode": "PAY_PER_REQUEST",
+            "deletion_protection_enabled": false,
+            "global_secondary_index": [],
+            "hash_key": "role_id",
+            "id": "RoleDetails",
+            "local_secondary_index": [],
+            "name": "RoleDetails",
+            "point_in_time_recovery": [
+              {
+                "enabled": false
+              }
+            ],
+            "range_key": null,
+            "read_capacity": 0,
+            "replica": [],
+            "restore_date_time": null,
+            "restore_source_name": null,
+            "restore_to_latest_time": null,
+            "server_side_encryption": [],
+            "stream_arn": "",
+            "stream_enabled": false,
+            "stream_label": "",
+            "stream_view_type": "",
+            "table_class": "STANDARD",
+            "tags": {},
+            "tags_all": {
+              "Environment": "dev",
+              "Terraform": "true"
+            },
+            "timeouts": null,
+            "ttl": [
+              {
+                "attribute_name": "",
+                "enabled": false
+              }
+            ],
+            "write_capacity": 0
+          },
+          "sensitive_attributes": [],
+          "private": "eyJlMmJmYjczMC1lY2FhLTExZTYtOGY4OC0zNDM2M2JjN2M0YzAiOnsiY3JlYXRlIjoxODAwMDAwMDAwMDAwLCJkZWxldGUiOjYwMDAwMDAwMDAwMCwidXBkYXRlIjozNjAwMDAwMDAwMDAwfSwic2NoZW1hX3ZlcnNpb24iOiIxIn0="
+        }
+      ]
+    },
+    {
+      "module": "module.platform_dynamodb_table[\"Sites\"]",
+      "mode": "managed",
+      "type": "aws_dynamodb_table",
+      "name": "table",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "schema_version": 1,
+          "attributes": {
+            "arn": "arn:aws:dynamodb:eu-central-1:745252665765:table/Sites",
+            "attribute": [
+              {
+                "name": "id",
+                "type": "S"
+              }
+            ],
+            "billing_mode": "PAY_PER_REQUEST",
+            "deletion_protection_enabled": false,
+            "global_secondary_index": [],
+            "hash_key": "id",
+            "id": "Sites",
+            "local_secondary_index": [],
+            "name": "Sites",
+            "point_in_time_recovery": [
+              {
+                "enabled": false
+              }
+            ],
+            "range_key": null,
+            "read_capacity": 0,
+            "replica": [],
+            "restore_date_time": null,
+            "restore_source_name": null,
+            "restore_to_latest_time": null,
+            "server_side_encryption": [],
+            "stream_arn": "",
+            "stream_enabled": false,
+            "stream_label": "",
+            "stream_view_type": "",
+            "table_class": "STANDARD",
+            "tags": {},
+            "tags_all": {
+              "Environment": "dev",
+              "Terraform": "true"
+            },
+            "timeouts": null,
+            "ttl": [
+              {
+                "attribute_name": "",
+                "enabled": false
+              }
+            ],
+            "write_capacity": 0
+          },
+          "sensitive_attributes": [],
+          "private": "eyJlMmJmYjczMC1lY2FhLTExZTYtOGY4OC0zNDM2M2JjN2M0YzAiOnsiY3JlYXRlIjoxODAwMDAwMDAwMDAwLCJkZWxldGUiOjYwMDAwMDAwMDAwMCwidXBkYXRlIjozNjAwMDAwMDAwMDAwfSwic2NoZW1hX3ZlcnNpb24iOiIxIn0="
+        }
+      ]
+    },
+    {
+      "module": "module.platform_dynamodb_table[\"User\"]",
+      "mode": "managed",
+      "type": "aws_dynamodb_table",
+      "name": "table",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "schema_version": 1,
+          "attributes": {
+            "arn": "arn:aws:dynamodb:eu-central-1:745252665765:table/User",
+            "attribute": [
+              {
+                "name": "id",
+                "type": "S"
+              }
+            ],
+            "billing_mode": "PAY_PER_REQUEST",
+            "deletion_protection_enabled": false,
+            "global_secondary_index": [],
+            "hash_key": "id",
+            "id": "User",
+            "local_secondary_index": [],
+            "name": "User",
+            "point_in_time_recovery": [
+              {
+                "enabled": false
+              }
+            ],
+            "range_key": null,
+            "read_capacity": 0,
+            "replica": [],
+            "restore_date_time": null,
+            "restore_source_name": null,
+            "restore_to_latest_time": null,
+            "server_side_encryption": [],
+            "stream_arn": "",
+            "stream_enabled": false,
+            "stream_label": "",
+            "stream_view_type": "",
+            "table_class": "STANDARD",
+            "tags": {},
+            "tags_all": {
+              "Environment": "dev",
+              "Terraform": "true"
+            },
+            "timeouts": null,
+            "ttl": [
+              {
+                "attribute_name": "",
+                "enabled": false
+              }
+            ],
+            "write_capacity": 0
+          },
+          "sensitive_attributes": [],
+          "private": "eyJlMmJmYjczMC1lY2FhLTExZTYtOGY4OC0zNDM2M2JjN2M0YzAiOnsiY3JlYXRlIjoxODAwMDAwMDAwMDAwLCJkZWxldGUiOjYwMDAwMDAwMDAwMCwidXBkYXRlIjozNjAwMDAwMDAwMDAwfSwic2NoZW1hX3ZlcnNpb24iOiIxIn0="
+        }
+      ]
+    },
+    {
+      "module": "module.platform_dynamodb_table[\"UserLoginDetails\"]",
+      "mode": "managed",
+      "type": "aws_dynamodb_table",
+      "name": "table",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "schema_version": 1,
+          "attributes": {
+            "arn": "arn:aws:dynamodb:eu-central-1:745252665765:table/UserLoginDetails",
+            "attribute": [
+              {
+                "name": "user_email",
+                "type": "S"
+              }
+            ],
+            "billing_mode": "PAY_PER_REQUEST",
+            "deletion_protection_enabled": false,
+            "global_secondary_index": [],
+            "hash_key": "user_email",
+            "id": "UserLoginDetails",
+            "local_secondary_index": [],
+            "name": "UserLoginDetails",
+            "point_in_time_recovery": [
+              {
+                "enabled": false
+              }
+            ],
+            "range_key": null,
+            "read_capacity": 0,
+            "replica": [],
+            "restore_date_time": null,
+            "restore_source_name": null,
+            "restore_to_latest_time": null,
+            "server_side_encryption": [],
+            "stream_arn": "",
+            "stream_enabled": false,
+            "stream_label": "",
+            "stream_view_type": "",
+            "table_class": "STANDARD",
+            "tags": {},
+            "tags_all": {
+              "Environment": "dev",
+              "Terraform": "true"
+            },
+            "timeouts": null,
+            "ttl": [
+              {
+                "attribute_name": "expiry_time",
+                "enabled": true
+              }
+            ],
+            "write_capacity": 0
+          },
+          "sensitive_attributes": [],
+          "private": "eyJlMmJmYjczMC1lY2FhLTExZTYtOGY4OC0zNDM2M2JjN2M0YzAiOnsiY3JlYXRlIjoxODAwMDAwMDAwMDAwLCJkZWxldGUiOjYwMDAwMDAwMDAwMCwidXBkYXRlIjozNjAwMDAwMDAwMDAwfSwic2NoZW1hX3ZlcnNpb24iOiIxIn0="
+        }
+      ]
+    },
+    {
+      "module": "module.platform_dynamodb_table[\"UserRoleDetails\"]",
+      "mode": "managed",
+      "type": "aws_dynamodb_table",
+      "name": "table",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "schema_version": 1,
+          "attributes": {
+            "arn": "arn:aws:dynamodb:eu-central-1:745252665765:table/UserRoleDetails",
+            "attribute": [
+              {
+                "name": "role_hashkey",
+                "type": "S"
+              },
+              {
+                "name": "user_id",
+                "type": "S"
+              }
+            ],
+            "billing_mode": "PAY_PER_REQUEST",
+            "deletion_protection_enabled": false,
+            "global_secondary_index": [],
+            "hash_key": "user_id",
+            "id": "UserRoleDetails",
+            "local_secondary_index": [],
+            "name": "UserRoleDetails",
+            "point_in_time_recovery": [
+              {
+                "enabled": false
+              }
+            ],
+            "range_key": "role_hashkey",
+            "read_capacity": 0,
+            "replica": [],
+            "restore_date_time": null,
+            "restore_source_name": null,
+            "restore_to_latest_time": null,
+            "server_side_encryption": [],
+            "stream_arn": "",
+            "stream_enabled": false,
+            "stream_label": "",
+            "stream_view_type": "",
+            "table_class": "STANDARD",
+            "tags": {},
+            "tags_all": {
+              "Environment": "dev",
+              "Terraform": "true"
+            },
+            "timeouts": null,
+            "ttl": [
+              {
+                "attribute_name": "",
+                "enabled": false
+              }
+            ],
+            "write_capacity": 0
+          },
+          "sensitive_attributes": [],
+          "private": "eyJlMmJmYjczMC1lY2FhLTExZTYtOGY4OC0zNDM2M2JjN2M0YzAiOnsiY3JlYXRlIjoxODAwMDAwMDAwMDAwLCJkZWxldGUiOjYwMDAwMDAwMDAwMCwidXBkYXRlIjozNjAwMDAwMDAwMDAwfSwic2NoZW1hX3ZlcnNpb24iOiIxIn0="
+        }
+      ]
+    },
+    {
+      "module": "module.platform_dynamodb_table[\"UserTrainingDetails\"]",
+      "mode": "managed",
+      "type": "aws_dynamodb_table",
+      "name": "table",
+      "provider": "provider[\"registry.terraform.io/hashicorp/aws\"]",
+      "instances": [
+        {
+          "schema_version": 1,
+          "attributes": {
+            "arn": "arn:aws:dynamodb:eu-central-1:745252665765:table/UserTrainingDetails",
+            "attribute": [
+              {
+                "name": "id",
+                "type": "S"
+              }
+            ],
+            "billing_mode": "PAY_PER_REQUEST",
+            "deletion_protection_enabled": false,
+            "global_secondary_index": [],
+            "hash_key": "id",
+            "id": "UserTrainingDetails",
+            "local_secondary_index": [],
+            "name": "UserTrainingDetails",
+            "point_in_time_recovery": [
+              {
+                "enabled": false
+              }
+            ],
+            "range_key": null,
+            "read_capacity": 0,
+            "replica": [],
+            "restore_date_time": null,
+            "restore_source_name": null,
+            "restore_to_latest_time": null,
+            "server_side_encryption": [],
+            "stream_arn": "",
+            "stream_enabled": false,
+            "stream_label": "",
+            "stream_view_type": "",
+            "table_class": "STANDARD",
+            "tags": {},
+            "tags_all": {
+              "Environment": "dev",
+              "Terraform": "true"
+            },
+            "timeouts": null,
+            "ttl": [
+              {
+                "attribute_name": "",
+                "enabled": false
+              }
+            ],
+            "write_capacity": 0
+          },
+          "sensitive_attributes": [],
+          "private": "eyJlMmJmYjczMC1lY2FhLTExZTYtOGY4OC0zNDM2M2JjN2M0YzAiOnsiY3JlYXRlIjoxODAwMDAwMDAwMDAwLCJkZWxldGUiOjYwMDAwMDAwMDAwMCwidXBkYXRlIjozNjAwMDAwMDAwMDAwfSwic2NoZW1hX3ZlcnNpb24iOiIxIn0="
+        }
+      ]
+    }
+  ]
+}
