@@ -1,21 +1,9 @@
-# Creation of platform dynamodb tables
-module "platform_dynamodb_table" {
-  source               = "../aws-common/dynamodb"
-  
-  # Combine local.tables and local.imported_table_identifiers
-  all_tables           = { for key, identifier in local.imported_table_identifiers : key => identifier } 
-                          union 
-                          local.tables
-  
-  # Use the combined tables in the for_each loop
-  for_each             = { for table in local.all_tables : table.name => merge(var.default_table_attributes, table) }
-  
-  table_name           = each.key
-  hash_key             = each.value.hash_key
-  range_key            = each.value.range_key
-  ttl_attribute_name   = each.value.ttl_attribute_name
-  stream_enabled       = each.value.stream_enabled
-  
-  # Corrected line: use lookup to avoid "Invalid index" errors
-  imported_identifier  = lookup(local.imported_table_identifiers, each.key, null)
+In Terraform v1.5.0 and later, use an import block to import DynamoDB tables using the name. For example:
+
+import {
+  to = aws_dynamodb_table.basic-dynamodb-table
+  id = "GameScores"
 }
+Using terraform import, import DynamoDB tables using the name. For example:
+
+% terraform import aws_dynamodb_table.basic-dynamodb-table GameScores
