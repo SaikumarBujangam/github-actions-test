@@ -1,17 +1,77 @@
 locals {
+  tables = [
+      {
+          name      = "Organisation",
+          hash_key  = "org_key"
+      },
+      {
+          name      = "PlatformConfig",
+          hash_key  = "item_name"
+          range_key = "item_type",
+      },
+      {
+          name      = "Project",
+          hash_key  = "project_key"
+          range_key = "org_key", 
+      },
+      {
+          name      = "User",
+          hash_key  = "id" 
+      },
+      {
+          name      = "UserRoleDetails",
+          hash_key  = "user_id"
+          range_key = "role_hashkey",
+      },
+      {
+          name      = "UserTrainingDetails",
+          hash_key  = "id"  
+      },
+      {
+          name      = "DataIngress",
+          hash_key  = "project_key"
+          range_key = "composed_key",
+          stream_enabled = true 
+      },
+      {
+          name                  = "UserLoginDetails",
+          hash_key              = "user_email"
+          ttl_attribute_name    = "expiry_time"
+      },
+      {
+          name      = "ProjectInfraDetails",
+          hash_key  = "project_key"
+          range_key = "resource_key", 
+      },
+      {
+          name      = "RoleDetails",
+          hash_key  = "role_id" 
+      },
+      {
+          name      = "Audit",
+          hash_key  = "audit_id",
+          range_key = "project_key"  
+      },
+      {
+          name      = "DataIngressLog",
+          hash_key  = "log_id",
+          range_key = "date_time_changed"
+      },
+      {
+          name      = "Sites",
+          hash_key  = "id"
+      },
+      {
+          name      = "ProjectNetworkDetails",
+          hash_key  = "id"
+      },
+      {
+          name      = "OrganisationNetworkDetails",
+          hash_key  = "id"
+      }
+  ],
+  
   imported_table_identifiers = {
     ProjectNetworkDetails = "arn:aws:dynamodb:eu-central-1:745252665765:table/ProjectNetworkDetails",
   }
-}
-
-module "platform_dynamodb_table" {
-  source      = "../aws-common/dynamodb"
-
-  for_each              = { for table in local.tables : table.name => merge(var.default_table_attributes, table) }
-  table_name            = each.key
-  hash_key              = each.value.hash_key
-  range_key             = each.value.range_key
-  ttl_attribute_name    = each.value.ttl_attribute_name
-  stream_enabled        = each.value.stream_enabled
-  imported_identifier   = local.imported_table_identifiers[each.key] # Reference the identifier here
 }
