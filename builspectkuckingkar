@@ -1,14 +1,1 @@
-For information on valid syntax, see:
-https://www.terraform.io/docs/cli/state/resource-addressing.html
-╷
-│ Error: Invalid address
-│
-│   on <import-address> line 1:
-│    1: module.platform_dynamodb_table.aws_dynamodb_table.table.ProjectNetworkDetails
-│
-│ Resource instance key must be given in square brackets.
-╵
-
-time=2023-11-01T18:52:07+05:30 level=error msg=Terraform invocation failed in C:/.terragrunt-cache/XTQi-oi0p63BODQSy4EBJhN-Zak/VlJQvwBldSrlCuJoozEeVg97DMM/platform-datastore prefix=[C:\Users\umababy.kannan\OneDrive - HCL Technologies Ltd\Documents\Star CAP\platform-infra\live\dev\eu-central-1\platform-datastore]
-time=2023-11-01T18:52:07+05:30 level=error msg=1 error occurred:
-        * exit status 1
+terraform import 'module.platform_dynamodb_table.aws_dynamodb_table[ProjectNetworkDetails]' arn:aws:dynamodb:eu-central-1:745252665765:table/ProjectNetworkDetails
