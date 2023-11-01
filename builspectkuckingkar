@@ -1,11 +1,22 @@
-module "platform_dynamodb_table" {
-  source      = "../aws-common/dynamodb"
+- Module C:/Users/umababy.kannan/OneDrive - HCL Technologies Ltd/Documents/Star CAP/platform-infra/live/dev/eu-central-1/platform-datastore
 
-  for_each              = { for table in local.tables : table.name => merge(var.default_table_attributes, table)  }
-  table_name            = each.key
-  hash_key              = each.value.hash_key
-  range_key             = each.value.range_key
-  ttl_attribute_name    = each.value.ttl_attribute_name
-  stream_enabled        = each.value.stream_enabled
-  imported_identifier   = local.imported_table_identifiers[each.key] # Reference the identifier here
-}
+
+Acquiring state lock. This may take a few moments...
+Releasing state lock. This may take a few moments...
+time=2023-11-01T22:22:15+05:30 level=error msg=Module C:/Users/umababy.kannan/OneDrive - HCL Technologies Ltd/Documents/Star CAP/platform-infra/live/dev/eu-central-1/platform-datastore has finished with an error: 1 error occurred:
+        * exit status 1
+
+ prefix=[C:\Users\umababy.kannan\OneDrive - HCL Technologies Ltd\Documents\Star CAP\platform-infra\live\dev\eu-central-1\platform-datastore]
+time=2023-11-01T22:22:15+05:30 level=info msg=╷
+│ Error: Unsupported argument
+│
+│   on main.tf line 95, in module "platform_dynamodb_table":
+│   95:   imported_identifier   = local.imported_table_identifiers[each.key]
+│
+│ An argument named "imported_identifier" is not expected here.
+╵
+time=2023-11-01T22:22:15+05:30 level=error msg=Terraform invocation failed in C:/.terragrunt-cache/XTQi-oi0p63BODQSy4EBJhN-Zak/VlJQvwBldSrlCuJoozEeVg97DMM/platform-datastore prefix=[C:\Users\umababy.kannan\OneDrive - HCL Technologies Ltd\Documents\Star CAP\platform-infra\live\dev\eu-central-1\platform-datastore]
+
+time=2023-11-01T22:22:15+05:30 level=error msg=1 error occurred:
+        * exit status 1
+
