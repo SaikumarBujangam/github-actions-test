@@ -1,1 +1,11 @@
-terraform import 'module.platform_dynamodb_table.aws_dynamodb_table[ProjectNetworkDetails]' arn:aws:dynamodb:eu-central-1:745252665765:table/ProjectNetworkDetails
+umababy.kannan@LP-5CG2311RDH MINGW64 ~/OneDrive - HCL Technologies Ltd/Documents/Star CAP/platform-infra/live/dev/eu-central-1/platform-datastore (feature/dynamodb_table)
+$ terraform import 'module.platform_dynamodb_table.aws_dynamodb_table[ProjectNetworkDetails]' arn:aws:dynamodb:eu-central-1:745252665765:table/ProjectNetworkDetails
+For information on valid syntax, see:
+https://www.terraform.io/docs/cli/state/resource-addressing.html
+╷
+│ Error: Index value required
+│
+│   on <import-address> line 1:
+│    1: module.platform_dynamodb_table.aws_dynamodb_table[ProjectNetworkDetails]
+│
+│ Index brackets must contain either a literal number or a literal string.
