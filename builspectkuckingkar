@@ -1,1 +1,17 @@
-terraform import 'module.platform_dynamodb_table.aws_dynamodb_table[ProjectNetworkDetails]' arn:aws:dynamodb:eu-central-1:745252665765:table/ProjectNetworkDetails
+Acquiring state lock. This may take a few moments...
+module.platform_dynamodb_table.aws_dynamodb_table.table["ProjectNetworkDetails"]: Importing from ID "arn:aws:dynamodb:eu-central-1:745252665765:table/ProjectNetworkDetails"...
+module.platform_dynamodb_table.aws_dynamodb_table.table["ProjectNetworkDetails"]: Import prepared!
+  Prepared aws_dynamodb_table for import
+module.platform_dynamodb_table.aws_dynamodb_table.table["ProjectNetworkDetails"]: Refreshing state... [id=arn:aws:dynamodb:eu-central-1:745252665765:table/ProjectNetworkDetails]
+╷
+│ Error: reading Amazon DynamoDB Table (arn:aws:dynamodb:eu-central-1:745252665765:table/ProjectNetworkDetails): ValidationException: 1 validation error detected: Value 'arn:aws:dynamodb:eu-central-1:745252665765:table/ProjectNetworkDetails' at 'tableName' failed to satisfy constraint: Valid ARN format is 'arn:<awsPartition>:<vendor>:<region>:<subscriber>:resourceType/resourceName', where Resource name must have length less than or equal to 255, Resource name must have length greater than or equal to 3, Resource name must satisfy regular expression pattern: [a-zA-Z0-9_.-]+
+│       status code: 400, request id: HTQ4H5RTGMF2OQODF1HEBLB0ERVV4KQNSO5AEMVJF66Q9ASUAAJG
+│
+│
+╵
+
+Releasing state lock. This may take a few moments...
+time=2023-11-01T19:10:19+05:30 level=error msg=Terraform invocation failed in C:/.terragrunt-cache/XTQi-oi0p63BODQSy4EBJhN-Zak/VlJQvwBldSrlCuJoozEeVg97DMM/platform-datastore prefix=[C:\Users\umababy.kannan\OneDrive - HCL Technologies Ltd\Documents\Star CAP\platform-infra\live\dev\eu-central-1\platform-datastore]
+time=2023-11-01T19:10:19+05:30 level=error msg=1 error occurred:
+        * exit status 1
+
