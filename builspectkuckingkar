@@ -1,99 +1,13 @@
-locals { 
-  tables = [
-    {
-      name     = "Organisation",
-      hash_key = "org_key"
-    },
-    {
-      name      = "PlatformConfig",
-      hash_key  = "item_name"
-      range_key = "item_type"
-    },
-    {
-      name      = "Project",
-      hash_key  = "project_key"
-      range_key = "org_key"
-    },
-    {
-      name     = "User",
-      hash_key = "id" 
-    },
-    {
-      name      = "UserRoleDetails",
-      hash_key  = "user_id"
-      range_key = "role_hashkey"
-    },
-    {
-      name     = "UserTrainingDetails",
-      hash_key = "id"  
-    },
-    {
-      name            = "DataIngress",
-      hash_key        = "project_key"
-      range_key       = "composed_key"
-      stream_enabled  = true 
-    },
-    {
-      name                 = "UserLoginDetails",
-      hash_key             = "user_email"
-      ttl_attribute_name   = "expiry_time"
-    },
-    {
-      name      = "ProjectInfraDetails",
-      hash_key  = "project_key"
-      range_key = "resource_key"
-    },
-    {
-      name     = "RoleDetails",
-      hash_key = "role_id" 
-    },
-    {
-      name      = "Audit",
-      hash_key  = "audit_id"
-      range_key = "project_key"
-    },
-    {
-      name      = "DataIngressLog",
-      hash_key  = "log_id"
-      range_key = "date_time_changed"
-    },
-    {
-      name     = "Sites",
-      hash_key = "id"
-    },
-    {
-      name     = "ProjectNetworkDetails",
-      hash_key = "id"
-    },
-    {
-      name     = "OrganisationNetworkDetails",
-      hash_key = "id"
-    }
-  ]
-  
-  imported_table_identifiers = {
-    ProjectNetworkDetails        = "arn:aws:dynamodb:eu-central-1:745252665765:table/ProjectNetworkDetails",
-    OrganisationNetworkDetails   = "arn:aws:dynamodb:eu-central-1:745252665765:table/OrganisationNetworkDetails"
-    # Add other imported tables as needed
-  }
-}
+ime=2023-11-01T22:33:59+05:30 level=info msg=╷
+│ Error: Missing newline after argument
+│
+│   on main.tf line 86, in module "platform_dynamodb_table":
+│   86:   all_tables           = { for key, identifier in local.imported_table_identifiers : key => identifier } union local.tables
+│
+│ An argument definition must end with a newline.
+╵
+time=2023-11-01T22:33:59+05:30 level=error msg=Terraform invocation failed in C:/.terragrunt-cache/XTQi-oi0p63BODQSy4EBJhN-Zak/VlJQvwBldSrlCuJoozEeVg97DMM/platform-datastore prefix=[C:\Users\umababy.kannan\OneDrive - HCL Technologies Ltd\Documents\Star CAP\platform-infra\live\dev\eu-central-1\platform-datastore]
 
-# Creation of platform dynamodb tables
-module "platform_dynamodb_table" {
-  source               = "../aws-common/dynamodb"
-  
-  # Combine local.tables and local.imported_table_identifiers
-  all_tables           = { for key, identifier in local.imported_table_identifiers : key => identifier } union local.tables
-  
-  # Use the combined tables in the for_each loop
-  for_each             = { for table in local.all_tables : table.name => merge(var.default_table_attributes, table) }
-  
-  table_name           = each.key
-  hash_key             = each.value.hash_key
-  range_key            = each.value.range_key
-  ttl_attribute_name   = each.value.ttl_attribute_name
-  stream_enabled       = each.value.stream_enabled
-  
-  # Corrected line: use lookup to avoid "Invalid index" errors
-  imported_identifier  = lookup(local.imported_table_identifiers, each.key, null)
-}
+time=2023-11-01T22:33:59+05:30 level=error msg=1 error occurred:
+        * exit status 1
+
