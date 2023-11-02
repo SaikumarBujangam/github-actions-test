@@ -1,210 +1,148 @@
-import datetime
-import json
+ 
+##################################### 
+# cloudwatch metric alarm
+#####################################
+resource "aws_cloudwatch_metric_alarm" "fsx_autoscaling" {
+  alarm_name                = "${var.project_uid}-${var.fsx_name}-cw-alarm"
+  #alarm_name                = "cw-alarm"
+  comparison_operator       = "LessThanOrEqualToThreshold"
+  evaluation_periods        = "2"
+  metric_name               = "FreeDataStorageCapacity"
+  namespace                 = "AWS/FSx"
+  period                    = "60"
+  statistic                 = "Sum"
+  threshold                 = "263882790666.24" #"257698037760" (245.76 GB is 20% out of 1228.8 GB --in bytes)
+  alarm_description         = "This metric monitors fsx StorageCapacity utilization"
+  insufficient_data_actions = []
+  
+  dimensions = {
+        FileSystemId = "${var.fsx_id}"
+      }
+  }
 
-import boto3
-import logging
+##################################### 
+# cloudwatch event rule
+#####################################
+resource "aws_cloudwatch_event_rule" "fsx_autoscaling" {
+  name        = "${var.project_uid}-${var.fsx_name}-cw-rule"
+ #name        = "cw-rule"
+  description = "Monitor cloudwatch alarm to trigger event bridge"
 
-# from botocore.vendored import requests
-# import requests
-import urllib3
-from botocore.exceptions import ClientError
-from dateutil.tz import tzlocal
+  event_pattern = <<PATTERN
+{
+  "source": ["aws.cloudwatch"],
+  "detail-type": ["CloudWatch Alarm State Change"],
+  "resources": ["${aws_cloudwatch_metric_alarm.fsx_autoscaling.arn}"],
+  "detail": {
+      "state": {
+          "value": [
+              "ALARM"
+          ]
+      }
+  }
+}
+PATTERN
+}
 
-logger = logging.getLogger()
-logger.setLevel(logging.INFO)
+##################################### 
+# cloudwatch event target
+#####################################
+resource "aws_cloudwatch_event_target" "fsx_autoscaling" {
+  arn  = aws_lambda_function.fsx_autoscaling.arn
+  rule = aws_cloudwatch_event_rule.fsx_autoscaling.id
+  
+    input = <<JSON
+    
+{
+  "fsx_id": "${var.fsx_id}",
+  "ui_api_endpoint": "https://${var.region_short}.api.${var.redcap_ui_api}.platform.navify.com/redcap/project/v1/api/",
+  "sqs_email_queue": "https://sqs.${var.app_region}.amazonaws.com/${var.aws_account}/redcap-email-send-q",
+  "navify_tenant": "${var.navify_tenant}"
+}
+JSON
+depends_on = [aws_lambda_function.fsx_autoscaling]
+}
 
+##################################### 
+# lambda basic permission
+#####################################
+resource "aws_lambda_permission" "allow_cloudwatch" {
+    statement_id = "AllowExecutionFromCloudWatch"
+    action = "lambda:InvokeFunction"
+    function_name = aws_lambda_function.fsx_autoscaling.function_name
+    principal = "events.amazonaws.com"
+    source_arn = aws_cloudwatch_event_rule.fsx_autoscaling.arn
+}
 
-def lambda_handler(event, context):
-    fsx_client = boto3.client('fsx')
-    sns_client = boto3.client('sns')
-    sqs_client = boto3.client('sqs')
-    #ssm_client = boto3.client('ssm', region_name="us-west-2")
-    reg = event["sqs_email_queue"].split(".")[1]
-    session = boto3.session.Session()
-    secret_client = session.client(
-        service_name='secretsmanager',
-        region_name=reg
-    )
-    cloudwatch = boto3.client('cloudwatch')
+##################################### 
+#Arquive the script
+#####################################
+data "archive_file" "python_lambda_package" {
+  type = "zip"
+  source_file = "${path.module}/code/lambda_function.py"
+  output_path = "fsx-lambda.zip"
+}
 
-    response = fsx_client.describe_file_systems(FileSystemIds=[event["fsx_id"]])
-    tag_set = response['FileSystems'][0]['Tags']
-    for i in range(len(tag_set)):
-        # if tag_set[i]['Key'] == "redcap:project-name":
-        #     project_name = tag_set[i]['Value']
-        if tag_set[i]['Key'] == "redcap:project-id":
-            project_id = tag_set[i]['Value']
-        if tag_set[i]['Key'] == "Name":
-            fsx_name = tag_set[i]['Value']
-        if tag_set[i]['Key'] == "navify:stack-name":
-            region = tag_set[i]['Value']
+#####################################
+#  Create the lamda function
+#####################################
+resource "aws_lambda_function" "fsx_autoscaling" {
+    function_name = "${var.project_uid}-${var.fsx_name}-lambda"
+    
+    filename         = "fsx-lambda.zip"
+    source_code_hash = data.archive_file.python_lambda_package.output_base64sha256
+    role             = aws_iam_role.lambda_role.arn
+    runtime          = "python3.8"
+    handler          = "lambda_function.lambda_handler"
+    timeout          = 10
+}
 
-    #region_ = region.lower().strip().split('-')
-    #reg = region_[0][:2] + region_[1][:1] + region_[2][:1]
+#####################################
+#  Create user role for lambda function
+#####################################
+data "aws_iam_policy_document" "lambda_assume_role_policy" {
+  statement {
+    effect = "Allow"
+    actions = ["sts:AssumeRole"]
 
-    sqs_queue_url = event["sqs_email_queue"]#.replace("region", region.lower())
-    ui_api_endpoint = event["ui_api_endpoint"]#.replace("region", reg)
+    principals {
+      type = "Service"
+      identifiers = ["lambda.amazonaws.com"]
+    }
+  }
+}
 
-    # def get_token(parameter_name):
-    #     access_token = ssm_client.get_parameter(Name=parameter_name)
-    #     access_token = access_token['Parameter']['Value']
-    #     return access_token
+resource "aws_iam_role" "lambda_role" {
+  name = "${var.project_uid}-${var.fsx_name}-lambda-role"
+  assume_role_policy = data.aws_iam_policy_document.lambda_assume_role_policy.json
+}
 
-    def get_secret(secret_name):
-        try:
-            get_secret_value_response = secret_client.get_secret_value(
-                SecretId=secret_name
-            )
-        except ClientError as e:
-            raise e
-        else:
-            if 'SecretString' in get_secret_value_response:
-                secret = get_secret_value_response['SecretString']
-            else:
-                secret = base64.b64decode(get_secret_value_response['SecretBinary'])
-        secret_value = json.loads(secret)[secret_name]
-        return secret_value
+ data "aws_iam_policy_document" "lambda_role_policy_document" {
+   statement {
+     effect = "Allow"
 
-    def get_request(url, access_token):
-        http = urllib3.PoolManager()
-        response = http.request('GET', url, headers={'Content-Type': 'application/json',
-                                                     'cookie': 'access_token={}'.format(
-                                                         access_token),
-                                                     'X-Navify-Tenant': event[
-                                                         "navify_tenant"]})  # + "projectusers/" + str(project_id))
-        print(response.status)
-        resp_data = json.loads(response.data)
-        if response.status == 200 and resp_data["status"] == "OK" and resp_data[
-            "result"] != []:
-            logger.info("response.json() {}".format(resp_data))
-            return resp_data
-        else:
-            logger.error("Error in {} api call {}".format(url, resp_data["error"]))
-            return None
+     actions = [
+      "fsx:UpdateFileSystem",
+      "fsx:DescribeFileSystems",
+      "sqs:SendMessage",
+      "secretsmanager:GetSecretValue",
+      "secretsmanager:DescribeSecret",
+      "ssm:GetParameter",
+      "sns:Publish",
+	  "cloudwatch:PutMetricAlarm"
+     ]
 
-    def get_dm_admin_email(project_id):
-        email_ids = []
-        try:
-            #access_token = get_token("access_token")
-            access_token = get_secret("access_token")
-            admin_url = ui_api_endpoint + "platformAdmins"
-            admin_resp_data = get_request(admin_url, access_token)
-            if admin_resp_data:
-                for i in range(len(admin_resp_data["result"])):
-                    email_ids.append(admin_resp_data["result"][i]["email"])
+     resources = ["*"]
+	  }
+ }
 
-            dm_url = ui_api_endpoint + "projectusers/infraName/" + project_id
-            dm_resp_data = get_request(dm_url, access_token)
-            if dm_resp_data:
-                for role in dm_resp_data['result']:
-                    if 'Data Manager' in role['roleName']:
-                        logger.info(role['userName'])
-                        email_ids.append(role['userName'])
-            logger.info(email_ids)
-        except Exception as ex:
-            logger.error("user email api invoke unsuccessful %s", str(ex))
-        return email_ids
+ resource "aws_iam_role_policy" "fsx-autoscaling_policy" {
+   name = "${var.project_uid}-${var.fsx_name}-lambda-policy"
+   policy = data.aws_iam_policy_document.lambda_role_policy_document.json
+   role = aws_iam_role.lambda_role.id
+ }
 
-    def send_msg_toqueue(email_template, fsx_size, error_msg=None):
-        fsx_name_ = fsx_name.lower().split('-')
-        env = fsx_name_[2].upper()
-        if env =="BFX":
-            env = "HPC"
-        fsx_type = None
-        if "raw" in fsx_name_[3]:
-            fsx_type = "Raw/Reference FSx"
-        elif "scratch" in fsx_name_[3]:
-            fsx_type = "Scratch FSx"
-
-        template = {"envName":env, "fSxName":fsx_type, "fsxSize":fsx_size, "dateTime": str(datetime.datetime.now()), "projectId": project_id}
-        if error_msg:
-            template["errorDetails"] = error_msg
-
-        msgbody = '{"projectId":"' + project_id + '","templateName":"' + email_template + '","toAddress":' + str(
-            json.dumps(get_dm_admin_email(project_id))) + ',"templateData":' + json.dumps(
-            json.dumps(template)) + '}'
-
-        try:
-            resp = sqs_client.send_message(
-                QueueUrl=sqs_queue_url,
-                MessageBody=(
-                    msgbody
-                )
-            )
-            logger.info(msgbody)
-            logger.info(resp['MessageId'])
-        except ClientError as e:
-            logger.error("error %s", e.response['Error']['Message'])
-
-    def update_cw_alarm_threshold(fsx_id, update_size):
-        if "bfx" in fsx_name and "scratch" in fsx_name:
-            fsx_name1 = "bfx_fsx_scratch"
-        elif "bfx" in fsx_name and "raw" in fsx_name:
-            fsx_name1 = "bfx_fsx_raw"
-        elif "da" in fsx_name and "scratch" in fsx_name:
-            fsx_name1 = "da_fsx_scratch"
-        elif "da" in fsx_name and "raw" in fsx_name:
-            fsx_name1 = "da_fsx_raw"
-        try:
-            logger.info("Cloud watch alarm update initiated!")
-            threshold_val = update_size * 0.2 * 1099511627776 #80% of update_size(2.4 TB) (converted to bytes)
-            response = cloudwatch.put_metric_alarm(
-                AlarmName="{}-{}-cw-alarm".format(project_id,fsx_name1), #"ailme1654093333364-bfx_fsx_scratch-cw-alarm"
-                ComparisonOperator="LessThanOrEqualToThreshold",
-                EvaluationPeriods=2,
-                MetricName="FreeDataStorageCapacity",
-                Namespace="AWS/FSx",
-                Period=60,
-                Statistic="Sum",
-                Threshold= threshold_val,
-                AlarmDescription="This metric monitors fsx StorageCapacity utilization",
-                InsufficientDataActions=[],
-                Dimensions=
-                [
-                    {
-                        "Name": "FileSystemId",
-                        "Value": fsx_id
-                    }]
-            )
-            logger.info("Alarm update response: {}".format(response))
-        except Exception as err:
-            logger.error("Error in alarm threshold update! {}".format(str(err)))
-
-
-    def get_curr_storage(fsx_id):
-        response = fsx_client.describe_file_systems(
-            FileSystemIds=[fsx_id])
-        logger.info("FSX response: {}".format(response))
-        curr_size = response["FileSystems"][0]["StorageCapacity"]
-        logger.info("Current storage size: {}".format(curr_size))
-        #send_msg_toqueue("EMAIL_013", "5 TB")
-        return curr_size
-
-    def update_storage(fsx_id):
-        curr_size = get_curr_storage(fsx_id)
-        update_size = curr_size * 2  # multiples
-        hard_limit_size = 9600
-        fsx_response = fsx_client.describe_file_systems(
-            FileSystemIds=[fsx_id])
-        if fsx_response["FileSystems"][0]["Lifecycle"] != "UPDATING":
-            if curr_size < hard_limit_size:
-                fsx_size = "{} TB".format(update_size / 1000)
-                try:
-                    response = fsx_client.update_file_system(
-                        FileSystemId=fsx_id,
-                        StorageCapacity=update_size)
-                    logger.info("FSX Update response: {}".format(response))
-                    send_msg_toqueue("EMAIL_013",fsx_size)
-                    update_cw_alarm_threshold(fsx_id, update_size / 1000)
-                except Exception as err:
-                    logger.error("Error in FSX storage update! {}".format(str(err)))
-                    send_msg_toqueue("EMAIL_015",fsx_size, str(err))
-            elif curr_size == hard_limit_size:
-                fsx_size = "{} TB".format(hard_limit_size / 1000)
-                send_msg_toqueue("EMAIL_014",fsx_size)
-        else:
-            logger.error("Error: FSX update already in progress...")
-
-    #get_curr_storage(event["fsx_id"])
-    update_storage(event["fsx_id"])
-
+ resource "aws_iam_role_policy_attachment" "basic" {
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+  role       = aws_iam_role.lambda_role.name
+}
