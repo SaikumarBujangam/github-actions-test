@@ -1,90 +1,102 @@
-
-
 #!/bin/bash
+
+log_timestamp() {
+  echo "$(date '+%Y-%m-%d %H:%M:%S') - $1"
+}
+
+start_time=$(date +%s)
+log_timestamp "Script execution started."
+
+# Switch to adl_dev_all_mig_svc user
 sudo -i -u adl_dev_all_mig_svc
+log_timestamp "Switched to adl_dev_all_mig_svc user."
+
+# Change ownership and permissions for /apps/dataproduct/cases
 chown adl_dev_all_mig_svc:adl_all_mig /apps/dataproduct/cases
 chmod -R 755 /apps/dataproduct/cases
-chown -R adl_dev_all_mig_svc:adl_all_mig /apps/dataproduct/cases/adl-cases-hrxassist-etl
+log_timestamp "Changed ownership and permissions for /apps/dataproduct/cases."
 
+# Change ownership and permissions for /apps/dataproduct/cases/adl-cases-hrxassist-etl
+chown -R adl_dev_all_mig_svc:adl_all_mig /apps/dataproduct/cases/adl-cases-hrxassist-etl
+log_timestamp "Changed ownership and permissions for /apps/dataproduct/cases/adl-cases-hrxassist-etl."
+
+# List contents of /apps/dataproduct/cases/adl-cases-hrxassist-etl
 ls -al /apps/dataproduct/cases/adl-cases-hrxassist-etl
+log_timestamp "Listed contents of /apps/dataproduct/cases/adl-cases-hrxassist-etl."
+
+# Create directories and extract tar file
 sudo -i -u adl_dev_all_mig_svc mkdir /apps/dataproduct/cases/adl-cases-hrxassist-etl/1.0.64
 sudo -i -u adl_dev_all_mig_svc mkdir -p /apps/dataproduct/cases/adl-cases-hrxassist-etl/land/stage
 sudo -i -u adl_dev_all_mig_svc tar -xvf /apps/dataproduct/cases/adl-cases-hrxassist-etl/land/adl-cases-hrxassist-etl-1.0.64.tar --directory /apps/dataproduct/cases/adl-cases-hrxassist-etl/land/stage
+log_timestamp "Created directories and extracted tar file."
+
+# Set AUTO_INFLATE_FLAG
 AUTO_INFLATE_FLAG=True
-if [[ ${AUTO_INFLATE_FLAG} != "True" ]]
-then
+
+if [[ ${AUTO_INFLATE_FLAG} != "True" ]]; then
+  log_timestamp "AUTO_INFLATE_FLAG is not True. Exiting script."
   exit 0
 else
   cd /apps/dataproduct/cases/adl-cases-hrxassist-etl/land/stage
-  # CI/CD should not create the top-level directories, this needs to be done at EC2 provisioning time..
-  if [[ -d "/apps/edh/prod" && -d "/apps/ben" ]]
-  then
-      ls -al /apps/dataproduct/cases/adl-cases-hrxassist-etl/land/stage
+  log_timestamp "Changed directory to /apps/dataproduct/cases/adl-cases-hrxassist-etl/land/stage."
 
-      for install_path in $(find . -type f)
-      do
-        # Separate the TAR entry into its file name and file path parts.
-        install_file=$(echo ${install_path##*/})
-        install_directory=$(echo ${install_path%/*} | cut -c3- )
-        # Create the subdirectory where the file will be copied. Create all required
-        # parent directories, and exit if there is an error in directory creation
-        # create the directories as the migration id, NOT as root, which yields a default 755 permission set.
-        echo $install_path
-        echo "creating this directory /apps/$install_directory"
-        echo "sudo -i -u adl_dev_all_mig_svc mkdir -p /apps/${install_directory}"
-        mkdir -p /apps/${install_directory}
-        chmod -R 755 /apps/${install_directory}
-        if [[ $? -ne "0" ]]
-        then
-          echo "Could not create directory: /apps/${install_directory}"
-          exit 1
+  # Check for required directories
+  if [[ -d "/apps/edh/prod" && -d "/apps/ben" ]]; then
+    ls -al /apps/dataproduct/cases/adl-cases-hrxassist-etl/land/stage
+    log_timestamp "Listed contents of /apps/dataproduct/cases/adl-cases-hrxassist-etl/land/stage."
+
+    for install_path in $(find . -type f); do
+      start_copy_time=$(date +%s)
+
+      install_file=$(echo ${install_path##*/})
+      install_directory=$(echo ${install_path%/*} | cut -c3- )
+
+      mkdir -p /apps/${install_directory}
+      chmod -R 755 /apps/${install_directory}
+      log_timestamp "Created directory: /apps/${install_directory}"
+
+      update_grp_dir="/apps"
+
+      for subdir in $(echo ${install_directory} | tr "/" " "); do
+        if [[ ${update_grp_dir} == "" ]]; then
+          update_grp_dir=${subdir}
+        else
+          update_grp_dir=${update_grp_dir}/${subdir}
         fi
-	update_grp_dir="/apps"
-        # Split the created directory into its distinct directory parts, as
-        # as each of these nested directories will need to have its
-        # group updated to the migration id's group. By default the group is not the correct migration id's group.
-        for subdir in $(echo ${install_directory} | tr "/" " ")
-        do
-          if [[ ${update_grp_dir} == "" ]]
-          then
-            update_grp_dir=${subdir}
-          else
-            update_grp_dir=${update_grp_dir}/${subdir}
-          fi
-          # Skip if the directory part is one of the base directories.
-          if [[ ${update_grp_dir} == "/apps" || ${update_grp_dir} == "/apps/edh" || ${update_grp_dir} == "/apps/edh/prod" || ${update_grp_dir} == "/apps/ben" ]]
-          then
-            echo "Base Directories, no action"
-          else
-            chgrp adl_all_mig ${update_grp_dir}
-            if [[ $? -ne "0" ]]
-            then
-              echo "Could not chgrp to: adl_all_mig on ${update_grp_dir}"
-              exit 1
-            fi
-          fi
-        done
 
-        # Copy the file into its target directory, update the group on the new file.
-        cp /apps/dataproduct/cases/adl-cases-hrxassist-etl/land/stage/${install_directory}/${install_file} /apps/${install_directory}/${install_file} && \
-          chgrp adl_all_mig /apps/${install_directory}/${install_file} && \
-          chmod 755 /apps/${install_directory}/${install_file}
-        if [[ $? -ne "0" ]]
-        then
-          echo "Could not write file to: /apps/${install_directory}/${install_file}"
-          exit 1
-        fi
-        # If the target directory contains either bin or scripts, make the copied file executable
-        if [[ ${install_path} == *"bin/"* || ${install_path} == *"scripts/"* ]]
-        then
-          sudo -i -u adl_dev_all_mig_svc chmod +x /apps/${install_directory}/${install_file}
-
+        if [[ ${update_grp_dir} != "/apps" && ${update_grp_dir} != "/apps/edh" && ${update_grp_dir} != "/apps/edh/prod" && ${update_grp_dir} != "/apps/ben" ]]; then
+          chgrp adl_all_mig ${update_grp_dir}
+          log_timestamp "Updated group on ${update_grp_dir} to adl_all_mig."
         fi
       done
-      cd /apps/dataproduct/cases/adl-cases-hrxassist-etl/land
-      rm -rf stage
+
+      cp /apps/dataproduct/cases/adl-cases-hrxassist-etl/land/stage/${install_directory}/${install_file} /apps/${install_directory}/${install_file} && \
+      chgrp adl_all_mig /apps/${install_directory}/${install_file} && \
+      chmod 755 /apps/${install_directory}/${install_file}
+
+      if [[ $? -ne "0" ]]; then
+        log_timestamp "Could not write file to: /apps/${install_directory}/${install_file}."
+        exit 1
+      fi
+
+      if [[ ${install_path} == *"bin/"* || ${install_path} == *"scripts/"* ]]; then
+        sudo -i -u adl_dev_all_mig_svc chmod +x /apps/${install_directory}/${install_file}
+      fi
+
+      end_copy_time=$(date +%s)
+      copy_duration=$((end_copy_time - start_copy_time))
+      log_timestamp "Copy operation for $install_path took $copy_duration seconds."
+    done
+
+    cd /apps/dataproduct/cases/adl-cases-hrxassist-etl/land
+    rm -rf stage
+    log_timestamp "Removed stage directory."
   else
-    echo "Error: Required top level directories, /apps and /apps/edh/prod, do not exist. Please review the setup of the instance on which this deployment was attemmpted."
+    log_timestamp "Error: Required top-level directories, /apps and /apps/edh/prod, do not exist. Please review the setup of the instance on which this deployment was attempted."
     exit 1
   fi
 fi
+
+end_time=$(date +%s)
+total_duration=$((end_time - start_time))
+log_timestamp "Script execution completed. Total execution time: $total_duration seconds."
