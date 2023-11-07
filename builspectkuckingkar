@@ -1,32 +1,6 @@
-2023-11-07 02:06:45 [stderr]
-2023-11-07 02:06:45 [stderr]real        0m0.084s
-2023-11-07 02:06:45 [stderr]user        0m0.014s
-2023-11-07 02:06:45 [stderr]sys 0m0.019s
-2023-11-07 02:06:45 [stderr]
-2023-11-07 02:06:45 [stderr]real        0m0.044s
-2023-11-07 02:06:45 [stderr]user        0m0.014s
-2023-11-07 02:06:45 [stderr]sys 0m0.016s
-2023-11-07 02:06:45 [stdout]./edh/prod/discovery/operational_event/bin/load_edh_discovery_assist_case_detail_test.sh
-2023-11-07 02:06:45 [stdout]ceating this directory /apps/edh/prod/discovery/operational_event/bin
-2023-11-07 02:06:45 [stdout]sudo -i -u adl_dev_all_mig_svc mkdir -p /apps/edh/prod/discovery/operational_event/bin
-2023-11-07 02:06:45 [stderr]
-2023-11-07 02:06:45 [stderr]real        0m0.049s
-2023-11-07 02:06:45 [stderr]user        0m0.010s
-2023-11-07 02:06:45 [stderr]sys 0m0.020s
-2023-11-07 02:06:50 [stdout]Base Directories, no action
-2023-11-07 02:06:50 [stdout]Base Directories, no action
-2023-11-07 02:06:50 [stderr]
-2023-11-07 02:06:50 [stderr]real        0m0.076s
-2023-11-07 02:06:50 [stderr]user        0m0.013s
-2023-11-07 02:06:50 [stderr]sys 0m0.018s
-2023-11-07 02:06:50 [stderr]
-2023-11-07 02:06:50 [stderr]real        0m0.043s
-2023-11-07 02:06:50 [stderr]user        0m0.017s
-2023-11-07 02:06:50 [stderr]sys 0m0.012s
-2023-11-07 02:06:50 [stdout]./edh/prod/discovery/operational_event/bin/p2_parallel_ddl.sh
-2023-11-07 02:06:50 [stdout]ceating this directory /apps/edh/prod/discovery/operational_event/bin
-2023-11-07 02:06:50 [stdout]sudo -i -u adl_dev_all_mig_svc mkdir -p /apps/edh/prod/discovery/operational_event/bin
-2023-11-07 02:06:50 [stderr]
-2023-11-07 02:06:50 [stderr]real        0m0.045s
-2023-11-07 02:06:50 [stderr]user        0m0.011s
-2023-11-07 02:06:50 [stderr]sys 0m0.017s
+[root@cdp-datahub-dev1-gateway0 a1086139]# ps -ef | grep codedeploy
+root       863     1  0 Nov03 ?        00:00:06 codedeploy-agent: master 863
+root      2991   863  0 Nov03 ?        00:00:39 codedeploy-agent: InstanceAgent::Plugins::CodeDeployPlugin::CommandPoller of master 863
+root     21368  2991  0 02:04 ?        00:00:00 sh /opt/codedeploy-agent/deployment-root/df29ca74-bc69-4591-90c0-5f6bc57ba083/d-9YNJT2TN2/deployment-archive/hookscripts/afterinstall.sh
+root     27733 27074  0 02:09 pts/33   00:00:00 grep --color=auto codedeploy
+[root@cdp-datahub-dev1-gateway0 a1086139]#
