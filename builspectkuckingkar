@@ -1,3 +1,6 @@
+2023-11-07 03:12:50 [stderr]cp: overwrite ‘/tmp/codedeploy-agent-deployments.log’?
+
+
 #!/bin/bash
 chown adl_dev_all_mig_svc:adl_all_mig /apps/dataproduct/cases
 chmod -R 755 /apps/dataproduct/cases
