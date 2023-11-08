@@ -1,41 +1,5 @@
-
-│ Error: only alphanumeric characters and hyphens allowed in "name": "DEV_APPRO1698303279060_JUPYTER-LC"
-│
-│   with module.jupyter_notebook.aws_sagemaker_notebook_instance_lifecycle_configuration.jupyter_lc,
-│   on ..\terraform-modules\terraform-aws-jupyter\main.tf line 31, in resource "aws_sagemaker_notebook_instance_lifecycle_configuration" "jupyter_lc":
-│   31:   name  = upper(format("%s%s%s", local.jup_resource_name_prefix, local.jup_resource_vpc_name,"JUPYTER-LC"))
-
-locals {
-  environment          = var.env
-  resource_name_prefix = upper(format("%s%s", local.environment, "_"))
-  jup_resource_name_prefix = upper(format("%s%s", local.environment, "_"))
-  resource_vpc_name      = upper(format("%s%s", var.project_key, "_"))
-  jup_resource_vpc_name      = upper(format("%s%s", var.project_key, "_"))
-  create_project_ds_role = true
-
-  tags = var.tags
-}
-
-##################################
-# Project On Demand JUPYTER Instance
-##################################
-
-resource "aws_sagemaker_notebook_instance" "jupyter" {
-  name  = replace(upper(format("%s%s%s%s%s", local.jup_resource_name_prefix, local.jup_resource_vpc_name,"JUPYTER", "-", var.instance_id)), "_", "-")
-  instance_type = var.jupyter_instance_type
-  role_arn = var.role_arn
-  subnet_id = var.subnet_ids[0]
-  security_groups = var.security_groups
-  lifecycle_config_name = aws_sagemaker_notebook_instance_lifecycle_configuration.jupyter_lc.name
-  root_access = "Disabled"
-  tags  = local.tags
-  depends_on = [
-    aws_sagemaker_notebook_instance_lifecycle_configuration.jupyter_lc
-  ]
-}
-
 resource "aws_sagemaker_notebook_instance_lifecycle_configuration" "jupyter_lc" {
-  name  = upper(format("%s%s%s", local.jup_resource_name_prefix, local.jup_resource_vpc_name,"JUPYTER-LC"))
+  name  = replace(upper(format("%s%s%s", local.jup_resource_name_prefix, local.jup_resource_vpc_name, "JUPYTER-LC")), "_", "-")
   
   #Domain Join
   on_start = base64encode(templatefile("${path.module}/templates/on_start_mount.tpl", {
