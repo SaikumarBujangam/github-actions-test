@@ -82,3 +82,15 @@ else
     exit 1
   fi
 fi
+
+
+2023-11-08 01:45:38 [stdout]File unchanged: /apps/edh/prod/discovery/operational_event/bin/load_edh_discovery_assist_case_summary_2.scala. Skipping ...
+2023-11-08 01:45:38 [stdout]./edh/prod/discovery/operational_event/bin/load_edh_discovery_assist_case_detail_test.jar
+2023-11-08 01:45:38 [stdout]creating this directory /apps/edh/prod/discovery/operational_event/bin
+2023-11-08 01:45:38 [stdout]sudo -i -u adl_dev_all_mig_svc mkdir -p /apps/edh/prod/discovery/operational_event/bin
+2023-11-08 01:45:43 [stdout]Base Directories, no action
+2023-11-08 01:45:43 [stdout]Base Directories, no action
+2023-11-08 01:45:43 [stdout]File unchanged: /apps/edh/prod/discovery/operational_event/bin/load_edh_discovery_assist_attribute_detail_1.scala. Skipping ...
+2023-11-08 01:45:44 [stdout]File unchanged: /apps/edh/prod/discovery/operational_event/bin/truncate_baseline_acd_parallel.sh. Skipping ...
+2023-11-08 01:45:44 [stdout]File unchanged: /apps/edh/prod/discovery/operational_event/bin/load_edh_discovery_case_detail_assist_data_union.sh. Skipping ...
+
