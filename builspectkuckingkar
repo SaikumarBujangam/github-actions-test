@@ -1,11 +1,88 @@
-# ... (existing workflow)
+# Comments
+# All 3 of these secrets are needed
+# GH_TOKEN: ${{ secrets.GH_CLONE_REPO }}
+# github_user: ${{ secrets.GH_USER_NAME }}
+# github_token: ${{ secrets.GH_CLONE_REPO }}
+name: ADL Create New Repository From Template
+on:
+  workflow_dispatch:
+    inputs:
+      repo-division-name:
+        description: 'Repo Division Area:'
+        required: true
+        type: string
+        default: 'adl'
+      repo-group-name:
+        description: 'Data Product for this repo'
+        required: true
+        type: string
+        default: 'no-group-provided'
+      repo-subject-area:
+        description: 'Repo Subject Area:'
+        required: true
+        type: string
+        default: ''
+      repo-template-name:
+        description: 'Based on template:'
+        required: true
+        type: string
+        default: 'adl-dataproduct-template'
+      org-name:
+        description: 'Organization to use for repo creation'
+        required: true
+        type: string
+        default: 'AlightEngineering'
+      admin-team-name:
+        description: 'Admin team for repo'
+        required: true
+        type: string
+        default: 'adl-core-admins'
+      repo-team-name:
+        description: 'Development team for repo'
+        required: true
+        type: string
+        default: 'no-team-provided'
+      repo-approver-team:
+        description: 'Approvers team for repo'
+        required: true
+        type: string
+        default: 'no-team-provided'
+      repo-dataproductowner-approvers-team:
+        description: 'Data Product Owner Approvers Team for release/prod'
+        required: true
+        type: string
+        default: 'adl-<dataproductname>-dataproductowners-approvers'
 
-      - name: Import ADL_ARTIFACTORY_TOKEN and ADL_ARTIFACTORY_USER_NAME Secrets from adl-awsdeploy-cicd
+jobs:
+  adl-create-repo:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Issue GH Create Repo Call
         env:
           GH_TOKEN: ${{ secrets.GH_CLONE_REPO }}
+        run: |
+          # ... (existing steps)
+
+      - name: Sleep After Create Repo
+        run: |
+          # ... (existing steps)
+
+      - name: Add Secrets to New Repository
+        env:
+          GH_TOKEN: ${{ secrets.GH_CLONE_REPO }}
+          github_user: ${{ secrets.GH_USER_NAME }}
           SOURCE_REPO: 'AlightEngineering/adl-awsdeploy-cicd'
           TARGET_REPO: ${{ inputs.org-name }}/${{ inputs.repo-division-name }}-${{ inputs.repo-group-name }}-${{ inputs.repo-subject-area }}
         run: |
+          # Add GH_TOKEN secret
+          gh secret set GH_TOKEN --repo $TARGET_REPO --body "${GH_TOKEN}"
+
+          # Add github_user secret
+          gh secret set github_user --repo $TARGET_REPO --body "${github_user}"
+
+          # Add github_token secret
+          gh secret set github_token --repo $TARGET_REPO --body "${GH_TOKEN}"
+
           # Retrieve ADL_ARTIFACTORY_TOKEN secret from source repository
           ADL_ARTIFACTORY_TOKEN_SOURCE=$(gh secret get ADL_ARTIFACTORY_TOKEN -R $SOURCE_REPO)
 
@@ -17,3 +94,7 @@
 
           # Set ADL_ARTIFACTORY_USER_NAME secret in the target repository
           gh secret set ADL_ARTIFACTORY_USER_NAME --repo $TARGET_REPO --body "${ADL_ARTIFACTORY_USER_NAME_SOURCE}"
+
+      # ... (remaining steps)
+
+  # ... (existing jobs and steps)
