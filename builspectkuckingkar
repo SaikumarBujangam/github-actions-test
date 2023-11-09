@@ -1,27 +1,31 @@
-- {
-                      - Action    = "s3:*"
-                      - Effect    = "Allow"
-                      - Principal = {
-                          - AWS = "arn:aws:iam::231719417377:role/InfraBuildRole"
-                        }
-                      - Resource  = "arn:aws:s3:::starcap-lambda-build-artifact/*"
-                      - Sid       = "QA Account Access"
-                    },
-                  - {
-                      - Action    = "s3:*"
-                      - Effect    = "Allow"
-                      - Principal = {
-                          - AWS = "arn:aws:iam::830238192966:role/InfraBuildRole"
-                        }
-                      - Resource  = "arn:aws:s3:::starcap-lambda-build-artifact/*"
-                      - Sid       = "Stg Account Access"
-                    },
-                  - {
-                      - Action    = "s3:*"
-                      - Effect    = "Allow"
-                      - Principal = {
-                          - AWS = "arn:aws:iam::580311079650:role/InfraBuildRole"
-                        }
-                      - Resource  = "arn:aws:s3:::starcap-lambda-build-artifact/*"
-                      - Sid       = "Prod Account Access"
-                    },
+{
+  "Statement": [
+    {
+      "Action": "s3:*",
+      "Effect": "Allow",
+      "Principal": {
+        "AWS": "arn:aws:iam::231719417377:role/InfraBuildRole"
+      },
+      "Resource": "arn:aws:s3:::starcap-lambda-build-artifact/*",
+      "Sid": "QAAccountAccess"
+    },
+    {
+      "Action": "s3:*",
+      "Effect": "Allow",
+      "Principal": {
+        "AWS": "arn:aws:iam::830238192966:role/InfraBuildRole"
+      },
+      "Resource": "arn:aws:s3:::starcap-lambda-build-artifact/*",
+      "Sid": "StgAccountAccess"
+    },
+    {
+      "Action": "s3:*",
+      "Effect": "Allow",
+      "Principal": {
+        "AWS": "arn:aws:iam::580311079650:role/InfraBuildRole"
+      },
+      "Resource": "arn:aws:s3:::starcap-lambda-build-artifact/*",
+      "Sid": "ProdAccountAccess"
+    }
+  ]
+}
