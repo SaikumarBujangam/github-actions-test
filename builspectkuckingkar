@@ -204,3 +204,35 @@ resource "aws_s3_bucket_policy" "lambda_bucket_policy" {
   bucket = module.lambda_source_bucket.s3_bucket_name
   policy = templatefile("${path.module}/../aws-common/templates/s3_bucket_lambda_build_policy.tpl")
 }
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Action": "s3:*",
+      "Effect": "Allow",
+      "Principal": {
+        "AWS": "arn:aws:iam::231719417377:role/InfraBuildRole"
+      },
+      "Resource": "arn:aws:s3:::starcap-lambda-build-artifact/*",
+      "Sid": "QAAccountAccess"
+    },
+    {
+      "Action": "s3:*",
+      "Effect": "Allow",
+      "Principal": {
+        "AWS": "arn:aws:iam::830238192966:role/InfraBuildRole"
+      },
+      "Resource": "arn:aws:s3:::starcap-lambda-build-artifact/*",
+      "Sid": "StgAccountAccess"
+    },
+    {
+      "Action": "s3:*",
+      "Effect": "Allow",
+      "Principal": {
+        "AWS": "arn:aws:iam::580311079650:role/InfraBuildRole"
+      },
+      "Resource": "arn:aws:s3:::starcap-lambda-build-artifact/*",
+      "Sid": "ProdAccountAccess"
+    }
+  ]
+}
