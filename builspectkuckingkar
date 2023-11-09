@@ -1,9 +1,293 @@
-resource "aws_sagemaker_notebook_instance_lifecycle_configuration" "jupyter_lc" {
-  name  = replace(upper(format("%s%s%s", local.jup_resource_name_prefix, local.jup_resource_vpc_name, "JUPYTER-LC")), "_", "-")
-  
-  #Domain Join
-  on_start = base64encode(templatefile("${path.module}/templates/on_start_mount.tpl", {
-        proj_scratch_fsx_dns    = var.scratch_fsx_dns,
-        proj_scratch_fsx_mount  = var.scratch_fsx_mount
-      }))
-}
+# Comments
+# All 3 of these secrets are needed
+# GH_TOKEN: ${{ secrets.GH_CLONE_REPO }}
+# github_user: ${{ secrets.GH_USER_NAME }}
+# github_token: ${{ secrets.GH_CLONE_REPO }}
+name: ADL Create New Repository From Template
+on:
+  workflow_dispatch:
+    inputs:
+      repo-division-name:
+        description: 'Repo Division Area:'
+        required: true
+        type: string
+        default: 'adl'
+      repo-group-name:
+        description: 'Data Product for this repo'
+        required: true
+        type: string
+        default: 'no-group-provided'
+      repo-subject-area:
+        description: 'Repo Subject Area:'
+        required: true
+        type: string
+        default: ''
+      repo-template-name:
+        description: 'Based on template:'
+        required: true
+        type: string
+        default: 'adl-dataproduct-template'
+      org-name:
+        description: 'Organization to use for repo creation'
+        required: true
+        type: string
+        default: 'AlightEngineering'
+      admin-team-name:
+        description: 'Admin team for repo'
+        required: true
+        type: string
+        default: 'adl-core-admins'
+      repo-team-name:
+        description: 'Development team for repo'
+        required: true
+        type: string
+        default: 'no-team-provided'
+      repo-approver-team:
+        description: 'Approvers team for repo'
+        required: true
+        type: string
+        default: 'no-team-provided'
+      repo-dataproductowner-approvers-team:
+        description: 'Data Product Owner Approvers Team for release/prod'
+        required: true
+        type: string
+        default: 'adl-<dataproductname>-dataproductowners-approvers'
+
+jobs:
+  adl-create-repo:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Issue GH Create Repo Call
+        env:
+          GH_TOKEN: ${{ secrets.GH_CLONE_REPO }}
+        run: |
+          if [[ ${{ inputs.repo-group-name }} = "no-group-provided" ]]
+          then
+            echo "Please specify group"
+            exit 1
+          fi
+          if [[ ${{ inputs.repo-team-name }} = "no-team-provided" ]]
+          then
+            echo "Please provide a repository team"
+            exit 1
+          fi
+          if [[ ${{ inputs.repo-approver-team }} = "no-team-provided" ]]
+          then
+            echo "Please provide an approver team"
+            exit 1
+          fi
+          if [[ ${{ inputs.repo-dataproductowner-approvers-team }} = "adl-<dataproductname>-dataproductowners-approvers" ]]
+          then
+            echo "Please provide a dataproduct owner approvers team"
+            exit 1
+          fi
+          echo ${{ inputs.repo-division-name }}
+          echo ${{ inputs.repo-group-name }}
+          echo ${{ inputs.repo-subject-area }}
+          echo ${{ inputs.repo-approver-team }}
+          echo ${{ inputs.repo-dataproductowner-approvers-team }}
+          gh repo create ${{ inputs.org-name }}/${{ inputs.repo-division-name }}-${{ inputs.repo-group-name }}-${{ inputs.repo-subject-area }} --internal --template ${{ inputs.org-name }}/${{ inputs.repo-template-name }}
+      - name: Sleep After Create Repo
+        run: |
+          echo "Sleeping for 120 seconds..."
+          sleep 120
+          echo "Waking up..."
+      - name: Add Secret
+        env:
+          GH_TOKEN:
+            ${{ secrets.GH_CLONE_REPO }}
+          SHARED_REPO_PAT:
+            ${{ secrets.REPO_PAT }}
+        run: |
+          gh secret set REPO_PAT --repo ${{ inputs.org-name }}/${{ inputs.repo-division-name }}-${{ inputs.repo-group-name }}-${{ inputs.repo-subject-area }} --body "${SHARED_REPO_PAT}"
+      - name: Add Group Designation File
+        run: |
+          group_file_content=$(echo ${{ inputs.repo-group-name }} |base64)
+          data="{\"message\":\"Adds group file\",\"committer\":{\"name\":\"Dushyant Remivasan\",\"email\":\"dushyant.remivasan@alight.com\"},\"content\": \"$(echo ${group_file_content})\"}"
+          echo $data > curl_data.json
+          curl -X PUT -H "Authorization: Bearer ${{ secrets.GH_CLONE_REPO }}" -H "Accept: application/vnd.github.everest-preview+json" https://api.github.com/repos/${{ inputs.org-name }}/${{ inputs.repo-division-name }}-${{ inputs.repo-group-name }}-${{ inputs.repo-subject-area }}/contents/.group -d @curl_data.json
+          rm curl_data.json
+      - name: Patch Delete Branch On Merge
+        env:
+          GH_TOKEN: ${{ secrets.GH_CLONE_REPO }}
+        run: |
+          gh api --method PATCH -H "Accept: application/vnd.github+json" /repos/${{ inputs.org-name }}/${{ inputs.repo-division-name }}-${{ inputs.repo-group-name }}-${{ inputs.repo-subject-area }} -F delete_branch_on_merge=true
+      - name: Add Admin Team To Repo
+        env:
+          GH_TOKEN: ${{ secrets.GH_CLONE_REPO }}
+        run: |
+          gh api --method PUT -H "Accept: application/vnd.github+json" /orgs/${{ inputs.org-name }}/teams/${{ inputs.admin-team-name }}/repos/${{ inputs.org-name }}/${{ inputs.repo-division-name }}-${{ inputs.repo-group-name }}-${{ inputs.repo-subject-area }} -f permission='admin'
+      - name: Add Developer Team To Repo
+        env:
+          GH_TOKEN: ${{ secrets.GH_CLONE_REPO }}
+        run: |
+          gh api --method PUT -H "Accept: application/vnd.github+json" /orgs/${{ inputs.org-name }}/teams/${{ inputs.repo-team-name }}/repos/${{ inputs.org-name }}/${{ inputs.repo-division-name }}-${{ inputs.repo-group-name }}-${{ inputs.repo-subject-area }} -f permission='push'
+      - name: Add Approvers Team To Repo
+        env:
+          GH_TOKEN: ${{ secrets.GH_CLONE_REPO }}
+        run: |
+          gh api --method PUT -H "Accept: application/vnd.github+json" /orgs/${{ inputs.org-name }}/teams/${{ inputs.repo-approver-team }}/repos/${{ inputs.org-name }}/${{ inputs.repo-division-name }}-${{ inputs.repo-group-name }}-${{ inputs.repo-subject-area }} -f permission='push'
+      - name: Add Dataproduct Owner Approvers Team To Repo
+        env:
+          GH_TOKEN: ${{ secrets.GH_CLONE_REPO }}
+        run: |
+          gh api --method PUT -H "Accept: application/vnd.github+json" /orgs/${{ inputs.org-name }}/teams/${{ inputs.repo-dataproductowner-approvers-team }}/repos/${{ inputs.org-name }}/${{ inputs.repo-division-name }}-${{ inputs.repo-group-name }}-${{ inputs.repo-subject-area }} -f permission='push'
+      - name: Add Code Owners To Master and QA
+        env:
+          github_user: ${{ secrets.GH_USER_NAME }}
+          GH_TOKEN: ${{ secrets.GH_CLONE_REPO }}
+        run: |
+          git clone -b master --single-branch https://${github_user}:${GH_TOKEN}@github.com/AlightEngineering/adl-awsdeploy-cicd.git
+          repo_base=$(pwd)/adl-awsdeploy-cicd
+          export PYTHONPATH=${repo_base}/src
+          pip install -r ${repo_base}/requirements.txt
+          ls -l ${repo_base}/.github/data/CODEOWNERS.template
+          python ${repo_base}/src/alight/foundation/app/generatetemplate.py --base-arg-parser-config-file-location ${repo_base}/config --base-arg-parser-config-file-name generate-template-build-args.json --template-root-location ${repo_base}/.github/data --template-file-name CODEOWNERS.template --generated-script-file-location ${repo_base} --generated-script-file-name CODEOWNERS_MASTER_QA \
+          --cicdvar "CODE_OWNER_TEAM_NAME=${{ inputs.repo-team-name }}" \
+          --cicdvar "ADMIN_TEAM_NAME=${{ inputs.admin-team-name }}"       
+          
+          python ${repo_base}/src/alight/foundation/app/generatetemplate.py --base-arg-parser-config-file-location ${repo_base}/config --base-arg-parser-config-file-name generate-template-build-args.json --template-root-location ${repo_base}/.github/data --template-file-name CODEOWNERS.template --generated-script-file-location ${repo_base} --generated-script-file-name CODEOWNERS_QC \
+          --cicdvar "CODE_OWNER_TEAM_NAME=${{ inputs.repo-approver-team }}" \
+          --cicdvar "ADMIN_TEAM_NAME=${{ inputs.admin-team-name }}"
+
+          python ${repo_base}/src/alight/foundation/app/generatetemplate.py --base-arg-parser-config-file-location ${repo_base}/config --base-arg-parser-config-file-name generate-template-build-args.json --template-root-location ${repo_base}/.github/data --template-file-name CODEOWNERS.template --generated-script-file-location ${repo_base} --generated-script-file-name CODEOWNERS_PROD \
+          --cicdvar "CODE_OWNER_TEAM_NAME=${{ inputs.repo-dataproductowner-approvers-team }}" \
+          --cicdvar "ADMIN_TEAM_NAME=${{ inputs.admin-team-name }}"
+          
+          sleep 5
+          export last_sha=$(gh api --method GET -H "Accept: application/vnd.github+json" /repos/${{ inputs.org-name }}/${{ inputs.repo-division-name }}-${{ inputs.repo-group-name }}-${{ inputs.repo-subject-area }}/contents/CODEOWNERS -f ref="master" | jq | grep sha | cut -f2 -d":" | tr ',' ' ' | tr -d '"')
+          
+          sleep 5
+          code_owners_content=$(cat ${repo_base}/CODEOWNERS_MASTER_QA |base64 -w 0)
+          code_owners_data="{\"message\":\"Updates CODEOWNERS file on master branch\",\"committer\":{\"name\":\"Dushyant Remivasan\",\"email\":\"dushyant.remivasan@alight.com\"},\"content\": \"$(echo ${code_owners_content})\",\"branch\": \"master\",\"sha\": \"$(echo ${last_sha})\"}"
+          echo $code_owners_data > code_owners_data.json
+
+          sleep 5
+          curl -X PUT \
+          -H "Authorization: Bearer ${{ secrets.GH_CLONE_REPO }}" -H "Accept: application/vnd.github+json" \
+          https://api.github.com/repos/${{ inputs.org-name }}/${{ inputs.repo-division-name }}-${{ inputs.repo-group-name }}-${{ inputs.repo-subject-area }}/contents/CODEOWNERS \
+          -d @code_owners_data.json 
+
+      - name: Create Release Branches
+        env:
+          GH_TOKEN: ${{ secrets.GH_CLONE_REPO }}
+        run: |
+          sleep 60
+          export last_sha=$(gh api --method GET -H "Accept: application/vnd.github+json" /repos/${{ inputs.org-name }}/${{ inputs.repo-division-name }}-${{ inputs.repo-group-name }}-${{ inputs.repo-subject-area }}/git/refs/heads/master | jq | grep sha | cut -f2 -d":" | tr ',' ' ' | tr -d '"')
+          gh api --method POST -H "Accept: application/vnd.github+json" /repos/${{ inputs.org-name }}/${{ inputs.repo-division-name }}-${{ inputs.repo-group-name }}-${{ inputs.repo-subject-area }}/git/refs -f ref='refs/heads/release/qa' -f sha=$(echo ${last_sha})
+          sleep 5        
+          export last_sha=$(gh api --method GET -H "Accept: application/vnd.github+json" /repos/${{ inputs.org-name }}/${{ inputs.repo-division-name }}-${{ inputs.repo-group-name }}-${{ inputs.repo-subject-area }}/git/refs/heads/release/qa | jq | grep sha | cut -f2 -d":" | tr ',' ' ' | tr -d '"')
+          gh api --method POST -H "Accept: application/vnd.github+json" /repos/${{ inputs.org-name }}/${{ inputs.repo-division-name }}-${{ inputs.repo-group-name }}-${{ inputs.repo-subject-area }}/git/refs -f ref='refs/heads/release/qc' -f sha=$(echo ${last_sha})
+          sleep 5     
+
+      - name: Add Code Owners To QC and PROD
+        env:
+          github_user: ${{ secrets.GH_USER_NAME }}
+          GH_TOKEN: ${{ secrets.GH_CLONE_REPO }}
+        run: |          
+          sleep 5
+          export last_sha=$(gh api --method GET -H "Accept: application/vnd.github+json" /repos/${{ inputs.org-name }}/${{ inputs.repo-division-name }}-${{ inputs.repo-group-name }}-${{ inputs.repo-subject-area }}/contents/CODEOWNERS | jq | grep sha | cut -f2 -d":" | tr ',' ' ' | tr -d '"')
+          
+          sleep 5
+          repo_base=$(pwd)/adl-awsdeploy-cicd
+          code_owners_content=$(cat ${repo_base}/CODEOWNERS_QC |base64 -w 0)
+          code_owners_data="{\"message\":\"Updates CODEOWNERS file on release/qc branch\",\"committer\":{\"name\":\"Dushyant Remivasan\",\"email\":\"dushyant.remivasan@alight.com\"},\"content\": \"$(echo ${code_owners_content})\",\"branch\": \"release/qc\",\"sha\": \"$(echo ${last_sha})\"}"
+          echo $code_owners_data > code_owners_data.json
+
+          sleep 5
+          curl -X PUT \
+          -H "Authorization: Bearer ${{ secrets.GH_CLONE_REPO }}" -H "Accept: application/vnd.github+json" \
+          https://api.github.com/repos/${{ inputs.org-name }}/${{ inputs.repo-division-name }}-${{ inputs.repo-group-name }}-${{ inputs.repo-subject-area }}/contents/CODEOWNERS \
+          -d @code_owners_data.json 
+          
+          sleep 15
+          export last_sha=$(gh api --method GET -H "Accept: application/vnd.github+json" /repos/${{ inputs.org-name }}/${{ inputs.repo-division-name }}-${{ inputs.repo-group-name }}-${{ inputs.repo-subject-area }}/git/refs/heads/release/qc | jq | grep sha | cut -f2 -d":" | tr ',' ' ' | tr -d '"')
+          gh api --method POST -H "Accept: application/vnd.github+json" /repos/${{ inputs.org-name }}/${{ inputs.repo-division-name }}-${{ inputs.repo-group-name }}-${{ inputs.repo-subject-area }}/git/refs -f ref='refs/heads/release/prod' -f sha=$(echo ${last_sha})
+          
+          sleep 5
+          export last_sha=$(gh api --method GET -H "Accept: application/vnd.github+json" /repos/${{ inputs.org-name }}/${{ inputs.repo-division-name }}-${{ inputs.repo-group-name }}-${{ inputs.repo-subject-area }}/contents/CODEOWNERS -f ref="release/prod" | jq | grep sha | cut -f2 -d":" | tr ',' ' ' | tr -d '"')
+          
+          sleep 5
+          code_owners_content=$(cat ${repo_base}/CODEOWNERS_PROD |base64 -w 0)
+          code_owners_data="{\"message\":\"Updates CODEOWNERS file on release/prod branch\",\"committer\":{\"name\":\"Dushyant Remivasan\",\"email\":\"dushyant.remivasan@alight.com\"},\"content\": \"$(echo ${code_owners_content})\",\"branch\": \"release/prod\",\"sha\": \"$(echo ${last_sha})\"}"
+          echo $code_owners_data > code_owners_data.json
+
+          sleep 5
+          curl -X PUT \
+          -H "Authorization: Bearer ${{ secrets.GH_CLONE_REPO }}" -H "Accept: application/vnd.github+json" \
+          https://api.github.com/repos/${{ inputs.org-name }}/${{ inputs.repo-division-name }}-${{ inputs.repo-group-name }}-${{ inputs.repo-subject-area }}/contents/CODEOWNERS \
+          -d @code_owners_data.json         
+
+          sleep 20
+
+  update-master-branch-permissions:
+    name: Update Branch Protection For master Branch
+    uses:
+      AlightEngineering/adl-awsdeploy-cicd/.github/workflows/branch-permissions.yml@master
+    with:
+      repo-name: ${{ inputs.repo-division-name }}-${{ inputs.repo-group-name }}-${{ inputs.repo-subject-area }}
+      repo-template-name: ${{ inputs.repo-template-name }}
+      org-name: ${{ inputs.org-name }}
+      branch-name: "master"
+      branch-permissions-base-name: master-branch-permissions
+      branch-permissions-approver-team: ${{ inputs.repo-approver-team }}
+      branch-permissions-bypass-team: ${{ inputs.admin-team-name }}
+    secrets:
+      branch-user: ${{ secrets.GH_USER_NAME }}
+      branch-secret: ${{ secrets.GH_CLONE_REPO }}
+    needs:
+      adl-create-repo
+
+  update-release-qa-branch-permissions:
+    name: Update Branch Protection For release/qa Branch
+    uses:
+      AlightEngineering/adl-awsdeploy-cicd/.github/workflows/branch-permissions.yml@master
+    with:
+      repo-name: ${{ inputs.repo-division-name }}-${{ inputs.repo-group-name }}-${{ inputs.repo-subject-area }}
+      repo-template-name: ${{ inputs.repo-template-name }}
+      org-name: ${{ inputs.org-name }}
+      branch-name: "release%2Fqa"
+      branch-permissions-base-name: qa-branch-permissions
+      branch-permissions-approver-team: ${{ inputs.repo-approver-team }}
+      branch-permissions-bypass-team: ${{ inputs.admin-team-name }}
+    secrets:
+      branch-user: ${{ secrets.GH_USER_NAME }}
+      branch-secret: ${{ secrets.GH_CLONE_REPO }}
+    needs:
+      update-master-branch-permissions
+
+  update-release-qc-branch-permissions:
+    name: Update Branch Protection For release/qc Branch
+    uses:
+      AlightEngineering/adl-awsdeploy-cicd/.github/workflows/branch-permissions.yml@master
+    with:
+      repo-name: ${{ inputs.repo-division-name }}-${{ inputs.repo-group-name }}-${{ inputs.repo-subject-area }}
+      repo-template-name: ${{ inputs.repo-template-name }}
+      org-name: ${{ inputs.org-name }}
+      branch-name: "release%2Fqc"
+      branch-permissions-base-name: qc-branch-permissions
+      branch-permissions-approver-team: ${{ inputs.repo-approver-team }}
+      branch-permissions-bypass-team: ${{ inputs.admin-team-name }}
+    secrets:
+      branch-user: ${{ secrets.GH_USER_NAME }}
+      branch-secret: ${{ secrets.GH_CLONE_REPO }}
+    needs:
+      update-release-qa-branch-permissions
+
+  update-release-prod-branch-permissions:
+    name: Update Branch Protection For release/prod Branch
+    uses:
+      AlightEngineering/adl-awsdeploy-cicd/.github/workflows/branch-permissions.yml@master
+    with:
+      repo-name: ${{ inputs.repo-division-name }}-${{ inputs.repo-group-name }}-${{ inputs.repo-subject-area }}
+      repo-template-name: ${{ inputs.repo-template-name }}
+      org-name: ${{ inputs.org-name }}
+      branch-name: "release%2Fprod"
+      branch-permissions-base-name: prod-branch-permissions
+      branch-permissions-approver-team: ${{ inputs.repo-dataproductowner-approvers-team }}
+      branch-permissions-bypass-team: ${{ inputs.admin-team-name }}
+    secrets:
+      branch-user: ${{ secrets.GH_USER_NAME }}
+      branch-secret: ${{ secrets.GH_CLONE_REPO }}
+    needs:
+      update-release-qc-branch-permissions
