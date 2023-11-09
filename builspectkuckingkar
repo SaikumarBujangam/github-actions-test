@@ -1,30 +1,96 @@
-- name: Add Secrets to New Repository
-  env:
-    GH_TOKEN: ${{ secrets.GH_CLONE_REPO }}
-    github_user: ${{ secrets.GH_USER_NAME }}
-    SOURCE_REPO: 'AlightEngineering/adl-awsdeploy-cicd'
-    TARGET_REPO: ${{ inputs.org-name }}/${{ inputs.repo-division-name }}-${{ inputs.repo-group-name }}-${{ inputs.repo-subject-area }}
-  run: |
-    # Add GH_TOKEN secret
-    gh secret set GH_TOKEN --repo $TARGET_REPO --body "${GH_TOKEN}"
+Note: Objects have changed outside of Terraform
 
-    # Add github_user secret
-    gh secret set github_user --repo $TARGET_REPO --body "${github_user}"
+Terraform detected the following changes made outside of Terraform since the
+last "terraform apply":
 
-    # Add github_token secret
-    gh secret set github_token --repo $TARGET_REPO --body "${GH_TOKEN}"
+  # aws_lambda_event_source_mapping.dynamodb_stream_lambda_mapping has been changed
+  ~ resource "aws_lambda_event_source_mapping" "dynamodb_stream_lambda_mapping" {
+      ~ enabled                            = true -> false
+      + function_response_types            = []
+        id                                 = "959f5c3c-8d37-4258-80bf-e87d7310980a"
+      ~ last_modified                      = "2023-10-06T07:09:00Z" -> "2023-10-12T08:19:00Z"
+      ~ last_processing_result             = "No records processed" -> "PROBLEM: Stream is closed"
+      + queues                             = []
+      ~ state                              = "Enabled" -> "Disabled"
+      ~ state_transition_reason            = "User action" -> "Unrecoverable error"
+      + topics                             = []
+        # (12 unchanged attributes hidden)
 
-    # List secrets in the source repository
-    secrets_list=$(gh secret list -R $SOURCE_REPO --json name)
-    
-    # Retrieve ADL_ARTIFACTORY_TOKEN secret from source repository
-    ADL_ARTIFACTORY_TOKEN_SOURCE=$(echo $secrets_list | jq -r '.[] | select(.name=="ADL_ARTIFACTORY_TOKEN") | .value')
-    
-    # Set ADL_ARTIFACTORY_TOKEN secret in the target repository
-    gh secret set ADL_ARTIFACTORY_TOKEN --repo $TARGET_REPO --body "${ADL_ARTIFACTORY_TOKEN_SOURCE}"
+        # (1 unchanged block hidden)
+    }
+  # aws_lambda_function.ingress-streams-processing-lambda has been changed
+  ~ resource "aws_lambda_function" "ingress-streams-processing-lambda" {
+        id                             = "ingress-streams-processing-lambda"
+      ~ last_modified                  = "2023-10-06T07:09:49.505+0000" -> "2023-10-20T12:06:51.000+0000"
+      + layers                         = []
+      ~ source_code_hash               = "LuKlc2MclQBddw+ycI3yFYklcQy3cLx5EEeG7AHqcps=" -> "VSYpfTz0Be/d/a5a8vQ+h/zdvylmaF51xKZcxgnIpfM="
+      ~ source_code_size               = 526 -> 1331
+      + tags                           = {}
+        # (19 unchanged attributes hidden)
 
-    # Retrieve ADL_ARTIFACTORY_USER_NAME secret from source repository
-    ADL_ARTIFACTORY_USER_NAME_SOURCE=$(echo $secrets_list | jq -r '.[] | select(.name=="ADL_ARTIFACTORY_USER_NAME") | .value')
 
-    # Set ADL_ARTIFACTORY_USER_NAME secret in the target repository
-    gh secret set ADL_ARTIFACTORY_USER_NAME --repo $TARGET_REPO --body "${ADL_ARTIFACTORY_USER_NAME_SOURCE}"
+        # (2 unchanged blocks hidden)
+    }
+
+Unless you have made equivalent changes to your configuration, or ignored the
+relevant attributes using ignore_changes, the following plan may include
+actions to undo or respond to these changes.
+
+─────────────────────────────────────────────────────────────────────────────
+
+Terraform used the selected providers to generate the following execution
+plan. Resource actions are indicated with the following symbols:
+  ~ update in-place
+-/+ destroy and then create replacement
+
+Terraform will perform the following actions:
+
+  # aws_lambda_event_source_mapping.dynamodb_stream_lambda_mapping must be replaced
+-/+ resource "aws_lambda_event_source_mapping" "dynamodb_stream_lambda_mapping" {
+      - batch_size                         = 100 -> null
+      - bisect_batch_on_function_error     = false -> null
+      ~ enabled                            = false -> true
+      ~ event_source_arn                   = "arn:aws:dynamodb:eu-central-1:745252665765:table/DataIngress/stream/2023-10-06T05:56:25.792" -> "arn:aws:dynamodb:eu-central-1:745252665765:table/DataIngress/stream/2023-10-12T08:32:43.346" # forces replacement
+      ~ function_arn                       = "arn:aws:lambda:eu-central-1:745252665765:function:ingress-streams-processing-lambda" -> (known after apply)
+      - function_response_types            = [] -> null
+      ~ id                                 = "959f5c3c-8d37-4258-80bf-e87d7310980a" -> (known after apply)
+      ~ last_modified                      = "2023-10-12T08:19:00Z" -> (known after apply)
+      ~ last_processing_result             = "PROBLEM: Stream is closed" -> (known after apply)
+      - maximum_batching_window_in_seconds = 0 -> null
+      ~ maximum_record_age_in_seconds      = -1 -> (known after apply)
+      ~ parallelization_factor             = 1 -> (known after apply)
+      - queues                             = [] -> null
+      ~ state                              = "Disabled" -> (known after apply)
+      ~ state_transition_reason            = "Unrecoverable error" -> (known after apply)
+      - topics                             = [] -> null
+      - tumbling_window_in_seconds         = 0 -> null
+      ~ uuid                               = "959f5c3c-8d37-4258-80bf-e87d7310980a" -> (known after apply)
+        # (3 unchanged attributes hidden)
+
+      + amazon_managed_kafka_event_source_config {
+          + consumer_group_id = (known after apply)
+        }
+
+      - destination_config {
+          - on_failure {}
+        }
+
+      + self_managed_kafka_event_source_config {
+          + consumer_group_id = (known after apply)
+        }
+    }
+
+  # aws_lambda_function.ingress-streams-processing-lambda will be updated in-place
+  ~ resource "aws_lambda_function" "ingress-streams-processing-lambda" {
+        id                             = "ingress-streams-processing-lambda"
+      ~ last_modified                  = "2023-10-20T12:06:51.000+0000" -> (known after apply)
+      ~ source_code_hash               = "VSYpfTz0Be/d/a5a8vQ+h/zdvylmaF51xKZcxgnIpfM=" -> "y4eVf7UViTFwLSGa9AcQzFETL4vSgfLMDDfhTpR9o+c="
+        tags                           = {}
+        # (21 unchanged attributes hidden)
+
+
+        # (2 unchanged blocks hidden)
+    }
+
+Plan: 1 to add, 1 to change, 1 to destroy.
+
