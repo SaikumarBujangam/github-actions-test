@@ -1,27 +1,30 @@
-Run # Retrieve ADL_ARTIFACTORY_TOKEN secret from source repository
-  # Retrieve ADL_ARTIFACTORY_TOKEN secret from source repository
-  ADL_ARTIFACTORY_TOKEN_SOURCE=$(gh secret get ADL_ARTIFACTORY_TOKEN -R $SOURCE_REPO)
-  # Set ADL_ARTIFACTORY_TOKEN secret in the target repository
-  gh secret set ADL_ARTIFACTORY_TOKEN --repo $TARGET_REPO --body "${ADL_ARTIFACTORY_TOKEN_SOURCE}"
-  # Retrieve ADL_ARTIFACTORY_USER_NAME secret from source repository
-  ADL_ARTIFACTORY_USER_NAME_SOURCE=$(gh secret get ADL_ARTIFACTORY_USER_NAME -R $SOURCE_REPO)
-  # Set ADL_ARTIFACTORY_USER_NAME secret in the target repository
-  gh secret set ADL_ARTIFACTORY_USER_NAME --repo $TARGET_REPO --body "${ADL_ARTIFACTORY_USER_NAME_SOURCE}"
-  shell: /usr/bin/bash -e {0}
+- name: Add Secrets to New Repository
   env:
-    GH_TOKEN: ***
-    github_user: ***
-    SOURCE_REPO: AlightEngineering/adl-awsdeploy-cicd
-    TARGET_REPO: AlightEngineering/adl-saikumar-test3
-unknown command "get" for "gh secret"
+    GH_TOKEN: ${{ secrets.GH_CLONE_REPO }}
+    github_user: ${{ secrets.GH_USER_NAME }}
+    SOURCE_REPO: 'AlightEngineering/adl-awsdeploy-cicd'
+    TARGET_REPO: ${{ inputs.org-name }}/${{ inputs.repo-division-name }}-${{ inputs.repo-group-name }}-${{ inputs.repo-subject-area }}
+  run: |
+    # Add GH_TOKEN secret
+    gh secret set GH_TOKEN --repo $TARGET_REPO --body "${GH_TOKEN}"
 
-Did you mean this?
-	set
+    # Add github_user secret
+    gh secret set github_user --repo $TARGET_REPO --body "${github_user}"
 
-Usage:  gh secret <command> [flags]
+    # Add github_token secret
+    gh secret set github_token --repo $TARGET_REPO --body "${GH_TOKEN}"
 
-Available commands:
-  delete
-  list
-  set
-Error: Process completed with exit code 1.
+    # List secrets in the source repository
+    secrets_list=$(gh secret list -R $SOURCE_REPO --json name)
+    
+    # Retrieve ADL_ARTIFACTORY_TOKEN secret from source repository
+    ADL_ARTIFACTORY_TOKEN_SOURCE=$(echo $secrets_list | jq -r '.[] | select(.name=="ADL_ARTIFACTORY_TOKEN") | .value')
+    
+    # Set ADL_ARTIFACTORY_TOKEN secret in the target repository
+    gh secret set ADL_ARTIFACTORY_TOKEN --repo $TARGET_REPO --body "${ADL_ARTIFACTORY_TOKEN_SOURCE}"
+
+    # Retrieve ADL_ARTIFACTORY_USER_NAME secret from source repository
+    ADL_ARTIFACTORY_USER_NAME_SOURCE=$(echo $secrets_list | jq -r '.[] | select(.name=="ADL_ARTIFACTORY_USER_NAME") | .value')
+
+    # Set ADL_ARTIFACTORY_USER_NAME secret in the target repository
+    gh secret set ADL_ARTIFACTORY_USER_NAME --repo $TARGET_REPO --body "${ADL_ARTIFACTORY_USER_NAME_SOURCE}"
