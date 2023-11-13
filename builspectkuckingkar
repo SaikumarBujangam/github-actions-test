@@ -30,3 +30,36 @@ jobs:
             secret_value=$(echo $secrets_list | jq -r --arg secret "$secret_name" '.[] | select(.name==$secret) | .value')
             gh secret set $secret_name --repo $TARGET_REPO --body "$secret_value"
           done
+
+
+Getting the below error
+
+Run # Add GH_TOKEN secret
+  # Add GH_TOKEN secret
+  gh secret set GH_TOKEN --repo $TARGET_REPO --body "${GH_TOKEN}"
+  
+  # Add github_user secret
+  gh secret set github_user --repo $TARGET_REPO --body "${github_user}"
+  
+  # Add github_token secret
+  gh secret set github_token --repo $TARGET_REPO --body "${GH_TOKEN}"
+  
+  # List secrets in the source repository
+  secrets_list=$(gh secret list -R $SOURCE_REPO --json name)
+  
+  # Loop through each secret and add it to the target repository
+  for secret_name in $(echo $secrets_list | jq -r '.[].name'); do
+    secret_value=$(echo $secrets_list | jq -r --arg secret "$secret_name" '.[] | select(.name==$secret) | .value')
+    gh secret set $secret_name --repo $TARGET_REPO --body "$secret_value"
+  done
+  shell: /usr/bin/bash -e {0}
+  env:
+    GH_TOKEN: ***
+    github_user: ***
+    SOURCE_REPO: AlightEngineering/adl-awsdeploy-cicd
+    TARGET_REPO: AlightEngineering/adl-testingnew-test1
+1 error occurred:
+	* failed to set secret "github_user": HTTP 422: Failed to add secret. Secret names must not start with GITHUB_. (https://api.github.com/repos/AlightEngineering/adl-testingnew-test1/actions/secrets/github_user)
+
+
+Error: Process completed with exit code 1.
