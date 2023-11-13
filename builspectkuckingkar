@@ -1,5 +1,56 @@
-An error occurred (ValidationException) when calling the UpdateFunctionCode operation: 1 validation error detected: Value 's3://starcap-lambda-build-artifact/' at 's3Bucket' failed to satisfy constraint: Member must satisfy regular expression pattern: ^[0-9A-Za-z\.\-_]*(?<!\.)$
+Container] 2023/11/13 07:53:58.055940 Running command aws eks --region $TARGET_REGION update-kubeconfig --name $ENV-starcap-platform-cluster --profile $ENV-account
+Added new context arn:aws:eks:eu-west-1:***:cluster/dev2-starcap-platform-cluster to /root/.kube/config
 
-elif [ $service_name = "lambda-services" ]; then
-             aws lambda update-function-code --function-name ingress-streams-processing-lambda --s3-bucket s3://starcap-lambda-build-artifact/ --s3-key audit/lambda_function_$appversion.zip --profile ${ENV}-account
-          else
+[Container] 2023/11/13 07:53:59.335027 Phase complete: PRE_BUILD State: SUCCEEDED
+[Container] 2023/11/13 07:53:59.335047 Phase context status code:  Message: 
+[Container] 2023/11/13 07:53:59.367867 Entering phase BUILD
+[Container] 2023/11/13 07:53:59.368591 Running command IFS=',' read -ra SERVICES <<< $SERVICES_TO_RESTART
+for service in "$SERVICES[@]"; do
+  kubectl rollout restart deployment $service -n backend
+done
+Error from server (NotFound): deployments.apps "login-services[@]" not found
+
+[Container] 2023/11/13 07:54:04.443888 Command did not exit successfully IFS=',' read -ra SERVICES <<< $SERVICES_TO_RESTART
+for service in "$SERVICES[@]"; do
+  kubectl rollout restart deployment $service -n backend
+done exit status 1
+[Container] 2023/11/13 07:54:04.449160 Phase complete: BUILD State: FAILED
+[Container] 2023/11/13 07:54:04.449175 Phase context status code: COMMAND_EXECUTION_ERROR Message: Error while executing command: IFS=',' read -ra SERVICES <<< $SERVICES_TO_RESTART
+for service in "$SERVICES[@]"; do
+  kubectl rollout restart deployment $service -n backend
+done. Reason: exit status 1
+[Container] 2023/11/13 07:54:04.483971 Entering phase POST_BUILD
+[Container] 2023/11/13 07:54:04.485973 Phase complete: POST_BUILD State: SUCCEEDED
+[Container] 2023/11/13 07:54:04.485987 Phase context status code:  Message: 
+
+version: 0.2
+env:
+  variables:
+    TARGET_REGION: ""
+    ENV: ""
+    SERVICES_TO_RESTART: ""
+  parameter-store:
+    ACCOUNT_ID: "$ENV_accountid"
+phases:
+  install:
+    runtime-versions:
+        java: corretto17
+  pre_build:
+    commands:
+      - echo "Validating environment parameter"
+      - |
+        if [ $ENV != "dev" ] && [ $ENV != "dev2" ]; then
+          echo "Invalid environment parameter. Accepted values are 'dev' or 'dev2'."
+          exit 1
+        fi 
+      - aws configure set region $TARGET_REGION --profile $ENV-account
+      - aws configure set role_arn arn:aws:iam::$ACCOUNT_ID:role/InfraBuildRole --profile $ENV-account
+      - aws configure set credential_source EcsContainer --profile $ENV-account
+      - aws eks --region $TARGET_REGION update-kubeconfig --name $ENV-starcap-platform-cluster --profile $ENV-account
+  build:
+    commands:
+      - |
+        IFS=',' read -ra SERVICES <<< $SERVICES_TO_RESTART
+        for service in "$SERVICES[@]"; do
+          kubectl rollout restart deployment $service -n backend
+        done
