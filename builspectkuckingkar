@@ -1,61 +1,39 @@
-exec_pkg_codedeploy_build --adl-artifact-type PKG_CDP_BUILD --codedeploy-definition-file 
+#!/bin/bash
+# EC2 CodeDeploy variables, these are set at the end of the mdsh_init call
+# Last Updated: 08-01-2023 18:43CDT
+# cdp_mig_mdsh_env
 
-exec_pkg_codedeploy_build()
-{
-  PYTHON_VAR_LIST=""
-  ALLOWS_ABSOLUTE_PATH=False
-  CICDVAR_LIST=""
-  SOURCE_ROOT=${APP_SUBJECT_AREA}
-  AUTO_INFLATE_FLAG=False
-  while test $# -gt 0
-  do
-    case $1 in
-      (--var)
-        shift
-        parameter_validation "Please provide a CICDVAR name and value" "$@" && return 104
-        CICDVAR_LIST=$(echo ${CICDVAR_LIST} "--cicdvar ${1}")
-        shift;;
-      (--codedeploy-definition-file)
-        shift
-        parameter_validation "Please provide a definition file location" "$@" && return 104
-        CODEDEPLOY_DEFINITION_FILE=${1}
-        shift;;
-      (--allows-absolute-path)
-        shift
-        parameter_validation "Please provide an absolute path flag" "$@" && return 104
-        ALLOWS_ABSOLUTE_PATH=${1}
-        shift;;
-      (--auto-inflate-flag)
-        shift
-        parameter_validation "Please provide an auto-inflate flag" "$@" && return 104
-        AUTO_INFLATE_FLAG=${1}
-        shift;;
-      (--adl-artifact-type)
-        shift
-        parameter_validation "Please provide an artifact type" "$@" && return 104
-        base_path=${1}_PATH
-        base_zip_name=${1}_ZIP_NAME
-        base_user_name=${1}_USER_NAME
-        base_group_name=${1}_GROUP_NAME
-        base_after_install_template=${1}_AFTER_INSTALL_TEMPLATE
-        SERVER_BASE_PATH=${!base_path}
-        ZIP_FILE_NAME=${!base_zip_name}
-        OWNER_USER_NAME=${!base_user_name}
-        OWNER_GROUP_NAME=${!base_group_name}
-        AFTER_INSTALL_TEMPLATE=${!base_after_install_template}
+PKG_CDP_BUILD_PATH="/apps/dataproduct"
+PKG_CDP_BUILD_ZIP_NAME=cdp_pkg_deploy.zip
+PKG_CDP_BUILD_USER_NAME=adl_${cdp_mig_mdsh_env}_all_mig_svc
+PKG_CDP_BUILD_GROUP_NAME=adl_all_mig
+PKG_CDP_BUILD_AFTER_INSTALL_TEMPLATE=${APP_ENV}_pkg_cdp_build_afterinstall.template
 
-        shift;;
-      (--codedeploy-source-root)
-        shift
-        parameter_validation "Please provide a source root" "$@" && return 104
-        SOURCE_ROOT=${1}
-        shift;;
-      (*)
-        shift;;
-    esac
-  done
-  run_logger python ${awsdeployrc_root}/src/alight/foundation/app/generatetar.py --base-arg-parser-config-file-location ${awsdeployrc_root}/config --base-arg-parser-config-file-name cdp-pkg-build-args.json --template-file-location ${APP_INSTALL_DIR}/config --template-file-name ${CODEDEPLOY_DEFINITION_FILE} --source-root ${SOURCE_ROOT} --pkg-version ${APP_VERSION} --tar-file-name ${APP_SUBJECT_AREA} --tar-file-location build --cicdvar "DATAPRODUCT_NAME=${DATA_PRODUCT_NAME}"
-  run_logger python ${awsdeployrc_root}/src/alight/foundation/app/generatetemplate.py --base-arg-parser-config-file-location ${awsdeployrc_root}/config --base-arg-parser-config-file-name generate-template-build-args.json --template-root-location ${awsdeployrc_root}/config --template-file-name ${AFTER_INSTALL_TEMPLATE} --generated-script-file-location build --generated-script-file-name afterinstall.sh --cicdvar "APP_ENV=${APP_ENV}" --cicdvar "DATAPRODUCT_USER=${OWNER_USER_NAME}" --cicdvar "DATAPRODUCT_GROUP=${OWNER_GROUP_NAME}" --cicdvar "APP_DATAPRODUCT_DIR=${SERVER_BASE_PATH}/${DATA_PRODUCT_NAME}" --cicdvar "APP_INSTALL_DIR=${SERVER_BASE_PATH}/${DATA_PRODUCT_NAME}/${APP_SUBJECT_AREA}/${APP_VERSION}" --cicdvar "APP_LAND_DIR=${SERVER_BASE_PATH}/${DATA_PRODUCT_NAME}/${APP_SUBJECT_AREA}/land" --cicdvar "APP_VERSION=${APP_VERSION}" --cicdvar "APP_SUBJECT_AREA=${APP_SUBJECT_AREA}" --cicdvar "APP_BASE_DIR=${SERVER_BASE_PATH}/${DATA_PRODUCT_NAME}/${APP_SUBJECT_AREA}" --cicdvar "DATA_PRODUCT_NAME=${DATA_PRODUCT_NAME}" --cicdvar "AUTO_INFLATE_FLAG=${AUTO_INFLATE_FLAG}"
-  run_logger python ${awsdeployrc_root}/src/alight/foundation/app/generatetemplate.py --base-arg-parser-config-file-location ${awsdeployrc_root}/config --base-arg-parser-config-file-name generate-template-build-args.json --template-root-location ${awsdeployrc_root}/config --template-file-name pkg-cdp-template.json --generated-script-file-location build --generated-script-file-name pkg-cdp-template.json --cicdvar "pkg_dir=build" --cicdvar "pkg_name=${APP_SUBJECT_AREA}" --cicdvar "pkg_version=${APP_VERSION}" --cicdvar "dataproduct=${DATA_PRODUCT_NAME}" --cicdvar "stream=${APP_SUBJECT_AREA}"
-  run_logger python ${awsdeployrc_root}/src/alight/foundation/app/deploy/sourcestage.py --base-arg-parser-config-file-location ${awsdeployrc_root}/config --base-arg-parser-config-file-name appspec-build-args.json --template-file-location build --template-file pkg-cdp-template.json --source-root "." --generated-appspec-location build --zip-file-name ${ZIP_FILE_NAME} --zip-file-location build --s3-bucket ${deployment_bucket} --s3-file-key cicd/codedeploy/${DATA_PRODUCT_NAME}/${APP_SUBJECT_AREA}/${ZIP_FILE_NAME} --server-base-path ${SERVER_BASE_PATH} --allows-absolute-path ${ALLOWS_ABSOLUTE_PATH} --deploy-owner-user-name ${OWNER_USER_NAME} --deploy-owner-group-name ${OWNER_GROUP_NAME} --hook-instructions-file-location ${awsdeployrc_root}/config --hook-instructions-file-name afterinstall_appspec_template.json ${CICDVAR_LIST} || true
-}
+DATAPRODUCT_CDP_BUILD_PATH="/apps/dataproduct"
+DATAPRODUCT_CDP_BUILD_ZIP_NAME=cdp_deploy.zip
+DATAPRODUCT_CDP_BUILD_USER_NAME=adl_${cdp_mig_mdsh_env}_all_mig_svc
+DATAPRODUCT_CDP_BUILD_GROUP_NAME=adl_all_mig
+DATAPRODUCT_CDP_BUILD_AFTER_INSTALL_TEMPLATE=dataproduct_cdp_build_afterinstall.template
+
+CDP_BUILD_PATH="/apps/dataproduct"
+CDP_BUILD_ZIP_NAME=cdp_deploy.zip
+CDP_BUILD_USER_NAME=adl_${cdp_mig_mdsh_env}_all_mig_svc
+CDP_BUILD_GROUP_NAME=adl_all_mig
+CDP_BUILD_AFTER_INSTALL_TEMPLATE=${APP_ENV}_cdp_build_afterinstall.template
+
+INFORMATICA_CONFIG_BUILD_PATH="/apps/dataproduct"
+INFORMATICA_CONFIG_BUILD_ZIP_NAME=ic_deploy.zip
+INFORMATICA_CONFIG_BUILD_USER_NAME=infasec${mdsh_env}
+INFORMATICA_CONFIG_BUILD_GROUP_NAME=infasec${mdsh_env}
+INFORMATICA_CONFIG_BUILD_AFTER_INSTALL_TEMPLATE=informatica_config_build_afterinstall.template
+
+# This should be removed in time, this is in order to support
+# ported IC projects who use a different root path for config and param files
+INFORMATICA_ABS_CONFIG_BUILD_PATH="/"
+INFORMATICA_ABS_CONFIG_BUILD_ZIP_NAME=ic_deploy.zip
+INFORMATICA_ABS_CONFIG_BUILD_USER_NAME=infasec${mdsh_env}
+INFORMATICA_ABS_CONFIG_BUILD_GROUP_NAME=infasec${mdsh_env}
+
+
+BOOTSTRAP_APP_BASE=/apps/dataproduct
+BOOTSTRAP_FOUNDATION_BASE=${BOOTSTRAP_APP_BASE}/${MDSH_GROUP}/adl-awsdeploy-cicd
