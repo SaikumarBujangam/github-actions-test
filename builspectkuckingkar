@@ -1,23 +1,48 @@
 #!/bin/bash
+# EC2 CodeDeploy variables, these are set at the end of the mdsh_init call
+# Last Updated: 08-01-2023 18:43CDT
+# cdp_mig_mdsh_env
 
 PKG_CDP_BUILD_PATH="/apps/dataproduct"
-PKG_CDP_BUILD_ZIP_NAME="cdp_pkg_deploy.zip"
-PKG_CDP_BUILD_USER_NAME="adl_${cdp_mig_mdsh_env}_all_mig_svc"
+PKG_CDP_BUILD_ZIP_NAME=cdp_pkg_deploy.zip
+PKG_CDP_BUILD_USER_NAME=adl_${cdp_mig_mdsh_env}_all_mig_svc
+if [ "${APP_ENV}" == "prd" ]; then
+    PKG_CDP_BUILD_GROUP_NAME="adl_all_mig"
+else
+    PKG_CDP_BUILD_GROUP_NAME="adl_${cdp_mig_mdsh_env}_all_etl_runtime"
+PKG_CDP_BUILD_AFTER_INSTALL_TEMPLATE=${APP_ENV}_pkg_cdp_build_afterinstall.template
 
-declare -A GROUP_NAME_MAP
-GROUP_NAME_MAP["prd"]="adl_all_mig"
-GROUP_NAME_MAP["dev"]="adl_${cdp_mig_mdsh_env}_all_etl_runtime"
-GROUP_NAME_MAP["qa"]="adl_${cdp_mig_mdsh_env}_all_etl_runtime"
-GROUP_NAME_MAP["qc"]="adl_${cdp_mig_mdsh_env}_all_etl_runtime"
-
-PKG_CDP_BUILD_GROUP_NAME=${GROUP_NAME_MAP["$APP_ENV"]}
-
-PKG_CDP_BUILD_AFTER_INSTALL_TEMPLATE="${APP_ENV}_pkg_cdp_build_afterinstall.template"
+DATAPRODUCT_CDP_BUILD_PATH="/apps/dataproduct"
+DATAPRODUCT_CDP_BUILD_ZIP_NAME=cdp_deploy.zip
+DATAPRODUCT_CDP_BUILD_USER_NAME=adl_${cdp_mig_mdsh_env}_all_mig_svc
+DATAPRODUCT_CDP_BUILD_GROUP_NAME=adl_all_mig
+DATAPRODUCT_CDP_BUILD_AFTER_INSTALL_TEMPLATE=dataproduct_cdp_build_afterinstall.template
 
 CDP_BUILD_PATH="/apps/dataproduct"
-CDP_BUILD_ZIP_NAME="cdp_deploy.zip"
-CDP_BUILD_USER_NAME="adl_${cdp_mig_mdsh_env}_all_mig_svc"
+CDP_BUILD_ZIP_NAME=cdp_deploy.zip
+CDP_BUILD_USER_NAME=adl_${cdp_mig_mdsh_env}_all_mig_svc
+if [ "${APP_ENV}" == "prd" ]; then
+    CDP_BUILD_GROUP_NAME="adl_all_mig"
+else
+    CDP_BUILD_GROUP_NAME="adl_${cdp_mig_mdsh_env}_all_etl_runtime"
+fi
+CDP_BUILD_AFTER_INSTALL_TEMPLATE=${APP_ENV}_cdp_build_afterinstall.template
 
-CDP_BUILD_GROUP_NAME=${GROUP_NAME_MAP["$APP_ENV"]}
+INFORMATICA_CONFIG_BUILD_PATH="/apps/dataproduct"
+INFORMATICA_CONFIG_BUILD_ZIP_NAME=ic_deploy.zip
+INFORMATICA_CONFIG_BUILD_USER_NAME=infasec${mdsh_env}
+INFORMATICA_CONFIG_BUILD_GROUP_NAME=infasec${mdsh_env}
+INFORMATICA_CONFIG_BUILD_AFTER_INSTALL_TEMPLATE=informatica_config_build_afterinstall.template
 
-CDP_BUILD_AFTER_INSTALL_TEMPLATE="${APP_ENV}_cdp_build_afterinstall.template"
+# This should be removed in time, this is in order to support
+# ported IC projects who use a different root path for config and param files
+INFORMATICA_ABS_CONFIG_BUILD_PATH="/"
+INFORMATICA_ABS_CONFIG_BUILD_ZIP_NAME=ic_deploy.zip
+INFORMATICA_ABS_CONFIG_BUILD_USER_NAME=infasec${mdsh_env}
+INFORMATICA_ABS_CONFIG_BUILD_GROUP_NAME=infasec${mdsh_env}
+
+
+BOOTSTRAP_APP_BASE=/apps/dataproduct
+BOOTSTRAP_FOUNDATION_BASE=${BOOTSTRAP_APP_BASE}/${MDSH_GROUP}/adl-awsdeploy-cicd
+
+bash: /D/Users/A1086139/git_repo/adl-awsdeploy-cicd/config/.adlpostinitrc: line 47: syntax error: unexpected end of file
