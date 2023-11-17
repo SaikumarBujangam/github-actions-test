@@ -1,13 +1,170 @@
-if [ "${APP_ENV}" == "dev" ]; then
-    # For dev environment
-    if [ "${APP_ENV}" == "prd" ]; then
-        CDP_BUILD_GROUP_NAME="adl_all_mig"
-    else
-        CDP_BUILD_GROUP_NAME="adl_${cdp_mig_mdsh_env}_all_etl_runtime"
-    fi
-    CDP_BUILD_AFTER_INSTALL_TEMPLATE="${APP_ENV}_cdp_build_afterinstall.template"
-else
-    # For other environments
-    CDP_BUILD_GROUP_NAME="adl_all_mig"
-    CDP_BUILD_AFTER_INSTALL_TEMPLATE="cdp_build_afterinstall.template"
-fi
+#####################################################
+# Creating cloudwatch-event-rule to trigger Tag based build
+#####################################################
+resource "aws_cloudwatch_event_rule" "trigger_build_on_tag_updates" {
+
+  name        = "${var.project_key}-cc-repo-codebuild-tag-rule"
+  description = "Amazon CloudWatch Events rule to automatically start the ${var.project_key}-cc-repo build when a change occurs in the ${var.project_key}-cc-repo repository. "
+
+  event_pattern = <<EOF
+{
+  "source": [
+    "aws.codecommit"
+  ],
+  "detail-type": [
+    "CodeCommit Repository State Change"
+  ],
+  "resources": "${module.project_codecommit[0].codecommit_repository_arn}",
+  "detail": {
+    "event": [
+      "referenceCreated",
+      "referenceUpdated"
+    ],
+    "repositoryName": [
+      "${module.project_codecommit[0].codecommit_repo_name}"
+    ],
+    "referenceType": [
+      "tag"
+    ]
+  }
+}
+EOF
+}
+
+resource "aws_cloudwatch_event_target" "codebuild" {
+
+  rule      = aws_cloudwatch_event_rule.trigger_build_on_tag_updates.name
+  target_id = "TriggerCodeBuild"
+  arn       = module.docker_build.codebuild_project_arn
+  role_arn  = aws_iam_role.cloudwatch_event_role.arn
+
+  input_transformer {
+    input_paths = {
+      git_tag = "$.detail.referenceName"
+    }
+    input_template = "{ \"environmentVariablesOverride\": [ { \"name\": \"TAG\", \"value\": <git_tag> }, { \"name\": \"SOURCETRIGGER\", \"value\": \"REPO_TAG\" } ]}"
+  }
+}
+
+module "docker_build" {
+  source = "../../terraform-modules/terraform-aws-codebuild"
+
+  
+  build_project_name              = "${var.project_key}-cc-repo-docker-build"
+  build_spec_file                 = "${path.module}/build_spec/docker-build.yml"
+  codebuild_role_arn              = aws_iam_role.codebuild_role.arn
+  source_location                 = module.project_codecommit[0].codecommit_repo_clone_url_http
+
+  build_specific_variables = {
+    "ecr_repository_url"       = module.project_ecr[0].ecr_repo_url
+    
+  }
+}
+module "project_codecommit" {
+  count                      = var.create_repository ? 1 : 0
+  source                     = "../../terraform-modules/terraform-aws-codecommit"
+  create_repository          = var.create_repository
+  codecommit_repository_name = lower("${var.project_key}-cc-repo")
+  tags = merge(
+    {
+      "project" = "${var.project_key}"
+    },
+    {
+      "platform" = "${var.platform}"
+    },
+    {
+      "organization" = "${var.org_key}"
+    },
+   )
+}
+
+module "project_ecr" {
+  count               = var.create_repository ? 1 : 0
+  source              = "../../terraform-modules/terraform-aws-ecr"
+  create_repository   = var.create_repository
+  repository_name     = lower("${var.project_key}-ecr-repo")
+  project_ecr_policy  = var.project_ecr_policy
+  org_ecr_policy      = var.org_ecr_policy
+  iam_user_arn        = module.project_iam_user[count.index].user_arn
+  iam_user_arn_list   = length(var.project_iam_user_arn_list) > 0 ? concat((var.project_iam_user_arn_list), [module.project_iam_user[count.index].user_arn]) : [module.project_iam_user[count.index].user_arn]
+  #org_repository_name = data.aws_ecr_repository.org_ecr[count.index].name
+  tags = merge(
+    {
+      "project" = "${var.project_key}"
+    },
+    {
+      "platform" = "${var.platform}"
+    },
+    {
+      "organization" = "${var.org_key}"
+    },
+   )
+  depends_on = [module.project_iam_user]
+}
+output "project_cc_repo_arn" {
+  description = "Codecommit Repo ARN"
+  value       = var.create_repository ? module.project_codecommit[0].codecommit_repository_arn : null
+}
+
+output "project_cc_repo_name" {
+  description = "Codecommit Repo Name"
+  value       = var.create_repository ? module.project_codecommit[0].codecommit_repo_name : null
+}
+
+output "project_cc_repo_id" {
+  description = "Codecommit Repo ID"
+  value       = var.create_repository ? module.project_codecommit[0].codecommit_repo_id : null
+}
+
+output "project_cc_repo_http" {
+  description = "Codecommit Clone url HTTP"
+  value       = var.create_repository ? module.project_codecommit[0].codecommit_repo_clone_url_http : null
+}
+
+output "project_cc_repo_ssh" {
+  description = "Codecommit Clone url SSH"
+  value       = var.create_repository ? module.project_codecommit[0].codecommit_repo_clone_url_ssh : null
+}
+C:\Users\umababy.kannan\OneDrive - HCL Technologies Ltd\Documents\Star CAP\project-infra-provisioning-services\terraform-init>terraform plan
+╷
+│ Error: Invalid index
+│
+│   on ..\infra-scripts\project-infra-services\project-base-infra\cloudwatch.tf line 17, in resource "aws_cloudwatch_event_rule" "trigger_build_on_tag_updates":
+│   17:   "resources": "${module.project_codecommit[0].codecommit_repository_arn}",
+│     ├────────────────
+│     │ module.project_codecommit is empty tuple
+│
+│ The given key does not identify an element in this collection value: the collection has no elements.
+╵
+╷
+│ Error: Invalid index
+│
+│   on ..\infra-scripts\project-infra-services\project-base-infra\cloudwatch.tf line 24, in resource "aws_cloudwatch_event_rule" "trigger_build_on_tag_updates":
+│   24:       "${module.project_codecommit[0].codecommit_repo_name}"
+│     ├────────────────
+│     │ module.project_codecommit is empty tuple
+│
+│ The given key does not identify an element in this collection value: the collection has no elements.
+╵
+╷
+│ Error: Invalid index
+│
+│   on ..\infra-scripts\project-infra-services\project-base-infra\dockerbuild.tf line 8, in module "docker_build":
+│    8:   source_location                 = module.project_codecommit[0].codecommit_repo_clone_url_http
+│     ├────────────────
+│     │ module.project_codecommit is empty tuple
+│
+│ The given key does not identify an element in this collection value: the collection has no elements.
+╵
+╷
+│ Error: Invalid index
+│
+│   on ..\infra-scripts\project-infra-services\project-base-infra\dockerbuild.tf line 11, in module "docker_build":
+│   11:     "ecr_repository_url"       = module.project_ecr[0].ecr_repo_url
+│     ├────────────────
+│     │ module.project_ecr is empty tuple
+│
+│ The given key does not identify an element in this collection value: the collection has no elements.
+╵
+
+C:\Users\umababy.kannan\OneDrive - HCL Technologies Ltd\Documents\Star CAP\project-infra-provisioning-services\terraform-init>
