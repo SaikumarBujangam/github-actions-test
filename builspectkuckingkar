@@ -1,26 +1,30 @@
-module "docker_build" {
-  source = var.create_build_project ? "../../terraform-modules/terraform-aws-codebuild" : null
 
-  create_build_project = var.create_build_project
+Note: You didn't use the -out option to save this plan, so Terraform can't guarantee to take exactly these actions if you run "terraform apply" now.
 
-  build_project_name     = "${var.project_key}-cc-repo-docker-build"
-  build_spec_file        = var.create_build_project ? "${path.module}/build_spec/docker-build.yml" : null
-  codebuild_role_arn     = var.create_build_project ? aws_iam_role.codebuild_role.arn : null
-  source_location        = var.create_build_project ? module.project_codecommit[0].codecommit_repo_clone_url_http : null
+C:\Users\umababy.kannan\OneDrive - HCL Technologies Ltd\Documents\Star CAP\project-infra-provisioning-services\terraform-init>terraform plan
+╷
+│ Error: Variables not allowed
+│
+│   on ..\infra-scripts\project-infra-services\project-base-infra\dockerbuild.tf line 29, in module "docker_build":
+│   29:   source = var.create_build_project ? "../../terraform-modules/terraform-aws-codebuild" : null
+│
+│ Variables may not be used here.
+╵
+╷
+│ Error: Unsuitable value type
+│
+│   on ..\infra-scripts\project-infra-services\project-base-infra\dockerbuild.tf line 29, in module "docker_build":
+│   29:   source = var.create_build_project ? "../../terraform-modules/terraform-aws-codebuild" : null
+│
+│ Unsuitable value: value must be known
+╵
+╷
+│ Error: Module source has changed
+│
+│   on ..\infra-scripts\project-infra-services\project-base-infra\dockerbuild.tf line 29, in module "docker_build":
+│   29:   source = var.create_build_project ? "../../terraform-modules/terraform-aws-codebuild" : null
+│
+│ The source address was changed since this module was installed. Run "terraform init" to install all modules required by this configuration.
+╵
 
-  build_specific_variables = var.create_build_project ? {
-    "ecr_repository_url" = module.project_ecr[0].ecr_repo_url
-  } : null
-
-  tags = var.create_build_project ? merge(
-    {
-      "organization" = "${var.org_key}"
-    },
-    {
-      "platform" = "${var.org_key}"
-    },
-    {
-      "project_key" = "${var.project_key}"
-    },
-  ) : null
-}
+C:\Users\umababy.kannan\OneDrive - HCL Technologies Ltd\Documents\Star CAP\project-infra-provisioning-services\terraform-init>
