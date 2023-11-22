@@ -160,3 +160,6 @@ C:\Users\umababy.kannan\OneDrive - HCL Technologies Ltd\Documents\Star CAP\proje
 ╵
 
 C:\Users\umababy.kannan\OneDrive - HCL Technologies Ltd\Documents\Star CAP\project-infra-provisioning-services\terraform-init>
+
+
+count     = module.docker_build[0].create_build_project ? 1 : 0
