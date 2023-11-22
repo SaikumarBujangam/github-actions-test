@@ -1,9 +1,11 @@
 data "template_file" "build_spec_template" {
+  count    = var.create_build_project ? 1 : 0
   template = file("${var.build_spec_file}")
   vars     = var.build_specific_variables
 }
 
 resource "aws_codebuild_project" "build" {
+  count                  = var.create_build_project ? 1 : 0
   name                   = var.build_project_name
   description            = "${var.build_project_name} codebuild project"
   build_timeout          = "60"
@@ -45,7 +47,7 @@ resource "aws_codebuild_project" "build" {
   source {
     type            = var.build_trigger
     location        = var.source_location
-    buildspec       = data.template_file.build_spec_template.rendered
+    buildspec       = data.template_file.build_spec_template[count.index].rendered
     git_clone_depth = 0
   }
 
@@ -56,14 +58,5 @@ resource "aws_codebuild_project" "build" {
 
 output "codebuild_project_arn" {
   description = "Codebuild project ARN"
-  value       = aws_codebuild_project.build.arn
+  value       = aws_codebuild_project.build[*].arn
 }
-
-resource "aws_codecommit_repository" "repository" {
-  count           = var.create_repository ? 1 : 0
-  repository_name = var.codecommit_repository_name
-  description     = "Repository for ${var.codecommit_repository_name}"
-  default_branch  = var.default_branch
-  tags            = var.tags
-}
-
