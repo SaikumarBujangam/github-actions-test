@@ -130,3 +130,18 @@ resource "aws_cloudwatch_event_target" "codebuild" {
     input_template = "{ \"environmentVariablesOverride\": [ { \"name\": \"TAG\", \"value\": <git_tag> }, { \"name\": \"SOURCETRIGGER\", \"value\": \"REPO_TAG\" } ]}"
   }
 }
+
+C:\Users\umababy.kannan\OneDrive - HCL Technologies Ltd\Documents\Star CAP\project-infra-provisioning-services\terraform-init>terraform plan
+╷
+│ Error: Unsupported attribute
+│
+│   on ..\infra-scripts\project-infra-services\project-base-infra\cloudwatch.tf line 39, in resource "aws_cloudwatch_event_target" "codebuild":
+│   39:   arn       = module.docker_build.codebuild_project_arn
+│     ├────────────────
+│     │ module.docker_build is a list of object, known only after apply
+│
+│ Can't access attributes on a list of objects. Did you mean to access attribute "codebuild_project_arn" for a specific element of the list, or across all elements of the
+│ list?
+╵
+
+C:\Users\umababy.kannan\OneDrive - HCL Technologies Ltd\Documents\Star CAP\project-infra-provisioning-services\terraform-init>
