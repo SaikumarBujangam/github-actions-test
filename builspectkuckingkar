@@ -1,18 +1,18 @@
 module "docker_build" {
-  source = "../../terraform-modules/terraform-aws-codebuild"
+  source = var.create_build_project ? "../../terraform-modules/terraform-aws-codebuild" : null
 
-  create_build_project = local.create_build_project
+  create_build_project = var.create_build_project
 
   build_project_name     = "${var.project_key}-cc-repo-docker-build"
-  build_spec_file        = "${path.module}/build_spec/docker-build.yml"
-  codebuild_role_arn     = aws_iam_role.codebuild_role.arn
-  source_location        = module.project_codecommit[0].codecommit_repo_clone_url_http
+  build_spec_file        = var.create_build_project ? "${path.module}/build_spec/docker-build.yml" : null
+  codebuild_role_arn     = var.create_build_project ? aws_iam_role.codebuild_role.arn : null
+  source_location        = var.create_build_project ? module.project_codecommit[0].codecommit_repo_clone_url_http : null
 
-  build_specific_variables = {
+  build_specific_variables = var.create_build_project ? {
     "ecr_repository_url" = module.project_ecr[0].ecr_repo_url
-  }
+  } : null
 
-  tags = merge(
+  tags = var.create_build_project ? merge(
     {
       "organization" = "${var.org_key}"
     },
@@ -22,9 +22,5 @@ module "docker_build" {
     {
       "project_key" = "${var.project_key}"
     },
-  )
-}
-
-locals {
-  create_build_project = var.create_build_project  # Set this variable to control the creation of the CodeBuild project
+  ) : null
 }
