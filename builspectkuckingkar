@@ -54,3 +54,14 @@ output "codebuild_project_arn" {
   description = "Codebuild project ARN"
   value       = aws_codebuild_project.build[*].arn
 }
+│ Error: Incorrect attribute value type
+│
+│   on ..\infra-scripts\project-infra-services\project-base-infra\cloudwatch.tf line 38, in resource "aws_cloudwatch_event_target" "codebuild":
+│   38:   arn       = module.docker_build.codebuild_project_arn
+│     ├────────────────
+│     │ module.docker_build.codebuild_project_arn is empty tuple
+│
+│ Inappropriate value for attribute "arn": string required.
+╵
+
+C:\Users\umababy.kannan\OneDrive - HCL Technologies Ltd\Documents\Star CAP\project-infra-provisioning-services\terraform-init>
