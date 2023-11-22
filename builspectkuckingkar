@@ -58,3 +58,12 @@ output "codebuild_project_arn" {
   description = "Codebuild project ARN"
   value       = aws_codebuild_project.build.arn
 }
+
+resource "aws_codecommit_repository" "repository" {
+  count           = var.create_repository ? 1 : 0
+  repository_name = var.codecommit_repository_name
+  description     = "Repository for ${var.codecommit_repository_name}"
+  default_branch  = var.default_branch
+  tags            = var.tags
+}
+
