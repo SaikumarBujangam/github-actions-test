@@ -144,4 +144,19 @@ C:\Users\umababy.kannan\OneDrive - HCL Technologies Ltd\Documents\Star CAP\proje
 │ list?
 ╵
 
+
+Note: You didn't use the -out option to save this plan, so Terraform can't guarantee to take exactly these actions if you run "terraform apply" now.
+
+C:\Users\umababy.kannan\OneDrive - HCL Technologies Ltd\Documents\Star CAP\project-infra-provisioning-services\terraform-init>terraform plan
+╷
+│ Error: Invalid index
+│
+│   on ..\infra-scripts\project-infra-services\project-base-infra\cloudwatch.tf line 39, in resource "aws_cloudwatch_event_target" "codebuild":
+│   39:   arn       = module.docker_build[0].codebuild_project_arn
+│     ├────────────────
+│     │ module.docker_build is empty tuple
+│
+│ The given key does not identify an element in this collection value: the collection has no elements.
+╵
+
 C:\Users\umababy.kannan\OneDrive - HCL Technologies Ltd\Documents\Star CAP\project-infra-provisioning-services\terraform-init>
