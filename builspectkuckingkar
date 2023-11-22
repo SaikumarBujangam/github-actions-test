@@ -1,165 +1,30 @@
-data "template_file" "build_spec_template" {
-  count    = var.create_build_project ? 1 : 0
-  template = file("${var.build_spec_file}")
-  vars     = var.build_specific_variables
-}
-
-resource "aws_codebuild_project" "build" {
-  count                  = var.create_build_project ? 1 : 0
-  name                   = var.build_project_name
-  description            = "${var.build_project_name} codebuild project"
-  build_timeout          = "60"
-  service_role           = var.codebuild_role_arn
-  concurrent_build_limit = var.concurrent_build_limit
-
-  dynamic "artifacts" {
-    for_each = var.store_artifact == true ? [1] : []
-    content {
-      type                    = "S3"
-      location                = var.artifact_bucket_name
-      override_artifact_name  = true
-      packaging               = "ZIP"
-    }
-  }
-
-  dynamic "artifacts" {
-    for_each = var.store_artifact == false ? [1] : []
-    content {
-      type                    = "NO_ARTIFACTS"
-    }
-  }
-
-  environment {
-    compute_type                = "BUILD_GENERAL1_SMALL"
-    image                       = var.build_image
-    type                        = "LINUX_CONTAINER"
-    image_pull_credentials_type = "CODEBUILD"
-    privileged_mode             = true
-  }
-
-  logs_config {
-    cloudwatch_logs {
-      group_name  = "${var.target_environment}-build-log-group"
-      stream_name = "${var.build_project_name}-log-stream"
-    }
-  }
-
-  source {
-    type            = var.build_trigger
-    location        = var.source_location
-    buildspec       = data.template_file.build_spec_template[count.index].rendered
-    git_clone_depth = 0
-  }
-
-  source_version = var.build_branch
-  tags           = var.tags
-
-}
-
 module "docker_build" {
   source = "../../terraform-modules/terraform-aws-codebuild"
 
-  
-  build_project_name              = "${var.project_key}-cc-repo-docker-build"
-  build_spec_file                 = "${path.module}/build_spec/docker-build.yml"
-  codebuild_role_arn              = aws_iam_role.codebuild_role.arn
-  source_location                 = module.project_codecommit[0].codecommit_repo_clone_url_http
+  create_build_project = local.create_build_project
+
+  build_project_name     = "${var.project_key}-cc-repo-docker-build"
+  build_spec_file        = "${path.module}/build_spec/docker-build.yml"
+  codebuild_role_arn     = aws_iam_role.codebuild_role.arn
+  source_location        = module.project_codecommit[0].codecommit_repo_clone_url_http
 
   build_specific_variables = {
-    "ecr_repository_url"       = module.project_ecr[0].ecr_repo_url
-    
+    "ecr_repository_url" = module.project_ecr[0].ecr_repo_url
   }
+
   tags = merge(
     {
       "organization" = "${var.org_key}"
-    }, 
+    },
     {
       "platform" = "${var.org_key}"
-    }, 
+    },
     {
-       "project_key" = "${var.project_key}"
+      "project_key" = "${var.project_key}"
     },
   )
 }
 
-#####################################################
-# Creating cloudwatch-event-rule to trigger Tag based build
-#####################################################
-resource "aws_cloudwatch_event_rule" "trigger_build_on_tag_updates" {
-
-  name        = "${var.project_key}-cc-repo-codebuild-tag-rule"
-  description = "Amazon CloudWatch Events rule to automatically start the ${var.project_key}-cc-repo build when a change occurs in the ${var.project_key}-cc-repo repository. "
-
-  event_pattern = <<EOF
-{
-  "source": [
-    "aws.codecommit"
-  ],
-  "detail-type": [
-    "CodeCommit Repository State Change"
-  ],
-  "resources": "${module.project_codecommit[0].codecommit_repository_arn}",
-  "detail": {
-    "event": [
-      "referenceCreated",
-      "referenceUpdated"
-    ],
-    "repositoryName": [
-      "${module.project_codecommit[0].codecommit_repo_name}"
-    ],
-    "referenceType": [
-      "tag"
-    ]
-  }
+locals {
+  create_build_project = var.create_build_project  # Set this variable to control the creation of the CodeBuild project
 }
-EOF
-}
-
-resource "aws_cloudwatch_event_target" "codebuild" {
-  
-
-  rule      = aws_cloudwatch_event_rule.trigger_build_on_tag_updates.name
-  target_id = "TriggerCodeBuild"
-  arn       = module.docker_build.codebuild_project_arn[count.index]
-  role_arn  = aws_iam_role.cloudwatch_event_role.arn
-
-  input_transformer {
-    input_paths = {
-      git_tag = "$.detail.referenceName"
-    }
-    input_template = "{ \"environmentVariablesOverride\": [ { \"name\": \"TAG\", \"value\": <git_tag> }, { \"name\": \"SOURCETRIGGER\", \"value\": \"REPO_TAG\" } ]}"
-  }
-}
-
-C:\Users\umababy.kannan\OneDrive - HCL Technologies Ltd\Documents\Star CAP\project-infra-provisioning-services\terraform-init>terraform plan
-╷
-│ Error: Unsupported attribute
-│
-│   on ..\infra-scripts\project-infra-services\project-base-infra\cloudwatch.tf line 39, in resource "aws_cloudwatch_event_target" "codebuild":
-│   39:   arn       = module.docker_build.codebuild_project_arn
-│     ├────────────────
-│     │ module.docker_build is a list of object, known only after apply
-│
-│ Can't access attributes on a list of objects. Did you mean to access attribute "codebuild_project_arn" for a specific element of the list, or across all elements of the
-│ list?
-╵
-
-
-Note: You didn't use the -out option to save this plan, so Terraform can't guarantee to take exactly these actions if you run "terraform apply" now.
-
-C:\Users\umababy.kannan\OneDrive - HCL Technologies Ltd\Documents\Star CAP\project-infra-provisioning-services\terraform-init>terraform plan
-╷
-│ Error: Invalid index
-│
-│   on ..\infra-scripts\project-infra-services\project-base-infra\cloudwatch.tf line 39, in resource "aws_cloudwatch_event_target" "codebuild":
-│   39:   arn       = module.docker_build[0].codebuild_project_arn
-│     ├────────────────
-│     │ module.docker_build is empty tuple
-│
-│ The given key does not identify an element in this collection value: the collection has no elements.
-╵
-
-C:\Users\umababy.kannan\OneDrive - HCL Technologies Ltd\Documents\Star CAP\project-infra-provisioning-services\terraform-init>
-
-
-count     = module.docker_build[0].create_build_project ? 1 : 0
