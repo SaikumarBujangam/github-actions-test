@@ -11,6 +11,13 @@ from alight.foundation.util.stringutil import StringUtil
 def filter_files(files, exclude_prefix):
     return [item for item in files if not item.get('file_details', {}).get('source', '').startswith(exclude_prefix)]
 
+def print_jars_info(files):
+    for item in files:
+        source_path = item.get('file_details', {}).get('source', '')
+        destination_path = item.get('file_details', {}).get('destination', '')
+        if source_path.startswith("jars/"):
+            print(f"Jar File: {source_path}, Destination: {destination_path}")
+
 if __name__ == "__main__":
     logger = StandardLogger().getDefaultLogger()
     try:
@@ -28,10 +35,14 @@ if __name__ == "__main__":
             handler = ParameterizedJson(json_str=json.dumps({"files": filtered_files}), parameter_dict=replacement_params)
             resulting_dict = json.loads(handler.generate_json_str())
 
+        print_jars_info(filtered_files)
+
         bundle_helper = BundleFileHandlerHelper(bundler=tarfile)
         logger.info("Creating Tar file: {}".format(tarfile.get_bundle_location()))
         bundle_helper.read_include_file_definition(file_definition=resulting_dict, source_root=command_args.sourceRoot)
 
+        # Add logic here to upload jars to JFrog Artifactory
+
     except Exception as e:
-            logger.error(e)
-            sys.exit(1)
+        logger.error(e)
+        sys.exit(1)
