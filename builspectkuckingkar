@@ -1,79 +1,175 @@
 import json
 import re
 
-from alight.foundation.aws.spec import AppspecReader, AppspecGenerator
-from alight.foundation.util.bundle import ZipBundler
+import yaml
 import os
-
+from alight.foundation.util.logging.standardlogger import StandardLogger
 from alight.foundation.util.dictionary import ParameterizedJson
 
-from jinja2 import Environment, FileSystemLoader
+from jinja2 import Environment, FileSystemLoader, Template
 
-class PipelinePackager:
+class AppspecGenerator:
+    YAML_INIT_TEMPLATE={
+        "version": 0.0,
+        "files": [],
+        "file_exists_behavior": "OVERWRITE",
+        "os":"",
+        "permissions": [],
+        "hooks": {}
+    }
+    logger = StandardLogger().getDefaultLogger()
     def __init__(self,
-                 pkg_file_name="deploy.zip",
-                 pkg_file_location="./",
-                 source_root=".",
-                 template_file_path="./appspec_definition.json",
-                 appspec_file_name="appspec.yml",
-                 appspec_file_location="./",
-                 server_base_path=".",
-                 parameter_dict=None,
+                 template_file_path="./appspec_template.json",
+                 server_base_path=None,
+                 generated_appspec_path="./appspec.yml",
+                 appspec_os="linux",
+                 parameter_dict:dict=None,
                  allows_absolute_path=False,
-                 deploy_owner_user_name="none",
-                 deploy_owner_group_name="none",
-                 hook_instructions_path="./hook_instructions.json"
-    ):
+                 files_owner="none",
+                 files_group="none",
+                 source_root=".",
+                 hook_instructions:list=list):
+
         self._template_file_path = template_file_path
-        self._appspec_file_location = appspec_file_location
-        self._appspec_file_name = appspec_file_name
-        self._zipFile = ZipBundler(bundle_name=pkg_file_name, bundle_location=pkg_file_location, omit_directories=True)
+        self._generated_appspec_path=generated_appspec_path
+        self.server_path = server_base_path
+        self._yaml_text = AppspecGenerator.YAML_INIT_TEMPLATE.copy()
+        self._appspec_os = appspec_os
+        self._parameter_dict = parameter_dict or dict()
+        self._allows_absolute_path = allows_absolute_path
+        self._files_owner = files_owner
+        self._files_group = files_group
         self._source_root = source_root
-        self._allows_absolute_path=allows_absolute_path
-        self._server_base_path = server_base_path
-        self._parameter_dict=parameter_dict or {}
-        self._deploy_owner_user_name=deploy_owner_user_name
-        self._deploy_owner_group_name=deploy_owner_group_name
-        self._hook_instructions_path = hook_instructions_path
+        self._hook_instructions=hook_instructions
 
-    def create(self):
-        # with open("adl-awsdeploy-cicd-biam-1477/config/afterinstall_appspec_template.json", "r") as hook_template_file:
-        #     hook_instructions = json.load(hook_template_file)
+        AppspecGenerator.logger.info("self._generated_app_spec_location={}".format(self._generated_appspec_path))
+        AppspecGenerator.logger.info("self._template_file_path={}".format(self._template_file_path))
+        AppspecGenerator.logger.info("self._yaml_text={}".format(self._yaml_text))
+        pass
 
-        with open(self._template_file_path, "r") as template_file:
-            file_contents = dict(json.load(template_file))
+    def _validate_file_path(self, path):
+        if(path == ""):
+            AppspecGenerator.logger.error("Input Template file destination path: {}, is blank, please provide relative path".format(path))
+            raise Exception("Blank destination path detected")
+        if (path.startswith("/")) and self._allows_absolute_path is False:
+            AppspecGenerator.logger.error("Input Template file destination path: {}, is invalid, please provide relative path".format(path))
+            raise Exception("Absolute destination path detected")
+
+    def _dump_yaml_to_file(self):
+        with open(os.path.join(self._generated_appspec_path), 'w') as generated_yaml:
+            yaml.dump(self._yaml_text, generated_yaml, default_flow_style=False)
+
+    def _handle_nested_files(self, file_item_dict:dict=None):
+        file_details = file_item_dict.get("file_details")
+        starting_path = file_item_dict["nested_path_root"]
+
+        if starting_path in file_details["source"]:
+            file_details["source"] = file_details["source"][len(starting_path)+1:]
+
+        return self._handle_files(file_item_dict=file_details)
+
+    def _handle_files(self, file_item_dict=None):
+        self._validate_file_path(file_item_dict.get("destination", ""))
+        file_item_dict["destination"] = re.sub("/+", "/", "{}/{}".format(self.server_path, file_item_dict["destination"]))
+        return file_item_dict
+
+    def generate(self):
+        with open(os.path.join(self._template_file_path), 'r') as json_template:
+            file_contents = dict(json.load(json_template))
             handler = ParameterizedJson(json_str=json.dumps(file_contents), parameter_dict=self._parameter_dict)
             resulting_dict = json.loads(handler.generate_json_str())
+            self._yaml_text["os"] = self._appspec_os
 
-        with open(self._hook_instructions_path, "r") as hook_instructions_file:
-            hook_instructions_dict = dict(json.load(hook_instructions_file))
+            # if resulting_dict.get("root_path", None) is not None:
+            #     self._add_files_permissions(resulting_dict["root_path"])
 
-        generated_appspec = AppspecGenerator(
-            template_file_path=self._template_file_path,
-            server_base_path=self._server_base_path,
-            generated_appspec_path=os.path.join(self._appspec_file_location, self._appspec_file_name),
-            appspec_os="linux",
-            parameter_dict=self._parameter_dict,
-            allows_absolute_path=self._allows_absolute_path,
-            source_root=self._source_root,
-            files_owner=self._deploy_owner_user_name,
-            files_group=self._deploy_owner_group_name,
-            hook_instructions=hook_instructions_dict["hooks"])
+            for file_item in resulting_dict.get("files", []):
+                if file_item.get("nested_path_root", None) is not None:
+                    processed_file_item = self._handle_nested_files(file_item_dict=file_item)
+                    source_file_path = os.path.join(self._source_root, file_item.get("nested_path_root"), processed_file_item["source"])
+                else:
+                    processed_file_item = self._handle_files(file_item_dict=file_item)
+                    source_file_path = os.path.join(self._source_root, processed_file_item["source"])
+                stripped_processed_file_item = {"source":processed_file_item["source"], "destination": processed_file_item["destination"]}
+                self._yaml_text["files"].append(stripped_processed_file_item)
+                self._add_files_permissions(file_item=stripped_processed_file_item, source_path_is_dir=os.path.isdir(source_file_path))
+                # self._add_directory_permissions(file_item=stripped_processed_file_item, source_path_is_dir=os.path.isdir(source_file_path))
 
-        generated_appspec.generate()
+            for hooks_instruction in self._hook_instructions:
+                initial_dict = dict()
+                if self._yaml_text.get("hooks", None) is None:
+                    self._yaml_text["hooks"] = initial_dict
 
-        self._zipFile.add_to_bundle(file=os.path.join(self._appspec_file_location, self._appspec_file_name), starting_path=self._appspec_file_name)
+                initial_dict = []
+#                initial_dict.append({"location": hooks_instruction["destination"], "timeout": hooks_instruction["timeout"], "runas": self._files_owner})
+                initial_dict.append({"location": hooks_instruction["destination"], "timeout": hooks_instruction["timeout"]})
+                self._yaml_text["hooks"][hooks_instruction["hook_name"]] = initial_dict
+            if len(self._yaml_text["hooks"]) == 0:
+                self._yaml_text.pop("hooks")
 
-        for hook_instruction in hook_instructions_dict["hooks"]:
-            self._zipFile.add_to_bundle(file=hook_instruction["source"], starting_path=hook_instruction["destination"], override_path=hook_instruction["destination"])
+    # End Hooks
+        self._dump_yaml_to_file()
 
-        for template_dict_item in resulting_dict.get("files", []):
-            if template_dict_item.get("nested_path_root", None) is not None:
-                bundle_file = os.path.join(self._source_root, template_dict_item.get("nested_path_root"), template_dict_item["file_details"]["source"])
-                starting_path = template_dict_item["file_details"]["source"]
-            else:
-                bundle_file = os.path.join(self._source_root, template_dict_item["source"])
-                starting_path = template_dict_item["source"]
-            self._zipFile.add_to_bundle(file=bundle_file, starting_path=starting_path)
+    def _populate_permissions(self, object_type="file", target_object=None, pattern=None, mode=755, owner=None, group=None):
+        permission_object={}
+        permission_object["type"] = object_type.strip().split(",")
+        permission_object["object"] = target_object
+        if pattern is not None:
+            permission_object["pattern"] = pattern
+        permission_object["mode"] = mode
+        permission_object["owner"] = owner
+        permission_object["group"] = group
+        return permission_object
 
-        self._zipFile.create()
+    def _add_files_permissions(self, file_item=None, source_path_is_dir=True):
+        if source_path_is_dir:
+            parent_directory = os.path.sep.join(file_item["destination"].split(os.path.sep)[:-1])+"/"
+            child_directory = "{}/**".format(file_item["destination"].split(os.path.sep)[-1])
+            self._yaml_text["permissions"].append(
+                self._populate_permissions(object_type="directory,file",
+                                           target_object=file_item["destination"],
+                                           pattern="**",
+                                           mode=755,
+                                           owner=self._files_owner,
+                                           group=self._files_group
+                                           )
+            )
+        else:
+            self._yaml_text["permissions"].append(
+                self._populate_permissions(object_type="file",
+                                           target_object=file_item["destination"],
+                                           pattern=None,
+                                           mode=755,
+                                           owner=self._files_owner,
+                                           group=self._files_group
+                                           )
+            )
+
+    def _add_directory_permissions(self, file_item=None, source_path_is_dir=True):
+
+        file_object = file_item["destination"]
+        if source_path_is_dir:
+            while file_object != "/apps":
+                for list_item in self._yaml_text.get("permissions"):
+                    if file_object == list_item.get("object"):
+                        file_object = "/".join(file_object.split("/")[:-1])
+                        break
+                    else:
+                        permission_object={}
+                        permission_object["type"] = []
+                        permission_object["type"].append("directory")
+                        permission_object["object"] = file_object
+                        permission_object["mode"] = 755
+                        permission_object["owner"] = self._files_owner
+                        permission_object["group"] = self._files_group
+                        self._yaml_text["permissions"].append(permission_object)
+                        file_object = "/".join(file_object.split("/")[:-1])
+                        break
+
+class AppspecReader:
+    def __init__(self, spec_file_path="appspec.yml"):
+        with open(spec_file_path, 'r') as generated_yaml:
+            self._appspec = yaml.safe_load(generated_yaml)
+
+    def get_spec(self):
+        return self._appspec.copy()
