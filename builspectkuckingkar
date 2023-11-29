@@ -1,51 +1,79 @@
-import sys
+import json
+import re
+
+from alight.foundation.aws.spec import AppspecReader, AppspecGenerator
+from alight.foundation.util.bundle import ZipBundler
 import os
-import time
 
-import boto3
-from alight.foundation.aws.codepipeline import PipelinePackager
-from alight.foundation.aws.spec import AppspecGenerator
-from alight.foundation.util.argparsebuilder import GenerateParser
-from alight.foundation.util.logging.standardlogger import StandardLogger
-from alight.foundation.util.stringutil import StringUtil
+from alight.foundation.util.dictionary import ParameterizedJson
 
-if __name__ == "__main__":
-    logger = StandardLogger().getDefaultLogger()
-    try:
-        command_args = GenerateParser(supports_duplicate_parameters=True).build()
-        su = StringUtil()
-        replacement_params = su.property_list_to_dict(input_list=command_args.cicdVar)
-        template_file_path = os.path.join(command_args.templateFileLocation, command_args.templateFile)
-        appspec_file_path = os.path.join(command_args.generatedAppSpecLocation, command_args.generatedAppSpec)
-        pkg_file_path = os.path.join(command_args.zipFileLocation, command_args.zipFileName)
-        hook_instructions_path=os.path.join(command_args.hookInstructionsFileLocation, command_args.hookInstructionsFileName)
+from jinja2 import Environment, FileSystemLoader
 
-        pipelinePackager = PipelinePackager(
-            pkg_file_location=command_args.zipFileLocation,
-            pkg_file_name=command_args.zipFileName,
-            source_root=command_args.sourceRoot,
-            template_file_path=template_file_path,
-            appspec_file_name=command_args.generatedAppSpec,
-            appspec_file_location=command_args.generatedAppSpecLocation,
-            server_base_path=command_args.serverBasePath,
-            parameter_dict=replacement_params,
-            allows_absolute_path=command_args.allowsAbsolutePath,
-            deploy_owner_user_name=command_args.deployOwnerUserName,
-            deploy_owner_group_name=command_args.deployOwnerGroupName,
-            hook_instructions_path=hook_instructions_path
-        )
+class PipelinePackager:
+    def __init__(self,
+                 pkg_file_name="deploy.zip",
+                 pkg_file_location="./",
+                 source_root=".",
+                 template_file_path="./appspec_definition.json",
+                 appspec_file_name="appspec.yml",
+                 appspec_file_location="./",
+                 server_base_path=".",
+                 parameter_dict=None,
+                 allows_absolute_path=False,
+                 deploy_owner_user_name="none",
+                 deploy_owner_group_name="none",
+                 hook_instructions_path="./hook_instructions.json"
+    ):
+        self._template_file_path = template_file_path
+        self._appspec_file_location = appspec_file_location
+        self._appspec_file_name = appspec_file_name
+        self._zipFile = ZipBundler(bundle_name=pkg_file_name, bundle_location=pkg_file_location, omit_directories=True)
+        self._source_root = source_root
+        self._allows_absolute_path=allows_absolute_path
+        self._server_base_path = server_base_path
+        self._parameter_dict=parameter_dict or {}
+        self._deploy_owner_user_name=deploy_owner_user_name
+        self._deploy_owner_group_name=deploy_owner_group_name
+        self._hook_instructions_path = hook_instructions_path
 
+    def create(self):
+        # with open("adl-awsdeploy-cicd-biam-1477/config/afterinstall_appspec_template.json", "r") as hook_template_file:
+        #     hook_instructions = json.load(hook_template_file)
 
-        pipelinePackager.create()
+        with open(self._template_file_path, "r") as template_file:
+            file_contents = dict(json.load(template_file))
+            handler = ParameterizedJson(json_str=json.dumps(file_contents), parameter_dict=self._parameter_dict)
+            resulting_dict = json.loads(handler.generate_json_str())
 
-        logger.info("PipelinePackager created the CodeDeploy Package: {}".format(pkg_file_path))
-        logger.info("Uploading the CodeDeploy Package to the deployment bucket: {}/{}.".format(command_args.s3Bucket, command_args.s3FileKey))
-        s3_resource = boto3.resource('s3')
-        s3_resource.meta.client.upload_file(pkg_file_path, command_args.s3Bucket, command_args.s3FileKey)
-        logger.info("Uploaded the CodeDeploy Package")
-        logger.info("Sleeping for {} seconds to give the CodeDeploy Agent time to work".format(command_args.deployPostWaitTime))
-        time.sleep(float(command_args.deployPostWaitTime))
-        logger.info("Waking up after {} seconds".format(command_args.deployPostWaitTime))
-    except Exception as e:
-        logger.error(e)
-        sys.exit(1)
+        with open(self._hook_instructions_path, "r") as hook_instructions_file:
+            hook_instructions_dict = dict(json.load(hook_instructions_file))
+
+        generated_appspec = AppspecGenerator(
+            template_file_path=self._template_file_path,
+            server_base_path=self._server_base_path,
+            generated_appspec_path=os.path.join(self._appspec_file_location, self._appspec_file_name),
+            appspec_os="linux",
+            parameter_dict=self._parameter_dict,
+            allows_absolute_path=self._allows_absolute_path,
+            source_root=self._source_root,
+            files_owner=self._deploy_owner_user_name,
+            files_group=self._deploy_owner_group_name,
+            hook_instructions=hook_instructions_dict["hooks"])
+
+        generated_appspec.generate()
+
+        self._zipFile.add_to_bundle(file=os.path.join(self._appspec_file_location, self._appspec_file_name), starting_path=self._appspec_file_name)
+
+        for hook_instruction in hook_instructions_dict["hooks"]:
+            self._zipFile.add_to_bundle(file=hook_instruction["source"], starting_path=hook_instruction["destination"], override_path=hook_instruction["destination"])
+
+        for template_dict_item in resulting_dict.get("files", []):
+            if template_dict_item.get("nested_path_root", None) is not None:
+                bundle_file = os.path.join(self._source_root, template_dict_item.get("nested_path_root"), template_dict_item["file_details"]["source"])
+                starting_path = template_dict_item["file_details"]["source"]
+            else:
+                bundle_file = os.path.join(self._source_root, template_dict_item["source"])
+                starting_path = template_dict_item["source"]
+            self._zipFile.add_to_bundle(file=bundle_file, starting_path=starting_path)
+
+        self._zipFile.create()
