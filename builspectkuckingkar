@@ -1,4 +1,44 @@
-[2023-11-30::19:54:52:IST)] [INFO] >>> python /d/Users/A1086139/git_repo/adl-awsdeploy-cicd/src/alight/foundation/app/generatetar.py --base-arg-parser-config-file-location /d/Users/A1086139/git_repo/adl-awsdeploy-cicd/config --base-arg-parser-config-file-name cdp-pkg-build-args.json --template-file-location /d/Users/A1086139/git_repo/local/interactns/adl-interactns-calls-etl/1.0.42/config --template-file-name interactns_calls_appspec_template.json --source-root adl-interactns-calls-etl --pkg-version 1.0.42 --tar-file-name adl-interactns-calls-etl --tar-file-location build --cicdvar DATAPRODUCT_NAME=interactns <<<
-[2023-11-30 19:54:53,309] [generatetar] [consolelogger] [<module>:30] [INFO]: "Jar Name: test1, Source: jars/test1, Destination: edh/prod/discovery/operational_event/bin"
-[2023-11-30 19:54:53,309] [generatetar] [consolelogger] [<module>:30] [INFO]: "Jar Name: test2, Source: jars/test2, Destination: edh/prod/discovery/operational_event/bin"
-[2023-11-30 19:54:53,309] [generatetar] [consolelogger] [<module>:37] [INFO]: "Creating Tar file: build\adl-interactns-calls-etl-1.0.42.tar"
+import json
+import sys
+import os
+
+from alight.foundation.util.bundle import TarBundler, BundleFileHandlerHelper
+from alight.foundation.util.argparsebuilder import GenerateParser
+from alight.foundation.util.dictionary import ParameterizedJson
+from alight.foundation.util.logging.standardlogger import StandardLogger
+from alight.foundation.util.stringutil import StringUtil
+
+def filter_files(files, include_prefix):
+    return [item for item in files if item.get('file_details', {}).get('source', '').startswith(include_prefix)]
+
+if __name__ == "__main__":
+    logger = StandardLogger().getDefaultLogger()
+    try:
+        command_args = GenerateParser(supports_duplicate_parameters=True).build()
+        replacement_params = StringUtil().property_list_to_dict(input_list=command_args.cicdVar)
+        tarfile = TarBundler(bundle_name="{}-{}.tar".format(command_args.tarFileName, command_args.pkgVersion), bundle_location=command_args.tarFileLocation)
+        cicd_var = command_args.cicdVar
+        cicd_var = cicd_var[0].split("=")
+        with open(os.path.join(command_args.templateFileLocation, command_args.templateFileName), "r") as template_file:
+            file_contents = dict(json.load(template_file))
+            all_files = file_contents.get('files', [])
+            included_files = filter_files(all_files, "jars/")
+            for item in included_files:
+                source_path = item.get('file_details', {}).get('source', '')
+                destination = item.get('file_details', {}).get('destination', '')
+                jar_name = os.path.basename(source_path)
+                logger.info ("Jar Name: {}, Source: {}, Destination: {}".format(jar_name, source_path, destination))
+            excluded_files = [item for item in all_files if item not in included_files]
+
+            handler = ParameterizedJson(json_str=json.dumps({"files": excluded_files}), parameter_dict=replacement_params)
+            resulting_dict = json.loads(handler.generate_json_str())
+
+        bundle_helper = BundleFileHandlerHelper(bundler=tarfile)
+        logger.info("Creating Tar file: {}".format(tarfile.get_bundle_location()))
+        bundle_helper.read_include_file_definition(file_definition=resulting_dict, source_root=command_args.sourceRoot)
+
+
+    except Exception as e:
+        logger.error(e)
+        sys.exit(1)
+        
