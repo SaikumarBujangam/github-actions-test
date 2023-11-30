@@ -1,34 +1,4 @@
-{
-  "files": [
-     {
-      "nested_path_root": "CALLS",
-      "file_details": {
-        "source": "apps/dataproduct/interactns/adl-interactns-calls-etl/bin",
-        "destination": "dataproduct/interactns/adl-interactns-calls-etl/bin"
-      }
-     },
-     {
-      "nested_path_root": "CALLS",
-      "file_details": {
-        "source": "apps/edh/prod/discovery/operational_event/bin",
-        "destination": "edh/prod/discovery/operational_event/bin"
-      }
-     },
-	 {
-      "nested_path_root": "CALLS",
-      "file_details": {
-        "source": "jars/test1",
-        "destination": "edh/prod/discovery/operational_event/bin"
-      }
-     },
-	 {
-      "nested_path_root": "CALLS",
-      "file_details": {
-        "source": "jars/test2",
-        "destination": "edh/prod/discovery/operational_event/bin"
-      }
-     }
-
-  ]
-}
-
+[2023-11-30::19:54:52:IST)] [INFO] >>> python /d/Users/A1086139/git_repo/adl-awsdeploy-cicd/src/alight/foundation/app/generatetar.py --base-arg-parser-config-file-location /d/Users/A1086139/git_repo/adl-awsdeploy-cicd/config --base-arg-parser-config-file-name cdp-pkg-build-args.json --template-file-location /d/Users/A1086139/git_repo/local/interactns/adl-interactns-calls-etl/1.0.42/config --template-file-name interactns_calls_appspec_template.json --source-root adl-interactns-calls-etl --pkg-version 1.0.42 --tar-file-name adl-interactns-calls-etl --tar-file-location build --cicdvar DATAPRODUCT_NAME=interactns <<<
+[2023-11-30 19:54:53,309] [generatetar] [consolelogger] [<module>:30] [INFO]: "Jar Name: test1, Source: jars/test1, Destination: edh/prod/discovery/operational_event/bin"
+[2023-11-30 19:54:53,309] [generatetar] [consolelogger] [<module>:30] [INFO]: "Jar Name: test2, Source: jars/test2, Destination: edh/prod/discovery/operational_event/bin"
+[2023-11-30 19:54:53,309] [generatetar] [consolelogger] [<module>:37] [INFO]: "Creating Tar file: build\adl-interactns-calls-etl-1.0.42.tar"
