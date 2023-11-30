@@ -1,3 +1,12 @@
+[2023-11-30::18:02:10:IST)] [INFO] >>> python /d/Users/A1086139/git_repo/adl-awsdeploy-cicd/src/alight/foundation/app/generatetar.py --base-arg-parser-config-file-location /d/Users/A1086139/git_repo/adl-awsdeploy-cicd/config --base-arg-parser-config-file-name cdp-pkg-build-args.json --template-file-location /d/Users/A1086139/git_repo/local/interactns/adl-interactns-calls-etl/1.0.42/config --template-file-name interactns_calls_appspec_template.json --source-root adl-interactns-calls-etl --pkg-version 1.0.42 --tar-file-name adl-interactns-calls-etl --tar-file-location build --cicdvar DATAPRODUCT_NAME=interactns <<<
+[2023-11-30 18:02:11,287] [generatetar] [consolelogger] [<module>:30] [INFO]: "Relative Path: ..\jars\test1"
+[2023-11-30 18:02:11,287] [generatetar] [consolelogger] [<module>:30] [INFO]: "Relative Path: ..\jars\test2"
+[2023-11-30 18:02:11,287] [generatetar] [consolelogger] [<module>:41] [INFO]: "Creating Tar file: build\adl-interactns-calls-etl-1.0.42.tar"
+[2023-11-30::18:02:12:IST)] [INFO] Execution returned a status of  0
+[2023-11-30::18:02:12:IST)] [INFO] END LOGGING EXECUTION
+[2023-11-30::18:02:12:IST)] [INFO] BEGIN LOGGING EXECUTION
+
+
 import json
 import sys
 import os
@@ -23,6 +32,15 @@ if __name__ == "__main__":
             file_contents = dict(json.load(template_file))
             all_files = file_contents.get('files', [])
             included_files = filter_files(all_files, "jars/")
+            for item in included_files:
+                source_path = item.get('file_details', {}).get('source', '')
+                destination = item.get('file_details', {}).get('destination', '')
+                relative_path = os.path.relpath(source_path, command_args.sourceRoot)
+                logger.info(f"Relative Path: {relative_path}")
+
+                if relative_path.startswith("jars/") and relative_path.endswith(".jar"):
+                    jar_name = os.path.basename(relative_path)
+                    logger.info("Jar Name: {}, Source: {}, Destination: {}".format(jar_name, source_path, destination))
             excluded_files = [item for item in all_files if item not in included_files]
 
             handler = ParameterizedJson(json_str=json.dumps({"files": excluded_files}), parameter_dict=replacement_params)
@@ -31,19 +49,6 @@ if __name__ == "__main__":
         bundle_helper = BundleFileHandlerHelper(bundler=tarfile)
         logger.info("Creating Tar file: {}".format(tarfile.get_bundle_location()))
         bundle_helper.read_include_file_definition(file_definition=resulting_dict, source_root=command_args.sourceRoot)
-
-        # Print jar file names, source paths, and destinations
-        for item in included_files:
-            source_path = item.get('file_details', {}).get('source', '')
-            destination = item.get('file_details', {}).get('destination', '')
-
-            # Extracting jar name from the source path
-            relative_path = os.path.relpath(source_path, command_args.sourceRoot)
-            logger.info(f"Relative Path: {relative_path}")
-
-            if relative_path.startswith("jars/") and relative_path.endswith(".jar"):
-                jar_name = os.path.basename(relative_path)
-                logger.info("Jar Name: {}, Source: {}, Destination: {}".format(jar_name, source_path, destination))
 
     except Exception as e:
         logger.error(e)
