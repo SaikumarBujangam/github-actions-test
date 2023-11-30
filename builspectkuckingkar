@@ -1,2 +1,58 @@
-[2023-11-30 13:49:57,093] [generatetar] [consolelogger] [<module>:29] [INFO]: "Jar Name: bin, Destination: dataproduct/interactns/adl-interactns-calls-etl/bin"
-[2023-11-30 13:49:57,093] [generatetar] [consolelogger] [<module>:29] [INFO]: "Jar Name: bin, Destination: edh/prod/discovery/operational_event/bin"
+Previously my JSON file looks like below 
+
+{
+  "files": [
+     {
+      "nested_path_root": "CALLS",
+      "file_details": {
+        "source": "apps/dataproduct/interactns/adl-interactns-calls-etl/bin",
+        "destination": "dataproduct/interactns/adl-interactns-calls-etl/bin"
+      }
+     },
+     {
+      "nested_path_root": "CALLS",
+      "file_details": {
+        "source": "apps/edh/prod/discovery/operational_event/bin",
+        "destination": "edh/prod/discovery/operational_event/bin"
+      }
+     }
+
+  ]
+}
+
+Now I want to include jars as well
+
+{
+  "files": [
+     {
+      "nested_path_root": "CALLS",
+      "file_details": {
+        "source": "apps/dataproduct/interactns/adl-interactns-calls-etl/bin",
+        "destination": "dataproduct/interactns/adl-interactns-calls-etl/bin"
+      }
+     },
+     {
+      "nested_path_root": "CALLS",
+      "file_details": {
+        "source": "apps/edh/prod/discovery/operational_event/bin",
+        "destination": "edh/prod/discovery/operational_event/bin"
+      }
+     },
+	 {
+      "nested_path_root": "CALLS",
+      "file_details": {
+        "source": "jars/test1",
+        "destination": "edh/prod/discovery/operational_event/bin"
+      }
+     },
+	 {
+      "nested_path_root": "CALLS",
+      "file_details": {
+        "source": "jars/test2",
+        "destination": "edh/prod/discovery/operational_event/bin"
+      }
+     }
+
+  ]
+}
+
