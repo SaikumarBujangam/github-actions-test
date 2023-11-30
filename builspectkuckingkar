@@ -11,24 +11,16 @@ from alight.foundation.util.stringutil import StringUtil
 def filter_files(files, include_prefix):
     return [item for item in files if item.get('file_details', {}).get('source', '').startswith(include_prefix)]
 
-def process_files(file_list, source_root, destination_prefix, logger):
+def print_jars(file_list, source_root, destination_prefix, logger):
     for item in file_list:
         source_path = item.get('file_details', {}).get('source', '')
         destination = item.get('file_details', {}).get('destination', '')
-        
+
         # Extracting jar name from the source path
         relative_path = os.path.relpath(source_path, source_root)
-        if os.path.isfile(source_path) and relative_path.startswith("jars/"):
+        if os.path.isfile(source_path) and relative_path.startswith("jars/") and source_path.endswith(".jar"):
             jar_name = os.path.basename(relative_path)
             logger.info("Jar Name: {}, Source: {}, Destination: {}".format(jar_name, source_path, destination))
-        elif os.path.isdir(source_path):
-            # Traverse through the directory and process jar files
-            for root, dirs, files in os.walk(source_path):
-                for file in files:
-                    if file.endswith(".jar"):
-                        jar_path = os.path.relpath(os.path.join(root, file), source_root)
-                        jar_name = os.path.basename(jar_path)
-                        logger.info("Jar Name: {}, Source: {}, Destination: {}".format(jar_name, os.path.join(root, file), destination))
 
 if __name__ == "__main__":
     logger = StandardLogger().getDefaultLogger()
@@ -52,7 +44,7 @@ if __name__ == "__main__":
         bundle_helper.read_include_file_definition(file_definition=resulting_dict, source_root=command_args.sourceRoot)
 
         # Print jar file names, source paths, and destinations
-        process_files(included_files, command_args.sourceRoot, "", logger)
+        print_jars(included_files, command_args.sourceRoot, "", logger)
 
     except Exception as e:
         logger.error(e)
