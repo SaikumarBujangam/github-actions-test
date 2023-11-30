@@ -4,6 +4,7 @@ for item in included_files:
 
     # Check if the source_path contains "jars/" and ends with ".jar"
     if "jars/" in source_path and source_path.endswith(".jar"):
-        # Extract jar name from the source path
-        jar_name = os.path.basename(source_path)
+        # Extracting jar name from the source path
+        relative_path = os.path.relpath(source_path, command_args.sourceRoot)
+        jar_name = os.path.basename(relative_path)
         logger.info("Jar Name: {}, Source: {}, Destination: {}".format(jar_name, source_path, destination))
