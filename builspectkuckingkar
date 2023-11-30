@@ -1,12 +1,5 @@
-# Specify the destination directory
-$destinationDirectory = "C:\Tools"
+$ jf c add
+tEnter a unique server identifier:test
+JFrog Platform URL: https://jfrog.alight.com/
 
-# Download JFrog CLI
-Invoke-WebRequest -Uri "https://releases.jfrog.io/artifactory/jfrog-cli/v2-jf/[RELEASE]/jfrog-cli-windows-amd64/jf.exe" -OutFile "$destinationDirectory\jf.exe"
-
-# Add the destination directory to the user's PATH
-$userPath = [System.Environment]::GetEnvironmentVariable('PATH', [System.EnvironmentVariableTarget]::User)
-[System.Environment]::SetEnvironmentVariable('PATH', "$userPath;$destinationDirectory", [System.EnvironmentVariableTarget]::User)
-
-# Verify Installation
-jf intro
+13:02:08 [Error] ^D
