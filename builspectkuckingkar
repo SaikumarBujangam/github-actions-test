@@ -1,58 +1,35 @@
-Previously my JSON file looks like below 
+import json
+import sys
+import os
 
-{
-  "files": [
-     {
-      "nested_path_root": "CALLS",
-      "file_details": {
-        "source": "apps/dataproduct/interactns/adl-interactns-calls-etl/bin",
-        "destination": "dataproduct/interactns/adl-interactns-calls-etl/bin"
-      }
-     },
-     {
-      "nested_path_root": "CALLS",
-      "file_details": {
-        "source": "apps/edh/prod/discovery/operational_event/bin",
-        "destination": "edh/prod/discovery/operational_event/bin"
-      }
-     }
+from alight.foundation.util.bundle import TarBundler, BundleFileHandlerHelper
+from alight.foundation.util.argparsebuilder import GenerateParser
+from alight.foundation.util.dictionary import ParameterizedJson
+from alight.foundation.util.logging.standardlogger import StandardLogger
+from alight.foundation.util.stringutil import StringUtil
 
-  ]
-}
+def filter_files(files, exclude_prefix):
+    return [item for item in files if not item.get('file_details', {}).get('source', '').startswith(exclude_prefix)]
 
-Now I want to include jars as well
+if __name__ == "__main__":
+    logger = StandardLogger().getDefaultLogger()
+    try:
+        command_args = GenerateParser(supports_duplicate_parameters=True).build()
+        replacement_params = StringUtil().property_list_to_dict(input_list=command_args.cicdVar)
+        tarfile = TarBundler(bundle_name="{}-{}.tar".format(command_args.tarFileName, command_args.pkgVersion), bundle_location=command_args.tarFileLocation)
+        cicd_var = command_args.cicdVar
+        cicd_var = cicd_var[0].split("=")
+        with open(os.path.join(command_args.templateFileLocation, command_args.templateFileName), "r") as template_file:
+            file_contents = dict(json.load(template_file))
+            filtered_files = filter_files(file_contents.get('files', []), "jars/")
 
-{
-  "files": [
-     {
-      "nested_path_root": "CALLS",
-      "file_details": {
-        "source": "apps/dataproduct/interactns/adl-interactns-calls-etl/bin",
-        "destination": "dataproduct/interactns/adl-interactns-calls-etl/bin"
-      }
-     },
-     {
-      "nested_path_root": "CALLS",
-      "file_details": {
-        "source": "apps/edh/prod/discovery/operational_event/bin",
-        "destination": "edh/prod/discovery/operational_event/bin"
-      }
-     },
-	 {
-      "nested_path_root": "CALLS",
-      "file_details": {
-        "source": "jars/test1",
-        "destination": "edh/prod/discovery/operational_event/bin"
-      }
-     },
-	 {
-      "nested_path_root": "CALLS",
-      "file_details": {
-        "source": "jars/test2",
-        "destination": "edh/prod/discovery/operational_event/bin"
-      }
-     }
+            handler = ParameterizedJson(json_str=json.dumps({"files": filtered_files}), parameter_dict=replacement_params)
+            resulting_dict = json.loads(handler.generate_json_str())
 
-  ]
-}
+        bundle_helper = BundleFileHandlerHelper(bundler=tarfile)
+        logger.info("Creating Tar file: {}".format(tarfile.get_bundle_location()))
+        bundle_helper.read_include_file_definition(file_definition=resulting_dict, source_root=command_args.sourceRoot)
 
+    except Exception as e:
+        logger.error(e)
+        sys.exit(1)
