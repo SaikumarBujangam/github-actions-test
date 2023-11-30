@@ -1,5 +1,3 @@
-I have tried with the below script
-
 import json
 import sys
 import os
@@ -28,8 +26,15 @@ if __name__ == "__main__":
             for item in included_files:
                 source_path = item.get('file_details', {}).get('source', '')
                 destination = item.get('file_details', {}).get('destination', '')
-                jar_name = os.path.basename(source_path)
-                logger.info ("Jar Name: {}, Source: {}, Destination: {}".format(jar_name, source_path, destination))
+
+                # Check if the source path starts with "jars/" and look for JAR files in any subdirectories
+                if source_path.startswith("jars/"):
+                    source_full_path = os.path.join(command_args.sourceRoot, source_path)
+                    for root, dirs, files in os.walk(source_full_path):
+                        for file in files:
+                            if file.endswith(".jar"):
+                                logger.info("Jar Name: {}, Source: {}, Destination: {}".format(file, os.path.join(root, file), destination))
+
             excluded_files = [item for item in all_files if item not in included_files]
 
             handler = ParameterizedJson(json_str=json.dumps({"files": excluded_files}), parameter_dict=replacement_params)
@@ -39,23 +44,6 @@ if __name__ == "__main__":
         logger.info("Creating Tar file: {}".format(tarfile.get_bundle_location()))
         bundle_helper.read_include_file_definition(file_definition=resulting_dict, source_root=command_args.sourceRoot)
 
-
     except Exception as e:
         logger.error(e)
         sys.exit(1)
-
-But I am getting like this
-
-[2023-11-30::19:54:52:IST)] [INFO] >>> python /d/Users/A1086139/git_repo/adl-awsdeploy-cicd/src/alight/foundation/app/generatetar.py --base-arg-parser-config-file-location /d/Users/A1086139/git_repo/adl-awsdeploy-cicd/config --base-arg-parser-config-file-name cdp-pkg-build-args.json --template-file-location /d/Users/A1086139/git_repo/local/interactns/adl-interactns-calls-etl/1.0.42/config --template-file-name interactns_calls_appspec_template.json --source-root adl-interactns-calls-etl --pkg-version 1.0.42 --tar-file-name adl-interactns-calls-etl --tar-file-location build --cicdvar DATAPRODUCT_NAME=interactns <<<
-[2023-11-30 19:54:53,309] [generatetar] [consolelogger] [<module>:30] [INFO]: "Jar Name: test1, Source: jars/test1, Destination: edh/prod/discovery/operational_event/bin"
-[2023-11-30 19:54:53,309] [generatetar] [consolelogger] [<module>:30] [INFO]: "Jar Name: test2, Source: jars/test2, Destination: edh/prod/discovery/operational_event/bin"
-[2023-11-30 19:54:53,309] [generatetar] [consolelogger] [<module>:37] [INFO]: "Creating Tar file: build\adl-interactns-calls-etl-1.0.42.tar"
-
-But I want something like this
-
-[2023-11-30::19:54:52:IST)] [INFO] >>> python /d/Users/A1086139/git_repo/adl-awsdeploy-cicd/src/alight/foundation/app/generatetar.py --base-arg-parser-config-file-location /d/Users/A1086139/git_repo/adl-awsdeploy-cicd/config --base-arg-parser-config-file-name cdp-pkg-build-args.json --template-file-location /d/Users/A1086139/git_repo/local/interactns/adl-interactns-calls-etl/1.0.42/config --template-file-name interactns_calls_appspec_template.json --source-root adl-interactns-calls-etl --pkg-version 1.0.42 --tar-file-name adl-interactns-calls-etl --tar-file-location build --cicdvar DATAPRODUCT_NAME=interactns <<<
-[2023-11-30 19:54:53,309] [generatetar] [consolelogger] [<module>:30] [INFO]: "Jar Name: test1.jar, Source: jars/test1, Destination: edh/prod/discovery/operational_event/bin"
-[2023-11-30 19:54:53,309] [generatetar] [consolelogger] [<module>:30] [INFO]: "Jar Name: test2.jar, Source: jars/test2, Destination: edh/prod/discovery/operational_event/bin"
-[2023-11-30 19:54:53,309] [generatetar] [consolelogger] [<module>:37] [INFO]: "Creating Tar file: build\adl-interactns-calls-etl-1.0.42.tar"
-
-Since test1.jar is inside the source path jars/test1 and test2.jar is inside jars/test2
