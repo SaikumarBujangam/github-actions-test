@@ -8,8 +8,8 @@ from alight.foundation.util.dictionary import ParameterizedJson
 from alight.foundation.util.logging.standardlogger import StandardLogger
 from alight.foundation.util.stringutil import StringUtil
 
-def filter_files(files, exclude_prefix):
-    return [item for item in files if not item.get('file_details', {}).get('source', '').startswith(exclude_prefix)]
+def filter_files(files, include_prefix):
+    return [item for item in files if item.get('file_details', {}).get('source', '').startswith(include_prefix)]
 
 if __name__ == "__main__":
     logger = StandardLogger().getDefaultLogger()
@@ -21,14 +21,23 @@ if __name__ == "__main__":
         cicd_var = cicd_var[0].split("=")
         with open(os.path.join(command_args.templateFileLocation, command_args.templateFileName), "r") as template_file:
             file_contents = dict(json.load(template_file))
-            filtered_files = filter_files(file_contents.get('files', []), "jars/")
+            all_files = file_contents.get('files', [])
+            included_files = filter_files(all_files, "jars/")
+            excluded_files = [item for item in all_files if item not in included_files]
 
-            handler = ParameterizedJson(json_str=json.dumps({"files": filtered_files}), parameter_dict=replacement_params)
+            handler = ParameterizedJson(json_str=json.dumps({"files": excluded_files}), parameter_dict=replacement_params)
             resulting_dict = json.loads(handler.generate_json_str())
 
         bundle_helper = BundleFileHandlerHelper(bundler=tarfile)
         logger.info("Creating Tar file: {}".format(tarfile.get_bundle_location()))
         bundle_helper.read_include_file_definition(file_definition=resulting_dict, source_root=command_args.sourceRoot)
+
+        # Print jar file names, source paths, and destinations
+        for item in included_files:
+            source_path = item.get('file_details', {}).get('source', '')
+            destination = item.get('file_details', {}).get('destination', '')
+            jar_name = os.path.basename(source_path)
+            logger.info("Jar Name: {}, Source: {}, Destination: {}".format(jar_name, source_path, destination))
 
     except Exception as e:
         logger.error(e)
