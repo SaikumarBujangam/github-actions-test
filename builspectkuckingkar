@@ -26,15 +26,8 @@ if __name__ == "__main__":
             for item in included_files:
                 source_path = item.get('file_details', {}).get('source', '')
                 destination = item.get('file_details', {}).get('destination', '')
-
-                # Check if the source path starts with "jars/" and look for JAR files in any subdirectories
-                if source_path.startswith("jars/"):
-                    source_full_path = os.path.join(command_args.sourceRoot, source_path)
-                    for root, dirs, files in os.walk(source_full_path):
-                        for file in files:
-                            if file.endswith(".jar"):
-                                logger.info("Jar Name: {}, Source: {}, Destination: {}".format(file, os.path.join(root, file), destination))
-
+                jar_name = os.path.basename(source_path)
+                logger.info ("Jar Name: {}, Source: {}, Destination: {}".format(jar_name, source_path, destination))
             excluded_files = [item for item in all_files if item not in included_files]
 
             handler = ParameterizedJson(json_str=json.dumps({"files": excluded_files}), parameter_dict=replacement_params)
@@ -44,6 +37,43 @@ if __name__ == "__main__":
         logger.info("Creating Tar file: {}".format(tarfile.get_bundle_location()))
         bundle_helper.read_include_file_definition(file_definition=resulting_dict, source_root=command_args.sourceRoot)
 
+
     except Exception as e:
         logger.error(e)
         sys.exit(1)
+
+
+{
+  "files": [
+     {
+      "nested_path_root": "CALLS",
+      "file_details": {
+        "source": "apps/dataproduct/interactns/adl-interactns-calls-etl/bin",
+        "destination": "dataproduct/interactns/adl-interactns-calls-etl/bin"
+      }
+     },
+     {
+      "nested_path_root": "CALLS",
+      "file_details": {
+        "source": "apps/edh/prod/discovery/operational_event/bin",
+        "destination": "edh/prod/discovery/operational_event/bin"
+      }
+     },
+	 {
+      "nested_path_root": "CALLS",
+      "file_details": {
+        "source": "jars/test1",
+        "destination": "edh/prod/discovery/operational_event/bin"
+      }
+     },
+	 {
+      "nested_path_root": "CALLS",
+      "file_details": {
+        "source": "jars/test2",
+        "destination": "edh/prod/discovery/operational_event/bin"
+      }
+     }
+
+  ]
+}
+
