@@ -73,3 +73,8 @@ if __name__ == "__main__":
     logger.error(e)
     sys.exit(1)
 
+----RDS Postgres connection detail------------------------
+Dev Postgres DC Nexus
+adl-com-d1-cdp-dcnexus.cgs723tlzdrk.us-east-1.rds.amazonaws.com
+Port – 5432
+
