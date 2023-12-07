@@ -1,79 +1,75 @@
-import json
-import sys
-import os
+exec_redshift_build()
+{
+  PYTHON_VAR_LIST=""
+  DB_SCHEMA_LIST=""
+  CICDVAR_LIST=""
+  while test $# -gt 0
+  do
+    case $1 in
+      (--var)
+        shift
+        parameter_validation "Please provide a DDL file location" "$@" && return 104
+        CICDVAR_LIST=$(echo ${CICDVAR_LIST} "--cicdvar ${1}")
+        shift;;
+      (--artifact-ddl-file)
+        shift
+        parameter_validation "Please provide a DDL file location" "$@" && return 104
+        ARTIFACT_DDL_FILE_LOCATION=${1}
+        shift;;
+      (--db-name)
+        shift
+        DB_NAME=${1}
+        parameter_validation "Please provide a database name" "$@" && return 105
+        shift;;
+      (--db-user-name)
+        shift
+        parameter_validation "Please provide a database name" "$@" && return 106
+        DB_USER_NAME=${DATA_PRODUCT_NAME}_${1##${DATA_PRODUCT_NAME}_}
+        shift;;
+      (--db-cluster-id)
+        shift
+        parameter_validation "Please provide a database name" "$@" && return 107
+        DB_CLUSTER_ID=${1}
+        shift;;
+      (--db-schema-list)
+        shift
+        parameter_validation "Please provide a database name" "$@" && return 107
+        DB_SCHEMA_LIST="--db-schema-list ${1}"
+        shift;;
+      (*)
+        shift;;
+    esac
+  done
+  run_logger python ${awsdeployrc_root}/src/alight/foundation/app/deploy/redshift.py --base-arg-parser-config-file-location ${awsdeployrc_root}/config --base-arg-parser-config-file-name redshift-build-args.json --artifact-ddl-file ${APP_INSTALL_DIR}/${ARTIFACT_DDL_FILE_LOCATION} --db-name ${DB_NAME} --db-user-name ${DB_USER_NAME} --db-cluster-id ${DB_CLUSTER_ID} ${DB_SCHEMA_LIST} ${CICDVAR_LIST} || true
+}
 
-from alight.foundation.util.bundle import TarBundler, BundleFileHandlerHelper
+import sys
+
+from alight.foundation.redshift.datapi import DataAPI
 from alight.foundation.util.argparsebuilder import GenerateParser
-from alight.foundation.util.dictionary import ParameterizedJson
 from alight.foundation.util.logging.standardlogger import StandardLogger
 from alight.foundation.util.stringutil import StringUtil
-
-def filter_files(files, include_prefix):
-    return [item for item in files if item.get('file_details', {}).get('source', '').startswith(include_prefix)]
+from alight.foundation.redshift.utils.replacement import DDLVariableReplacer
 
 if __name__ == "__main__":
-    logger = StandardLogger().getDefaultLogger()
-    try:
-        command_args = GenerateParser(supports_duplicate_parameters=True).build()
-        replacement_params = StringUtil().property_list_to_dict(input_list=command_args.cicdVar)
-        tarfile = TarBundler(bundle_name="{}-{}.tar".format(command_args.tarFileName, command_args.pkgVersion), bundle_location=command_args.tarFileLocation)
-        cicd_var = command_args.cicdVar
-        cicd_var = cicd_var[0].split("=")
-        with open(os.path.join(command_args.templateFileLocation, command_args.templateFileName), "r") as template_file:
-            file_contents = dict(json.load(template_file))
-            all_files = file_contents.get('files', [])
-            included_files = filter_files(all_files, "jars/")
-            for item in included_files:
-                source_path = item.get('file_details', {}).get('source', '')
-                destination = item.get('file_details', {}).get('destination', '')
-                jar_name = os.path.basename(source_path)
-                logger.info ("Jar Name: {}, Source: {}, Destination: {}".format(jar_name, source_path, destination))
-            excluded_files = [item for item in all_files if item not in included_files]
+  logger = StandardLogger().getDefaultLogger()
+  try:
+    command_args = GenerateParser(supports_duplicate_parameters=True).build()
+    logger.info("Running {} file on cluster: {}. database: {}".format(command_args.artifactDdlFile, command_args.dbClusterId, command_args.dbName))
+    redshift_api = DataAPI(db_name=command_args.dbName, db_user_name=command_args.dbUserName, db_cluster_id=command_args.dbClusterId)
 
-            handler = ParameterizedJson(json_str=json.dumps({"files": excluded_files}), parameter_dict=replacement_params)
-            resulting_dict = json.loads(handler.generate_json_str())
-
-        bundle_helper = BundleFileHandlerHelper(bundler=tarfile)
-        logger.info("Creating Tar file: {}".format(tarfile.get_bundle_location()))
-        bundle_helper.read_include_file_definition(file_definition=resulting_dict, source_root=command_args.sourceRoot)
-
-
-    except Exception as e:
-        logger.error(e)
-        sys.exit(1)
-
-
-{
-  "files": [
-     {
-      "nested_path_root": "CALLS",
-      "file_details": {
-        "source": "apps/dataproduct/interactns/adl-interactns-calls-etl/bin",
-        "destination": "dataproduct/interactns/adl-interactns-calls-etl/bin"
-      }
-     },
-     {
-      "nested_path_root": "CALLS",
-      "file_details": {
-        "source": "apps/edh/prod/discovery/operational_event/bin",
-        "destination": "edh/prod/discovery/operational_event/bin"
-      }
-     },
-	 {
-      "nested_path_root": "CALLS",
-      "file_details": {
-        "source": "jars/test1",
-        "destination": "edh/prod/discovery/operational_event/bin"
-      }
-     },
-	 {
-      "nested_path_root": "CALLS",
-      "file_details": {
-        "source": "jars/test2",
-        "destination": "edh/prod/discovery/operational_event/bin"
-      }
-     }
-
-  ]
-}
+    su = StringUtil()
+    replacement_params = su.property_list_to_dict(input_list=command_args.cicdVar)
+    replacer = DDLVariableReplacer(parameter_dict=replacement_params)
+    with open(command_args.artifactDdlFile) as ddl_file:
+      ddl_statement=replacer.replace(ddl_file.read())
+      for schema_name in command_args.dbSchemaList.split(","):
+        execution_statement = []
+        if schema_name != "EMBEDDED":
+          execution_statement.append("set search_path to {}".format(schema_name))
+        execution_statement.append(ddl_statement)
+        redshift_api.execute_sql(sql_statement=";\n".join(execution_statement), with_event=command_args.dbWithEvent)
+  except Exception as e:
+    logger.error(e)
+    sys.exit(1)
 
