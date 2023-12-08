@@ -1,80 +1,89 @@
-exec_redshift_build()
+bump_version()
 {
-  PYTHON_VAR_LIST=""
-  DB_SCHEMA_LIST=""
-  CICDVAR_LIST=""
-  while test $# -gt 0
+  local scope=${1}
+  local version_path=${2:?ERROR: Please provide a scope (major, minor, patch) and version file location}
+  case $scope in
+    major)
+      SEM_VER_SCOPE=1
+      ;;
+    minor)
+      SEM_VER_SCOPE=2
+      ;;
+    patch)
+      SEM_VER_SCOPE=3
+      ;;
+    *)
+      log_error "Please specify major, minor, patch" >&2
+      return 1
+      ;;
+  esac
+
+  touch ${version_path}/.version
+
+  # First determine if there has ever been a version for this environment -- initial case
+  unset current_branch_exists
+  current_branch_exists=$(version ${version_path})
+  if [ -z "$current_branch_exists" ]
+  then
+    echo "# Do not modify this file directly, unless you REALLY understand how it is used." >> ${version_path}/.version
+    echo "# The patch version is updated automatically by the CI/CD pipeline" >> ${version_path}/.version
+    echo "# Use bump_version for updating major and minor versions" >> ${version_path}/.version
+    echo "version=1.0.0" >> ${version_path}/.version
+    return 0
+  fi
+
+  readarray -t version_array < ${version_path}/.version
+  rm -rf ${version_path}/.tmp_version
+  touch ${version_path}/.tmp_version
+  for version_item in "${version_array[@]}"
   do
-    case $1 in
-      (--var)
-        shift
-        parameter_validation "Please provide a DDL file location" "$@" && return 104
-        CICDVAR_LIST=$(echo ${CICDVAR_LIST} "--cicdvar ${1}")
-        shift;;
-      (--artifact-ddl-file)
-        shift
-        parameter_validation "Please provide a DDL file location" "$@" && return 104
-        ARTIFACT_DDL_FILE_LOCATION=${1}
-        shift;;
-      (--db-name)
-        shift
-        DB_NAME=${1}
-        parameter_validation "Please provide a database name" "$@" && return 105
-        shift;;
-      (--db-user-name)
-        shift
-        parameter_validation "Please provide a database name" "$@" && return 106
-        DB_USER_NAME=${DATA_PRODUCT_NAME}_${1##${DATA_PRODUCT_NAME}_}
-        shift;;
-      (--db-cluster-id)
-        shift
-        parameter_validation "Please provide a database name" "$@" && return 107
-        DB_CLUSTER_ID=${1}
-        shift;;
-      (--db-schema-list)
-        shift
-        parameter_validation "Please provide a database name" "$@" && return 107
-        DB_SCHEMA_LIST="--db-schema-list ${1}"
-        shift;;
-      (*)
-        shift;;
+    # Do a little error handling
+    is_matched_comment_pattern=$([[ $version_item =~ ^# ]] && echo 0 || echo 1)
+    if [ $is_matched_comment_pattern -eq 0 ]
+    then
+      echo $version_item >> ${version_path}/.tmp_version
+      continue
+    fi
+    is_matched_pattern=$([[ $version_item =~ ^version=[0-9]*\.[0-9]*\.[0-9]* ]] && echo 0 || echo 1)
+    if [ $is_matched_pattern -ne 0 ]
+    then
+      log_error "The semantic version in the file does not match the proper pattern" >&2
+      return 1
+    fi
+    # do bump logic
+    current_version=$(version ${version_path})
+    current_scope_version=$(version ${version_path} | cut -d"." -f${SEM_VER_SCOPE})
+    next_scope_version=$(expr $current_scope_version + 1)
+    case $SEM_VER_SCOPE in
+      1)
+        sem_ver_major=$next_scope_version
+        sem_ver_minor=0
+        sem_ver_patch=0
+        ;;
+      2)
+        sem_ver_major=$(echo $current_version | cut -d"." -f1)
+        sem_ver_minor=$next_scope_version
+        sem_ver_patch=0
+        ;;
+      3)
+        sem_ver_major=$(echo $current_version | cut -d"." -f1)
+        sem_ver_minor=$(echo $current_version | cut -d"." -f2)
+        sem_ver_patch=$next_scope_version
+        ;;
     esac
+    echo "version=${sem_ver_major}.${sem_ver_minor}.${sem_ver_patch}" >> ${version_path}/.tmp_version
   done
-  run_logger python ${awsdeployrc_root}/src/alight/foundation/app/deploy/redshift.py --base-arg-parser-config-file-location ${awsdeployrc_root}/config --base-arg-parser-config-file-name redshift-build-args.json --artifact-ddl-file ${APP_INSTALL_DIR}/${ARTIFACT_DDL_FILE_LOCATION} --db-name ${DB_NAME} --db-user-name ${DB_USER_NAME} --db-cluster-id ${DB_CLUSTER_ID} ${DB_SCHEMA_LIST} ${CICDVAR_LIST} || true
+  cp ${version_path}/.tmp_version ${version_path}/.version
+  rm -rf ${version_path}/.tmp_version
 }
+export -f bump_version
 
-import sys
 
-from alight.foundation.redshift.datapi import DataAPI
-from alight.foundation.util.argparsebuilder import GenerateParser
-from alight.foundation.util.logging.standardlogger import StandardLogger
-from alight.foundation.util.stringutil import StringUtil
-from alight.foundation.redshift.utils.replacement import DDLVariableReplacer
-
-if __name__ == "__main__":
-  logger = StandardLogger().getDefaultLogger()
-  try:
-    command_args = GenerateParser(supports_duplicate_parameters=True).build()
-    logger.info("Running {} file on cluster: {}. database: {}".format(command_args.artifactDdlFile, command_args.dbClusterId, command_args.dbName))
-    redshift_api = DataAPI(db_name=command_args.dbName, db_user_name=command_args.dbUserName, db_cluster_id=command_args.dbClusterId)
-
-    su = StringUtil()
-    replacement_params = su.property_list_to_dict(input_list=command_args.cicdVar)
-    replacer = DDLVariableReplacer(parameter_dict=replacement_params)
-    with open(command_args.artifactDdlFile) as ddl_file:
-      ddl_statement=replacer.replace(ddl_file.read())
-      for schema_name in command_args.dbSchemaList.split(","):
-        execution_statement = []
-        if schema_name != "EMBEDDED":
-          execution_statement.append("set search_path to {}".format(schema_name))
-        execution_statement.append(ddl_statement)
-        redshift_api.execute_sql(sql_statement=";\n".join(execution_statement), with_event=command_args.dbWithEvent)
-  except Exception as e:
-    logger.error(e)
-    sys.exit(1)
-
-----RDS Postgres connection detail------------------------
-Dev Postgres DC Nexus
-adl-com-d1-cdp-dcnexus.cgs723tlzdrk.us-east-1.rds.amazonaws.com
-Port – 5432
-
+ env:
+    event_repo_name: AlightEngineering/adl-alightsec-adhoc
+    cicd_version: d1.0.280
+    event_repo_branch: master
+    calling_repo_name: AlightEngineering/adl-awsdeploy-cicd
+    dispatch_repo_name: adl-awsdeploy-cicd
+Error: 2-08::11:53:52:UTC)] [ERROR] The semantic version in the file does not match the proper pattern
+Error: Process completed with exit code 1.
