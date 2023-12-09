@@ -1,9 +1,14 @@
 $ python test_postgresdataapi.py
-[2023-12-09 16:30:00,193] [test_postgresdataapi] [consolelogger] [setUp:14] [INFO]: "Connected to the database."
-.[2023-12-09 16:30:01,018] [test_postgresdataapi] [consolelogger] [setUp:14] [INFO]: "Connected to the database."
-E[2023-12-09 16:30:01,701] [test_postgresdataapi] [consolelogger] [setUp:14] [INFO]: "Connected to the database."
-E[2023-12-09 16:30:02,382] [test_postgresdataapi] [consolelogger] [setUp:14] [INFO]: "Connected to the database."
-E
+[2023-12-09 16:32:53,470] [test_postgresdataapi] [consolelogger] [setUp:14] [INFO]: "Connected to the database."
+[2023-12-09 16:32:53,470] [test_postgresdataapi] [consolelogger] [test_connection:27] [INFO]: "Connection test passed."
+[2023-12-09 16:32:53,470] [test_postgresdataapi] [consolelogger] [tearDown:22] [INFO]: "Closed the database connection."
+.[2023-12-09 16:32:54,288] [test_postgresdataapi] [consolelogger] [setUp:14] [INFO]: "Connected to the database."
+E[2023-12-09 16:32:54,304] [test_postgresdataapi] [consolelogger] [tearDown:22] [INFO]: "Closed the database connection."
+[2023-12-09 16:32:54,968] [test_postgresdataapi] [consolelogger] [setUp:14] [INFO]: "Connected to the database."
+E[2023-12-09 16:32:54,968] [test_postgresdataapi] [consolelogger] [tearDown:22] [INFO]: "Closed the database connection."
+[2023-12-09 16:32:55,655] [test_postgresdataapi] [consolelogger] [setUp:14] [INFO]: "Connected to the database."
+E[2023-12-09 16:32:55,671] [test_postgresdataapi] [consolelogger] [tearDown:22] [INFO]: "Closed the database connection."
+
 ======================================================================
 ERROR: test_create_table (__main__.TestPostgresDataAPI.test_create_table)
 ----------------------------------------------------------------------
@@ -13,9 +18,9 @@ Traceback (most recent call last):
   File "D:\Users\A1086139\git_repo\adl-awsdeploy-cicd\src\alight\foundation\postgres\postgresdataapi.py", line 56, in execute_sql
     raise e
   File "D:\Users\A1086139\git_repo\adl-awsdeploy-cicd\src\alight\foundation\postgres\postgresdataapi.py", line 38, in execute_sql
-    res = self._cursor.execute_statement(Database=self._db_name, DbUser=self._db_user_name, Sql=sql_statement,
-          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-AttributeError: 'psycopg2.extensions.cursor' object has no attribute 'execute_statement'
+    res = self._cursor.execute(Database=self._db_name, DbUser=self._db_user_name, Sql=sql_statement,
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: function takes at most 2 keyword arguments (4 given)
 
 ======================================================================
 ERROR: test_select_from_table (__main__.TestPostgresDataAPI.test_select_from_table)
@@ -27,9 +32,9 @@ Traceback (most recent call last):
   File "D:\Users\A1086139\git_repo\adl-awsdeploy-cicd\src\alight\foundation\postgres\postgresdataapi.py", line 56, in execute_sql
     raise e
   File "D:\Users\A1086139\git_repo\adl-awsdeploy-cicd\src\alight\foundation\postgres\postgresdataapi.py", line 38, in execute_sql
-    res = self._cursor.execute_statement(Database=self._db_name, DbUser=self._db_user_name, Sql=sql_statement,
-          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-AttributeError: 'psycopg2.extensions.cursor' object has no attribute 'execute_statement'
+    res = self._cursor.execute(Database=self._db_name, DbUser=self._db_user_name, Sql=sql_statement,
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: function takes at most 2 keyword arguments (4 given)
 
 ======================================================================
 ERROR: test_table_not_created_in_schema (__main__.TestPostgresDataAPI.test_table_not_created_in_schema)
@@ -41,11 +46,11 @@ Traceback (most recent call last):
   File "D:\Users\A1086139\git_repo\adl-awsdeploy-cicd\src\alight\foundation\postgres\postgresdataapi.py", line 56, in execute_sql
     raise e
   File "D:\Users\A1086139\git_repo\adl-awsdeploy-cicd\src\alight\foundation\postgres\postgresdataapi.py", line 38, in execute_sql
-    res = self._cursor.execute_statement(Database=self._db_name, DbUser=self._db_user_name, Sql=sql_statement,
-          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-AttributeError: 'psycopg2.extensions.cursor' object has no attribute 'execute_statement'
+    res = self._cursor.execute(Database=self._db_name, DbUser=self._db_user_name, Sql=sql_statement,
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: function takes at most 2 keyword arguments (4 given)
 
 ----------------------------------------------------------------------
-Ran 4 tests in 3.022s
+Ran 4 tests in 3.034s
 
 FAILED (errors=3)
