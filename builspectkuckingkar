@@ -1,33 +1,56 @@
-import logging
-from alight.foundation.util.logging.logger import Logging4PythonConfig
+import unittest
+from alight.foundation.postgres.postgresdataapi import PostgresDataAPI
+from alight.foundation.util.argparsebuilder import GenerateParser
+from alight.foundation.util.logging.standardlogger import StandardLogger
 
-# This acts sort of like a singleton, but with a caveate. It is expected that the
-# first item to call this will supply a name -- which, will become the name of the
-# logger -- which translates into the cloudwatch stream name
-# There is still some clean-up to do, and Logging4PythonConfig perhaps should really be
-# called ElementLoggerConfig, with the understanding that it "supports" cloudwatch
-# This can be done later.
-# The double-underscore dictionary and method prevents the config loader from loading and
-# re-reading the config file, as well as making the additional call to Logging4PythonConfig
-# which would make an additional call to AWS Cloudwatch if it exists in the logging config.
-# Initializing self.__logger is required, it cannot be within any conditional. This is OK
-# because logging.getLogger("name") will return a logger with that name if it already exists,
-# kind of like a singleton...
-class StandardLogger():
-    __singleton_dict = {}
+class TestPostgresDataAPI(unittest.TestCase):
+    logger = StandardLogger().getDefaultLogger()
 
-    def __make_singleton(self, logger_class='consolelogger', logger_group_name='default', logger_config_file=None):
-        if 'logger_name' not in self.__singleton_dict:
-            self.__singleton_dict['logger_name'] = logger_class
-            self.__singleton_dict['logger_group_name'] = logger_group_name
+    def setUp(self):
+        try:
+            # Replace with actual database connection parameters for testing
+            self.data_api = PostgresDataAPI(db_name='postgres', db_user_name='dbusername', db_host='adl-com-d1-cdp-dcnexus.cgs723tlzdrk.us-east-1.rds.amazonaws.com', db_password='Password123$')
+            self.data_api.connect()
+            self.logger.info("Connected to the database.")
+        except Exception as e:
+            self.logger.info(f"Error connecting to the database: {e}")
+            raise
 
-        if logger_class is not None and 'logger_config_done' not in self.__singleton_dict:
-            Logging4PythonConfig(logger_group_name=self.__singleton_dict['logger_group_name'],
-                                 logger_name=logger_class, logging_config_file=logger_config_file)
-            self.__singleton_dict['logger_config_done'] = True
+    def tearDown(self):
+        # Close the database connection after testing
+        self.data_api.close_connection()
+        self.logger.info("Closed the database connection.")
 
-    def __init__(self, logger_class='consolelogger', logger_group_name='default', logger_config_file=None):
-        self.__make_singleton(logger_class, logger_group_name, logger_config_file)
+    def test_connection(self):
+        self.assertTrue(self.data_api._conn is not None)
+        self.assertTrue(self.data_api._cursor is not None)
+        self.logger.info("Connection test passed.")
+    def test_create_table(self):
+        # Test creating a table in the PostgreSQL database
+        sql_statement = "CREATE TABLE IF NOT EXISTS test_cicd.test_table (id serial PRIMARY KEY, name VARCHAR);"
+        self.data_api.execute_sql(sql_statement)
+        self.logger.debug("Table creation test passed.")
+        
+        # Perform additional assertions if needed
 
-    def getDefaultLogger(self):
-        return logging.getLogger(self.__singleton_dict['logger_name'])
+    def test_select_from_table(self):
+        # Test selecting data from a table in the PostgreSQL database
+        sql_statement = "SELECT * FROM test_cicd.test_table;"
+        query_id, response = self.data_api.execute_sql(sql_statement)
+        self.assertEqual(response, "FINISHED")
+        self.logger.debug("Select from table test passed.")
+
+        # Perform additional assertions if needed
+
+    def test_table_not_created_in_schema(self):
+        # Test a scenario where a table was not created, and the query should fail
+        sql_statement = "SELECT * FROM test_cicd.non_existent_table;"
+        query_id, response = self.data_api.execute_sql(sql_statement)
+        self.assertEqual(response, "FAILED")
+        self.logger.debug("Table not created in schema test passed.")
+
+        # Perform additional assertions if needed
+
+
+if __name__ == '__main__':
+    unittest.main()
