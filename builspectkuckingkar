@@ -1,51 +1,33 @@
-$ python test_postgresdataapi.py
-[2023-12-09 18:22:45,995] [postgresdataapi] [consolelogger] [execute_sql:55] [ERROR]: "Error executing SQL statement: 'NoneType' object has no attribute 'execute'"
-[2023-12-09 18:22:45,995] [postgresdataapi] [consolelogger] [execute_sql:62] [ERROR]: "Error dropping temporary table: 'NoneType' object has no attribute 'execute'"
-E[2023-12-09 18:22:45,995] [postgresdataapi] [consolelogger] [execute_sql:55] [ERROR]: "Error executing SQL statement: 'NoneType' object has no attribute 'execute'"
-[2023-12-09 18:22:45,995] [postgresdataapi] [consolelogger] [execute_sql:62] [ERROR]: "Error dropping temporary table: 'NoneType' object has no attribute 'execute'"
-E[2023-12-09 18:22:45,995] [postgresdataapi] [consolelogger] [execute_sql:55] [ERROR]: "Error executing SQL statement: 'NoneType' object has no attribute 'execute'"
-[2023-12-09 18:22:45,995] [postgresdataapi] [consolelogger] [execute_sql:62] [ERROR]: "Error dropping temporary table: 'NoneType' object has no attribute 'execute'"
-E
-======================================================================
-ERROR: test_create_table (__main__.TestPostgresDataAPI.test_create_table)
-----------------------------------------------------------------------
-Traceback (most recent call last):
-  File "D:\Users\A1086139\git_repo\adl-awsdeploy-cicd\tests\alight\foundation\postgres\test_postgresdataapi.py", line 17, in test_create_table
-    query_id, status = self.data_api.execute_sql(sql_statement)
-                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "D:\Users\A1086139\git_repo\adl-awsdeploy-cicd\src\alight\foundation\postgres\postgresdataapi.py", line 36, in execute_sql
-    self._cursor.execute(sql_statement)
-    ^^^^^^^^^^^^^^^^^^^^
-AttributeError: 'NoneType' object has no attribute 'execute'
+import unittest
+from alight.foundation.postgres.postgresdataapi import PostgresDataAPI
+from alight.foundation.util.argparsebuilder import GenerateParser
+from alight.foundation.util.logging.standardlogger import StandardLogger
 
-======================================================================
-ERROR: test_select_from_table (__main__.TestPostgresDataAPI.test_select_from_table)
-----------------------------------------------------------------------
-Traceback (most recent call last):
-  File "D:\Users\A1086139\git_repo\adl-awsdeploy-cicd\tests\alight\foundation\postgres\test_postgresdataapi.py", line 21, in test_select_from_table
-    self.test_create_table()  # Ensure there's a table to select from
-    ^^^^^^^^^^^^^^^^^^^^^^^^
-  File "D:\Users\A1086139\git_repo\adl-awsdeploy-cicd\tests\alight\foundation\postgres\test_postgresdataapi.py", line 17, in test_create_table
-    query_id, status = self.data_api.execute_sql(sql_statement)
-                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "D:\Users\A1086139\git_repo\adl-awsdeploy-cicd\src\alight\foundation\postgres\postgresdataapi.py", line 36, in execute_sql
-    self._cursor.execute(sql_statement)
-    ^^^^^^^^^^^^^^^^^^^^
-AttributeError: 'NoneType' object has no attribute 'execute'
+class TestPostgresDataAPI(unittest.TestCase):
+    logger = StandardLogger().getDefaultLogger()
 
-======================================================================
-ERROR: test_table_not_created (__main__.TestPostgresDataAPI.test_table_not_created)
-----------------------------------------------------------------------
-Traceback (most recent call last):
-  File "D:\Users\A1086139\git_repo\adl-awsdeploy-cicd\tests\alight\foundation\postgres\test_postgresdataapi.py", line 29, in test_table_not_created
-    query_id, status = self.data_api.execute_sql(sql_statement)
-                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "D:\Users\A1086139\git_repo\adl-awsdeploy-cicd\src\alight\foundation\postgres\postgresdataapi.py", line 36, in execute_sql
-    self._cursor.execute(sql_statement)
-    ^^^^^^^^^^^^^^^^^^^^
-AttributeError: 'NoneType' object has no attribute 'execute'
+    def setUp(self):
+        self.data_api = PostgresDataAPI(db_name="postgres", db_user_name="dbusername", db_host="adl-com-d1-cdp-dcnexus.cgs723tlzdrk.us-east-1.rds.amazonaws.com", db_password="Password123$")
 
-----------------------------------------------------------------------
-Ran 3 tests in 0.003s
+    def tearDown(self):
+        self.data_api.close_connection()
 
-FAILED (errors=3)
+    def test_create_table(self):
+        sql_statement = "CREATE TABLE test_cicd.sample_table (id SERIAL PRIMARY KEY, name VARCHAR);"
+        query_id, status = self.data_api.execute_sql(sql_statement)
+        self.assertEqual(status, "FINISHED")
+
+    def test_select_from_table(self):
+        self.test_create_table()  # Ensure there's a table to select from
+
+        sql_statement = "SELECT * FROM test_cicd.sample_table;"
+        query_id, status = self.data_api.execute_sql(sql_statement)
+        self.assertEqual(status, "FINISHED")
+
+    def test_table_not_created(self):
+        sql_statement = "SELECT * FROM test_cicd.non_existent_table;"
+        query_id, status = self.data_api.execute_sql(sql_statement)
+        self.assertEqual(status, "FAILED")
+
+if __name__ == '__main__':
+    unittest.main()
