@@ -1,56 +1,106 @@
-import unittest
-from alight.foundation.postgres.postgresdataapi import PostgresDataAPI
-from alight.foundation.util.argparsebuilder import GenerateParser
-from alight.foundation.util.logging.standardlogger import StandardLogger
-
-class TestPostgresDataAPI(unittest.TestCase):
-    logger = StandardLogger().getDefaultLogger()
-
-    def setUp(self):
-        try:
-            # Replace with actual database connection parameters for testing
-            self.data_api = PostgresDataAPI(db_name='postgres', db_user_name='dbusername', db_host='adl-com-d1-cdp-dcnexus.cgs723tlzdrk.us-east-1.rds.amazonaws.com', db_password='Password123$')
-            self.data_api.connect()
-            self.logger.info("Connected to the database.")
-        except Exception as e:
-            self.logger.info(f"Error connecting to the database: {e}")
-            raise
-
-    def tearDown(self):
-        # Close the database connection after testing
-        self.data_api.close_connection()
-        self.logger.info("Closed the database connection.")
-
-    def test_connection(self):
-        self.assertTrue(self.data_api._conn is not None)
-        self.assertTrue(self.data_api._cursor is not None)
-        self.logger.info("Connection test passed.")
-    def test_create_table(self):
-        # Test creating a table in the PostgreSQL database
-        sql_statement = "CREATE TABLE IF NOT EXISTS test_cicd.test_table (id serial PRIMARY KEY, name VARCHAR);"
-        self.data_api.execute_sql(sql_statement)
-        self.logger.debug("Table creation test passed.")
-        
-        # Perform additional assertions if needed
-
-    def test_select_from_table(self):
-        # Test selecting data from a table in the PostgreSQL database
-        sql_statement = "SELECT * FROM test_cicd.test_table;"
-        query_id, response = self.data_api.execute_sql(sql_statement)
-        self.assertEqual(response, "FINISHED")
-        self.logger.debug("Select from table test passed.")
-
-        # Perform additional assertions if needed
-
-    def test_table_not_created_in_schema(self):
-        # Test a scenario where a table was not created, and the query should fail
-        sql_statement = "SELECT * FROM test_cicd.non_existent_table;"
-        query_id, response = self.data_api.execute_sql(sql_statement)
-        self.assertEqual(response, "FAILED")
-        self.logger.debug("Table not created in schema test passed.")
-
-        # Perform additional assertions if needed
-
-
-if __name__ == '__main__':
+[2023-12-09 17:56:10,041] [test_postgresdataapi] [consolelogger] [setUp:14] [INFO]: "Connected to the database."
+[2023-12-09 17:56:10,041] [test_postgresdataapi] [consolelogger] [test_connection:27] [INFO]: "Connection test passed."
+[2023-12-09 17:56:10,041] [test_postgresdataapi] [consolelogger] [tearDown:22] [INFO]: "Closed the database connection."
+.[2023-12-09 17:56:10,864] [test_postgresdataapi] [consolelogger] [setUp:14] [INFO]: "Connected to the database."
+[2023-12-09 17:56:13,122] [postgresdataapi] [consolelogger] [status_check:72] [ERROR]: "Error checking status: relation "test_cicd.temp_query_status" does not exist
+LINE 1: SELECT status FROM test_cicd.temp_query_status WHERE query_i...
+                           ^
+"
+[2023-12-09 17:56:13,222] [postgresdataapi] [consolelogger] [status_check:79] [ERROR]: "Error dropping temporary table: current transaction is aborted, commands ignored until end of transaction block
+"
+[2023-12-09 17:56:14,323] [postgresdataapi] [consolelogger] [status_check:72] [ERROR]: "Error checking status: current transaction is aborted, commands ignored until end of transaction block
+"
+[2023-12-09 17:56:14,405] [postgresdataapi] [consolelogger] [status_check:79] [ERROR]: "Error dropping temporary table: current transaction is aborted, commands ignored until end of transaction block
+"
+[2023-12-09 17:56:15,508] [postgresdataapi] [consolelogger] [status_check:72] [ERROR]: "Error checking status: current transaction is aborted, commands ignored until end of transaction block
+"
+[2023-12-09 17:56:15,593] [postgresdataapi] [consolelogger] [status_check:79] [ERROR]: "Error dropping temporary table: current transaction is aborted, commands ignored until end of transaction block
+"
+[2023-12-09 17:56:16,697] [postgresdataapi] [consolelogger] [status_check:72] [ERROR]: "Error checking status: current transaction is aborted, commands ignored until end of transaction block
+"
+[2023-12-09 17:56:16,782] [postgresdataapi] [consolelogger] [status_check:79] [ERROR]: "Error dropping temporary table: current transaction is aborted, commands ignored until end of transaction block
+"
+[2023-12-09 17:56:17,886] [postgresdataapi] [consolelogger] [status_check:72] [ERROR]: "Error checking status: current transaction is aborted, commands ignored until end of transaction block
+"
+[2023-12-09 17:56:17,971] [postgresdataapi] [consolelogger] [status_check:79] [ERROR]: "Error dropping temporary table: current transaction is aborted, commands ignored until end of transaction block
+"
+[2023-12-09 17:56:19,059] [postgresdataapi] [consolelogger] [status_check:72] [ERROR]: "Error checking status: current transaction is aborted, commands ignored until end of transaction block
+"
+[2023-12-09 17:56:19,159] [postgresdataapi] [consolelogger] [status_check:79] [ERROR]: "Error dropping temporary table: current transaction is aborted, commands ignored until end of transaction block
+"
+[2023-12-09 17:56:20,256] [postgresdataapi] [consolelogger] [status_check:72] [ERROR]: "Error checking status: current transaction is aborted, commands ignored until end of transaction block
+"
+[2023-12-09 17:56:20,341] [postgresdataapi] [consolelogger] [status_check:79] [ERROR]: "Error dropping temporary table: current transaction is aborted, commands ignored until end of transaction block
+"
+[2023-12-09 17:56:21,461] [postgresdataapi] [consolelogger] [status_check:72] [ERROR]: "Error checking status: current transaction is aborted, commands ignored until end of transaction block
+"
+[2023-12-09 17:56:21,546] [postgresdataapi] [consolelogger] [status_check:79] [ERROR]: "Error dropping temporary table: current transaction is aborted, commands ignored until end of transaction block
+"
+[2023-12-09 17:56:22,634] [postgresdataapi] [consolelogger] [status_check:72] [ERROR]: "Error checking status: current transaction is aborted, commands ignored until end of transaction block
+"
+[2023-12-09 17:56:22,734] [postgresdataapi] [consolelogger] [status_check:79] [ERROR]: "Error dropping temporary table: current transaction is aborted, commands ignored until end of transaction block
+"
+[2023-12-09 17:56:23,822] [postgresdataapi] [consolelogger] [status_check:72] [ERROR]: "Error checking status: current transaction is aborted, commands ignored until end of transaction block
+"
+[2023-12-09 17:56:23,923] [postgresdataapi] [consolelogger] [status_check:79] [ERROR]: "Error dropping temporary table: current transaction is aborted, commands ignored until end of transaction block
+"
+[2023-12-09 17:56:25,025] [postgresdataapi] [consolelogger] [status_check:72] [ERROR]: "Error checking status: current transaction is aborted, commands ignored until end of transaction block
+"
+[2023-12-09 17:56:25,105] [postgresdataapi] [consolelogger] [status_check:79] [ERROR]: "Error dropping temporary table: current transaction is aborted, commands ignored until end of transaction block
+"
+[2023-12-09 17:56:26,210] [postgresdataapi] [consolelogger] [status_check:72] [ERROR]: "Error checking status: current transaction is aborted, commands ignored until end of transaction block
+"
+[2023-12-09 17:56:26,294] [postgresdataapi] [consolelogger] [status_check:79] [ERROR]: "Error dropping temporary table: current transaction is aborted, commands ignored until end of transaction block
+"
+[2023-12-09 17:56:27,398] [postgresdataapi] [consolelogger] [status_check:72] [ERROR]: "Error checking status: current transaction is aborted, commands ignored until end of transaction block
+"
+[2023-12-09 17:56:27,483] [postgresdataapi] [consolelogger] [status_check:79] [ERROR]: "Error dropping temporary table: current transaction is aborted, commands ignored until end of transaction block
+"
+[2023-12-09 17:56:28,587] [postgresdataapi] [consolelogger] [status_check:72] [ERROR]: "Error checking status: current transaction is aborted, commands ignored until end of transaction block
+"
+[2023-12-09 17:56:28,672] [postgresdataapi] [consolelogger] [status_check:79] [ERROR]: "Error dropping temporary table: current transaction is aborted, commands ignored until end of transaction block
+"
+[2023-12-09 17:56:29,777] [postgresdataapi] [consolelogger] [status_check:72] [ERROR]: "Error checking status: current transaction is aborted, commands ignored until end of transaction block
+"
+[2023-12-09 17:56:29,877] [postgresdataapi] [consolelogger] [status_check:79] [ERROR]: "Error dropping temporary table: current transaction is aborted, commands ignored until end of transaction block
+"
+[2023-12-09 17:56:30,965] [postgresdataapi] [consolelogger] [status_check:72] [ERROR]: "Error checking status: current transaction is aborted, commands ignored until end of transaction block
+"
+[2023-12-09 17:56:31,066] [postgresdataapi] [consolelogger] [status_check:79] [ERROR]: "Error dropping temporary table: current transaction is aborted, commands ignored until end of transaction block
+"
+[2023-12-09 17:56:31,969] [postgresdataapi] [consolelogger] [execute_sql:61] [ERROR]: "Error dropping temporary table: current transaction is aborted, commands ignored until end of transaction block
+"
+[2023-12-09 17:56:31,969] [logger] [root] [log_uncaught_exceptions:90] [CRITICAL]: "Current PID is 1560"
+[2023-12-09 17:56:31,969] [logger] [root] [log_uncaught_exceptions:91] [CRITICAL]: "  File "D:\Users\A1086139\git_repo\adl-awsdeploy-cicd\tests\alight\foundation\postgres\test_postgresdataapi.py", line 56, in <module>
     unittest.main()
+  File "D:\Users\A1086139\AppData\Local\Programs\Python\Python311\Lib\unittest\main.py", line 102, in __init__
+    self.runTests()
+  File "D:\Users\A1086139\AppData\Local\Programs\Python\Python311\Lib\unittest\main.py", line 274, in runTests
+    self.result = testRunner.run(self.test)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Users\A1086139\AppData\Local\Programs\Python\Python311\Lib\unittest\runner.py", line 217, in run
+    test(result)
+  File "D:\Users\A1086139\AppData\Local\Programs\Python\Python311\Lib\unittest\suite.py", line 84, in __call__
+    return self.run(*args, **kwds)
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Users\A1086139\AppData\Local\Programs\Python\Python311\Lib\unittest\suite.py", line 122, in run
+    test(result)
+  File "D:\Users\A1086139\AppData\Local\Programs\Python\Python311\Lib\unittest\suite.py", line 84, in __call__
+    return self.run(*args, **kwds)
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Users\A1086139\AppData\Local\Programs\Python\Python311\Lib\unittest\suite.py", line 122, in run
+    test(result)
+  File "D:\Users\A1086139\AppData\Local\Programs\Python\Python311\Lib\unittest\case.py", line 678, in __call__
+    return self.run(*args, **kwds)
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Users\A1086139\AppData\Local\Programs\Python\Python311\Lib\unittest\case.py", line 623, in run
+    self._callTestMethod(testMethod)
+  File "D:\Users\A1086139\AppData\Local\Programs\Python\Python311\Lib\unittest\case.py", line 579, in _callTestMethod
+    if method() is not None:
+       ^^^^^^^^
+  File "D:\Users\A1086139\git_repo\adl-awsdeploy-cicd\tests\alight\foundation\postgres\test_postgresdataapi.py", line 31, in test_create_table
+    self.data_api.execute_sql(sql_statement)
+  File "D:\Users\A1086139\git_repo\adl-awsdeploy-cicd\src\alight\foundation\postgres\postgresdataapi.py", line 51, in execute_sql
+    time.sleep(retry_interval)
+"
+[2023-12-09 17:56:31,969] [logger] [root] [log_uncaught_exceptions:92] [CRITICAL]: "<class 'KeyboardInterrupt'>: "
