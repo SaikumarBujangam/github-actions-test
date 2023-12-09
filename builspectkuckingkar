@@ -1,9 +1,51 @@
-def setUp(self):
-    try:
-        # Replace with actual database connection parameters for testing
-        self.data_api = PostgresDataAPI(db_name='postgres', db_user_name='dbusername', db_host='adl-com-d1-cdp-dcnexus.cgs723tlzdrk.us-east-1.rds.amazonaws.com', db_password='Password123$')
-        self.data_api.connect()
-        self.logger.debug("Connected to the database.")
-    except Exception as e:
-        self.logger.error(f"Error connecting to the database: {e}")
-        raise
+$ python test_postgresdataapi.py
+[2023-12-09 16:30:00,193] [test_postgresdataapi] [consolelogger] [setUp:14] [INFO]: "Connected to the database."
+.[2023-12-09 16:30:01,018] [test_postgresdataapi] [consolelogger] [setUp:14] [INFO]: "Connected to the database."
+E[2023-12-09 16:30:01,701] [test_postgresdataapi] [consolelogger] [setUp:14] [INFO]: "Connected to the database."
+E[2023-12-09 16:30:02,382] [test_postgresdataapi] [consolelogger] [setUp:14] [INFO]: "Connected to the database."
+E
+======================================================================
+ERROR: test_create_table (__main__.TestPostgresDataAPI.test_create_table)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\Users\A1086139\git_repo\adl-awsdeploy-cicd\tests\alight\foundation\postgres\test_postgresdataapi.py", line 32, in test_create_table
+    self.data_api.execute_sql(sql_statement)
+  File "D:\Users\A1086139\git_repo\adl-awsdeploy-cicd\src\alight\foundation\postgres\postgresdataapi.py", line 56, in execute_sql
+    raise e
+  File "D:\Users\A1086139\git_repo\adl-awsdeploy-cicd\src\alight\foundation\postgres\postgresdataapi.py", line 38, in execute_sql
+    res = self._cursor.execute_statement(Database=self._db_name, DbUser=self._db_user_name, Sql=sql_statement,
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'psycopg2.extensions.cursor' object has no attribute 'execute_statement'
+
+======================================================================
+ERROR: test_select_from_table (__main__.TestPostgresDataAPI.test_select_from_table)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\Users\A1086139\git_repo\adl-awsdeploy-cicd\tests\alight\foundation\postgres\test_postgresdataapi.py", line 40, in test_select_from_table
+    query_id, response = self.data_api.execute_sql(sql_statement)
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Users\A1086139\git_repo\adl-awsdeploy-cicd\src\alight\foundation\postgres\postgresdataapi.py", line 56, in execute_sql
+    raise e
+  File "D:\Users\A1086139\git_repo\adl-awsdeploy-cicd\src\alight\foundation\postgres\postgresdataapi.py", line 38, in execute_sql
+    res = self._cursor.execute_statement(Database=self._db_name, DbUser=self._db_user_name, Sql=sql_statement,
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'psycopg2.extensions.cursor' object has no attribute 'execute_statement'
+
+======================================================================
+ERROR: test_table_not_created_in_schema (__main__.TestPostgresDataAPI.test_table_not_created_in_schema)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\Users\A1086139\git_repo\adl-awsdeploy-cicd\tests\alight\foundation\postgres\test_postgresdataapi.py", line 49, in test_table_not_created_in_schema
+    query_id, response = self.data_api.execute_sql(sql_statement)
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Users\A1086139\git_repo\adl-awsdeploy-cicd\src\alight\foundation\postgres\postgresdataapi.py", line 56, in execute_sql
+    raise e
+  File "D:\Users\A1086139\git_repo\adl-awsdeploy-cicd\src\alight\foundation\postgres\postgresdataapi.py", line 38, in execute_sql
+    res = self._cursor.execute_statement(Database=self._db_name, DbUser=self._db_user_name, Sql=sql_statement,
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'psycopg2.extensions.cursor' object has no attribute 'execute_statement'
+
+----------------------------------------------------------------------
+Ran 4 tests in 3.022s
+
+FAILED (errors=3)
