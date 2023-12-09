@@ -1,44 +1,4 @@
-exec_postgres_build()
-{
-  PYTHON_VAR_LIST=""
-  DB_SCHEMA_LIST=""
-  CICDVAR_LIST=""
-  while test $# -gt 0
-  do
-    case $1 in
-      (--var)
-        shift
-        parameter_validation "Please provide a DDL file location" "$@" && return 104
-        CICDVAR_LIST=$(echo ${CICDVAR_LIST} "--cicdvar ${1}")
-        shift;;
-      (--artifact-ddl-file)
-        shift
-        parameter_validation "Please provide a DDL file location" "$@" && return 104
-        ARTIFACT_DDL_FILE_LOCATION=${1}
-        shift;;
-      (--db-name)
-        shift
-        DB_NAME=${1}
-        parameter_validation "Please provide a database name" "$@" && return 105
-        shift;;
-      (--db-user-name)
-        shift
-        parameter_validation "Please provide a database name" "$@" && return 106
-        DB_USER_NAME=${DATA_PRODUCT_NAME}_${1##${DATA_PRODUCT_NAME}_}
-        shift;;
-      (--db-host)
-        shift
-        parameter_validation "Please provide a database host" "$@" && return 108
-        DB_HOST=${1}
-        shift;;
-      (--db-port)
-        shift
-        parameter_validation "Please provide a database port" "$@" && return 109
-        DB_PORT=${1}
-        shift;;
-      (*)
-        shift;;
-    esac
-  done
-  run_logger python ${awsdeployrc_root}/src/alight/foundation/app/deploy/postgres.py --base-arg-parser-config-file-location ${awsdeployrc_root}/config --base-arg-parser-config-file-name postgres-build-args.json --artifact-ddl-file ${APP_INSTALL_DIR}/${ARTIFACT_DDL_FILE_LOCATION} --db-name ${DB_NAME} --db-user-name ${DB_USER_NAME} --db-host ${DB_HOST} --db-port ${DB_PORT} ${CICDVAR_LIST} || true
-}
+CREATE
+OR REPLACE VIEW ${cicdvar:schema_rpt}.PRSN_HM_CH_ENR_MRG_PERFTEST1 AS
+SELECT * FROM hwr_datashare_db.${cicdvar:schema_itg}.MV_PRSN_HM_CH_ENR_MRG_PERFTEST1
+WHERE CLIENT_ID = ${cicdvar:CLIENT_ID} WITH NO SCHEMA BINDING;
