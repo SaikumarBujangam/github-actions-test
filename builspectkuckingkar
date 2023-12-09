@@ -1,14 +1,81 @@
-default.ADDR_DIMN.artifact.name=ADDR_DIMN
-default.ADDR_DIMN.artifact.type=TABLE
-default.ADDR_DIMN.artifact.build.type=exec_redshift_build
-default.ADDR_DIMN.artifact.build.phase=RECREATE
-default.ADDR_DIMN.artifact.build.var.key.1=schema_rpt
-default.ADDR_DIMN.artifact.build.var.mapping.1=RPT_SCHEMA_PLACEHOLDER
-default.ADDR_DIMN.artifact.build.namedvar.key.1=artifact-ddl-file
-default.ADDR_DIMN.artifact.build.namedvar.mapping.1=ddl/consumer/rpt/ADDR_DIMN.ddl
-default.ADDR_DIMN.artifact.build.namedvar.key.2=db-name
-default.ADDR_DIMN.artifact.build.namedvar.mapping.2=${db_consumer_database_name}
-default.ADDR_DIMN.artifact.build.namedvar.key.3=db-user-name
-default.ADDR_DIMN.artifact.build.namedvar.mapping.3=${redshift_user_name}
-default.ADDR_DIMN.artifact.build.namedvar.key.4=db-cluster-id
-default.ADDR_DIMN.artifact.build.namedvar.mapping.4=${db_consumer_cluster_id}
+# postgres_data_api.py
+
+import psycopg2
+from alight.foundation.util.logging.standardlogger import StandardLogger
+
+class PostgresDataAPI:
+    logger = StandardLogger().getDefaultLogger()
+
+    def __init__(self, db_name=None, db_user_name=None, db_host=None, db_port=5432, db_password=None):
+        self._conn = None
+        self._cursor = None
+        self._db_name = db_name
+        self._db_user_name = db_user_name
+        self._db_host = db_host
+        self._db_port = db_port
+        self._db_password = db_password
+
+    def connect(self):
+        try:
+            connection_params = {
+                "dbname": self._db_name,
+                "user": self._db_user_name,
+                "password": self._db_password,
+                "host": self._db_host,
+                "port": self._db_port
+            }
+
+            self._conn = psycopg2.connect(**connection_params)
+            self._cursor = self._conn.cursor()
+
+        except Exception as e:
+            self.logger.error(f"Error connecting to the database: {e}")
+            raise
+
+    def execute_sql(self, sql_statement, with_event=False):
+        try:
+            self._cursor.execute(sql_statement)
+            self._conn.commit()
+
+        except Exception as e:
+            self.logger.error(f"Error executing SQL statement: {e}")
+            raise
+
+    def close_connection(self):
+        if self._cursor:
+            self._cursor.close()
+        if self._conn:
+            self._conn.close()
+
+
+# postgres.py
+
+import sys
+from alight.foundation.util.argparsebuilder import GenerateParser
+from alight.foundation.util.logging.standardlogger import StandardLogger
+from postgres_data_api import PostgresDataAPI  # Importing the PostgresDataAPI class
+
+if __name__ == "__main__":
+    logger = StandardLogger().getDefaultLogger()
+    try:
+        command_args = GenerateParser(supports_duplicate_parameters=True).build()
+        logger.info("Running {} file on database: {}".format(command_args.artifactDdlFile, command_args.dbName))
+
+        postgres_api = PostgresDataAPI(
+            db_name=command_args.dbName,
+            db_user_name=command_args.dbUserName,
+            db_host=command_args.dbHost,
+            db_port=command_args.dbPort,
+            db_password=command_args.dbPassword
+        )
+
+        su = StringUtil()
+        with open(command_args.artifactDdlFile) as ddl_file:
+            ddl_statement = ddl_file.read()
+            postgres_api.connect()
+            postgres_api.execute_sql(sql_statement=ddl_statement)
+            postgres_api.close_connection()
+
+    except Exception as e:
+        logger.error(e)
+        sys.exit(1)
