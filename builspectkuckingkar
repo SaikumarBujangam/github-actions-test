@@ -1,4 +1,14 @@
-CREATE
-OR REPLACE VIEW ${cicdvar:schema_rpt}.PRSN_HM_CH_ENR_MRG_PERFTEST1 AS
-SELECT * FROM hwr_datashare_db.${cicdvar:schema_itg}.MV_PRSN_HM_CH_ENR_MRG_PERFTEST1
-WHERE CLIENT_ID = ${cicdvar:CLIENT_ID} WITH NO SCHEMA BINDING;
+default.ADDR_DIMN.artifact.name=ADDR_DIMN
+default.ADDR_DIMN.artifact.type=TABLE
+default.ADDR_DIMN.artifact.build.type=exec_redshift_build
+default.ADDR_DIMN.artifact.build.phase=RECREATE
+default.ADDR_DIMN.artifact.build.var.key.1=schema_rpt
+default.ADDR_DIMN.artifact.build.var.mapping.1=RPT_SCHEMA_PLACEHOLDER
+default.ADDR_DIMN.artifact.build.namedvar.key.1=artifact-ddl-file
+default.ADDR_DIMN.artifact.build.namedvar.mapping.1=ddl/consumer/rpt/ADDR_DIMN.ddl
+default.ADDR_DIMN.artifact.build.namedvar.key.2=db-name
+default.ADDR_DIMN.artifact.build.namedvar.mapping.2=${db_consumer_database_name}
+default.ADDR_DIMN.artifact.build.namedvar.key.3=db-user-name
+default.ADDR_DIMN.artifact.build.namedvar.mapping.3=${redshift_user_name}
+default.ADDR_DIMN.artifact.build.namedvar.key.4=db-cluster-id
+default.ADDR_DIMN.artifact.build.namedvar.mapping.4=${db_consumer_cluster_id}
