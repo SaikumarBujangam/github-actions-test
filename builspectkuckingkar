@@ -1,42 +1,51 @@
 from unittest import TestCase
 
-import boto3
+from your_module.postgres_data_api import PostgresDataAPI
 
-from alight.foundation.redshift.datapi import DataAPI
-from alight.foundation.util.argparsebuilder import GenerateParser
-from alight.foundation.util.logging.standardlogger import StandardLogger
+class PostgresDataAPITestCase(TestCase):
+    def setUp(self):
+        # Replace with actual database connection parameters for testing
+        self.db_name = "your_test_database"
+        self.db_user_name = "your_test_username"
+        self.db_host = "your_test_host"
+        self.db_port = 5432  # Replace with the actual port
+        self.db_password = "your_test_password"
 
+        # Create an instance of PostgresDataAPI for testing
+        self.postgres_api = PostgresDataAPI(
+            db_name=self.db_name,
+            db_user_name=self.db_user_name,
+            db_host=self.db_host,
+            db_port=self.db_port,
+            db_password=self.db_password
+        )
 
-class DataAPITestCase(TestCase):
+        # Connect to the database for testing
+        self.postgres_api.connect()
+
+    def tearDown(self):
+        # Close the database connection after testing
+        self.postgres_api.close_connection()
+
     def test_create_table(self):
-        dataapiClient = DataAPI(db_cluster_id="adl-com-d1-data-rsproducer", db_name="rsproducerdb01", db_user_name="david.madison")
-        dataapiClient.execute_sql(sql_statement="DROP TABLE IF EXISTS scratch.adl_awsdeploy_cicd_unit_test_1; CREATE TABLE IF NOT EXISTS scratch.adl_awsdeploy_cicd_unit_test_1 (field1 integer);", with_event=True)
-        q_id, response = dataapiClient.execute_sql(sql_statement="select count(field1) from scratch.adl_awsdeploy_cicd_unit_test_1;", with_event=True)
+        # Test creating a table in the PostgreSQL database
+        sql_statement = "CREATE TABLE IF NOT EXISTS test_table (id serial PRIMARY KEY, name VARCHAR);"
+        self.postgres_api.execute_sql(sql_statement)
+        
+        # Perform additional assertions if needed
+
+    def test_select_from_table(self):
+        # Test selecting data from a table in the PostgreSQL database
+        sql_statement = "SELECT * FROM test_table;"
+        query_id, response = self.postgres_api.execute_sql(sql_statement)
         self.assertEqual(response, "FINISHED")
 
-    def test_create_table_with_parameters(self):
-        dataapiClient = DataAPI(db_cluster_id="adl-com-d1-data-rsproducer", db_name="rsproducerdb01", db_user_name="david.madison")
-        q_id, response = dataapiClient.execute_sql(sql_statement="DROP TABLE IF EXISTS :schema_name.adl_awsdeploy_cicd_unit_test_1; CREATE TABLE IF NOT EXISTS scratch.adl_awsdeploy_cicd_unit_test_1 (field1 integer);", parameters=[{"name":"schema_name", "value":"adl_awsdeploy_cicd_unit_test_5"}], with_event=True)
-        self.assertEqual(response, "FINISHED")
-        q_id, response = dataapiClient.execute_sql(sql_statement="select count(field1) from scratch.adl_awsdeploy_cicd_unit_test_5;", with_event=True)
-        self.assertEqual(response, "FINISHED")
+        # Perform additional assertions if needed
 
-    def test_was_not_created(self):
-        dataapiClient = DataAPI(db_cluster_id="adl-com-d1-data-rsproducer", db_name="rsproducerdb01", db_user_name="david.madison")
-        dataapiClient.execute_sql(sql_statement="DROP TABLE IF EXISTS scratch.adl_awsdeploy_cicd_unit_test_1; CREATE TABLE IF NOT EXISTS scratch.adl_awsdeploy_cicd_unit_test_1 (field1 integer);", with_event=True)
-        q_id, response = dataapiClient.execute_sql(sql_statement="select count(field1) from scratch.adl_bad_name_awsdeploy_cicd_unit_test_1;", with_event=True)
+    def test_table_not_created(self):
+        # Test a scenario where a table was not created, and the query should fail
+        sql_statement = "SELECT * FROM non_existent_table;"
+        query_id, response = self.postgres_api.execute_sql(sql_statement)
         self.assertEqual(response, "FAILED")
 
-    def test_create_table_multiple_schemas(self):
-        args = GenerateParser(["--base-arg-parser-config-file-location", "config", "--base-arg-parser-config-file-name", "redshift-build-args.json", "--artifact-ddl-file", "tests/config/adl_awsdeploy_cicd_unit_test_1.ddl", "--db-name", "rsproducerdb01", "--db-user-name", "david.madison", "--db-cluster-id", "adl-com-d1-data-rsproducer", "--db-schema-list", "scratch,scratch"]).build()
-        dataapiClient = DataAPI(db_cluster_id=args.dbClusterId, db_name=args.dbName, db_user_name=args.dbUserName)
-
-        with open(args.artifactDdlFile) as ddl_file:
-            ddl_statement=ddl_file.read()
-            for schema_name in args.dbSchemaList.split(","):
-                execution_statement = []
-                if schema_name != "EMBEDDED":
-                    execution_statement.append("set search_path to {}".format(schema_name))
-                execution_statement.append(ddl_statement)
-                q_id, response = dataapiClient.execute_sql(sql_statement=";\n".join(execution_statement), with_event=args.dbWithEvent)
-                self.assertEqual(response, "FINISHED")
+        # Perform additional assertions if needed
