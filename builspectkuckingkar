@@ -1,106 +1,124 @@
-[2023-12-09 17:56:10,041] [test_postgresdataapi] [consolelogger] [setUp:14] [INFO]: "Connected to the database."
-[2023-12-09 17:56:10,041] [test_postgresdataapi] [consolelogger] [test_connection:27] [INFO]: "Connection test passed."
-[2023-12-09 17:56:10,041] [test_postgresdataapi] [consolelogger] [tearDown:22] [INFO]: "Closed the database connection."
-.[2023-12-09 17:56:10,864] [test_postgresdataapi] [consolelogger] [setUp:14] [INFO]: "Connected to the database."
-[2023-12-09 17:56:13,122] [postgresdataapi] [consolelogger] [status_check:72] [ERROR]: "Error checking status: relation "test_cicd.temp_query_status" does not exist
-LINE 1: SELECT status FROM test_cicd.temp_query_status WHERE query_i...
-                           ^
-"
-[2023-12-09 17:56:13,222] [postgresdataapi] [consolelogger] [status_check:79] [ERROR]: "Error dropping temporary table: current transaction is aborted, commands ignored until end of transaction block
-"
-[2023-12-09 17:56:14,323] [postgresdataapi] [consolelogger] [status_check:72] [ERROR]: "Error checking status: current transaction is aborted, commands ignored until end of transaction block
-"
-[2023-12-09 17:56:14,405] [postgresdataapi] [consolelogger] [status_check:79] [ERROR]: "Error dropping temporary table: current transaction is aborted, commands ignored until end of transaction block
-"
-[2023-12-09 17:56:15,508] [postgresdataapi] [consolelogger] [status_check:72] [ERROR]: "Error checking status: current transaction is aborted, commands ignored until end of transaction block
-"
-[2023-12-09 17:56:15,593] [postgresdataapi] [consolelogger] [status_check:79] [ERROR]: "Error dropping temporary table: current transaction is aborted, commands ignored until end of transaction block
-"
-[2023-12-09 17:56:16,697] [postgresdataapi] [consolelogger] [status_check:72] [ERROR]: "Error checking status: current transaction is aborted, commands ignored until end of transaction block
-"
-[2023-12-09 17:56:16,782] [postgresdataapi] [consolelogger] [status_check:79] [ERROR]: "Error dropping temporary table: current transaction is aborted, commands ignored until end of transaction block
-"
-[2023-12-09 17:56:17,886] [postgresdataapi] [consolelogger] [status_check:72] [ERROR]: "Error checking status: current transaction is aborted, commands ignored until end of transaction block
-"
-[2023-12-09 17:56:17,971] [postgresdataapi] [consolelogger] [status_check:79] [ERROR]: "Error dropping temporary table: current transaction is aborted, commands ignored until end of transaction block
-"
-[2023-12-09 17:56:19,059] [postgresdataapi] [consolelogger] [status_check:72] [ERROR]: "Error checking status: current transaction is aborted, commands ignored until end of transaction block
-"
-[2023-12-09 17:56:19,159] [postgresdataapi] [consolelogger] [status_check:79] [ERROR]: "Error dropping temporary table: current transaction is aborted, commands ignored until end of transaction block
-"
-[2023-12-09 17:56:20,256] [postgresdataapi] [consolelogger] [status_check:72] [ERROR]: "Error checking status: current transaction is aborted, commands ignored until end of transaction block
-"
-[2023-12-09 17:56:20,341] [postgresdataapi] [consolelogger] [status_check:79] [ERROR]: "Error dropping temporary table: current transaction is aborted, commands ignored until end of transaction block
-"
-[2023-12-09 17:56:21,461] [postgresdataapi] [consolelogger] [status_check:72] [ERROR]: "Error checking status: current transaction is aborted, commands ignored until end of transaction block
-"
-[2023-12-09 17:56:21,546] [postgresdataapi] [consolelogger] [status_check:79] [ERROR]: "Error dropping temporary table: current transaction is aborted, commands ignored until end of transaction block
-"
-[2023-12-09 17:56:22,634] [postgresdataapi] [consolelogger] [status_check:72] [ERROR]: "Error checking status: current transaction is aborted, commands ignored until end of transaction block
-"
-[2023-12-09 17:56:22,734] [postgresdataapi] [consolelogger] [status_check:79] [ERROR]: "Error dropping temporary table: current transaction is aborted, commands ignored until end of transaction block
-"
-[2023-12-09 17:56:23,822] [postgresdataapi] [consolelogger] [status_check:72] [ERROR]: "Error checking status: current transaction is aborted, commands ignored until end of transaction block
-"
-[2023-12-09 17:56:23,923] [postgresdataapi] [consolelogger] [status_check:79] [ERROR]: "Error dropping temporary table: current transaction is aborted, commands ignored until end of transaction block
-"
-[2023-12-09 17:56:25,025] [postgresdataapi] [consolelogger] [status_check:72] [ERROR]: "Error checking status: current transaction is aborted, commands ignored until end of transaction block
-"
-[2023-12-09 17:56:25,105] [postgresdataapi] [consolelogger] [status_check:79] [ERROR]: "Error dropping temporary table: current transaction is aborted, commands ignored until end of transaction block
-"
-[2023-12-09 17:56:26,210] [postgresdataapi] [consolelogger] [status_check:72] [ERROR]: "Error checking status: current transaction is aborted, commands ignored until end of transaction block
-"
-[2023-12-09 17:56:26,294] [postgresdataapi] [consolelogger] [status_check:79] [ERROR]: "Error dropping temporary table: current transaction is aborted, commands ignored until end of transaction block
-"
-[2023-12-09 17:56:27,398] [postgresdataapi] [consolelogger] [status_check:72] [ERROR]: "Error checking status: current transaction is aborted, commands ignored until end of transaction block
-"
-[2023-12-09 17:56:27,483] [postgresdataapi] [consolelogger] [status_check:79] [ERROR]: "Error dropping temporary table: current transaction is aborted, commands ignored until end of transaction block
-"
-[2023-12-09 17:56:28,587] [postgresdataapi] [consolelogger] [status_check:72] [ERROR]: "Error checking status: current transaction is aborted, commands ignored until end of transaction block
-"
-[2023-12-09 17:56:28,672] [postgresdataapi] [consolelogger] [status_check:79] [ERROR]: "Error dropping temporary table: current transaction is aborted, commands ignored until end of transaction block
-"
-[2023-12-09 17:56:29,777] [postgresdataapi] [consolelogger] [status_check:72] [ERROR]: "Error checking status: current transaction is aborted, commands ignored until end of transaction block
-"
-[2023-12-09 17:56:29,877] [postgresdataapi] [consolelogger] [status_check:79] [ERROR]: "Error dropping temporary table: current transaction is aborted, commands ignored until end of transaction block
-"
-[2023-12-09 17:56:30,965] [postgresdataapi] [consolelogger] [status_check:72] [ERROR]: "Error checking status: current transaction is aborted, commands ignored until end of transaction block
-"
-[2023-12-09 17:56:31,066] [postgresdataapi] [consolelogger] [status_check:79] [ERROR]: "Error dropping temporary table: current transaction is aborted, commands ignored until end of transaction block
-"
-[2023-12-09 17:56:31,969] [postgresdataapi] [consolelogger] [execute_sql:61] [ERROR]: "Error dropping temporary table: current transaction is aborted, commands ignored until end of transaction block
-"
-[2023-12-09 17:56:31,969] [logger] [root] [log_uncaught_exceptions:90] [CRITICAL]: "Current PID is 1560"
-[2023-12-09 17:56:31,969] [logger] [root] [log_uncaught_exceptions:91] [CRITICAL]: "  File "D:\Users\A1086139\git_repo\adl-awsdeploy-cicd\tests\alight\foundation\postgres\test_postgresdataapi.py", line 56, in <module>
-    unittest.main()
-  File "D:\Users\A1086139\AppData\Local\Programs\Python\Python311\Lib\unittest\main.py", line 102, in __init__
-    self.runTests()
-  File "D:\Users\A1086139\AppData\Local\Programs\Python\Python311\Lib\unittest\main.py", line 274, in runTests
-    self.result = testRunner.run(self.test)
-                  ^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "D:\Users\A1086139\AppData\Local\Programs\Python\Python311\Lib\unittest\runner.py", line 217, in run
-    test(result)
-  File "D:\Users\A1086139\AppData\Local\Programs\Python\Python311\Lib\unittest\suite.py", line 84, in __call__
-    return self.run(*args, **kwds)
-           ^^^^^^^^^^^^^^^^^^^^^^^
-  File "D:\Users\A1086139\AppData\Local\Programs\Python\Python311\Lib\unittest\suite.py", line 122, in run
-    test(result)
-  File "D:\Users\A1086139\AppData\Local\Programs\Python\Python311\Lib\unittest\suite.py", line 84, in __call__
-    return self.run(*args, **kwds)
-           ^^^^^^^^^^^^^^^^^^^^^^^
-  File "D:\Users\A1086139\AppData\Local\Programs\Python\Python311\Lib\unittest\suite.py", line 122, in run
-    test(result)
-  File "D:\Users\A1086139\AppData\Local\Programs\Python\Python311\Lib\unittest\case.py", line 678, in __call__
-    return self.run(*args, **kwds)
-           ^^^^^^^^^^^^^^^^^^^^^^^
-  File "D:\Users\A1086139\AppData\Local\Programs\Python\Python311\Lib\unittest\case.py", line 623, in run
-    self._callTestMethod(testMethod)
-  File "D:\Users\A1086139\AppData\Local\Programs\Python\Python311\Lib\unittest\case.py", line 579, in _callTestMethod
-    if method() is not None:
-       ^^^^^^^^
-  File "D:\Users\A1086139\git_repo\adl-awsdeploy-cicd\tests\alight\foundation\postgres\test_postgresdataapi.py", line 31, in test_create_table
-    self.data_api.execute_sql(sql_statement)
-  File "D:\Users\A1086139\git_repo\adl-awsdeploy-cicd\src\alight\foundation\postgres\postgresdataapi.py", line 51, in execute_sql
-    time.sleep(retry_interval)
-"
-[2023-12-09 17:56:31,969] [logger] [root] [log_uncaught_exceptions:92] [CRITICAL]: "<class 'KeyboardInterrupt'>: "
+import argparse
+import sys
+import os
+import logging
+import traceback
+from logging.config import fileConfig as logger_file_config
+
+class Logging4PythonConfig():
+    def __init__(self, logging_config_file=None, logger_group_name=None, logger_name=None):
+        try:
+            if logging_config_file is None:
+                module_path = os.path.abspath(os.path.dirname(__file__))
+                logging_config_file=os.path.join(module_path, "log4python.ini")
+            logger_file_config(logging_config_file)
+        except Exception as e:
+            traceback.print_exc(file=sys.stdout)
+            logging.critical("An unexpected error has occurred: {}".format(e))
+
+# This is a generic logging class based on the built-in python logging library
+# This treats the root logger separately from a module's logger, such that the level
+# format and handler (stream/console, file, etc) can be separated between a module's
+# logger and the root logger.
+#
+# Notes: Because of the nature of the underlyling logging library, at the present time this
+#        class does not allow the root logger to be re-configured within an application, and thus
+#        the first module to setup the root logger wins!
+#
+#        This class also allows for uncaught exceptions to be logged by the root logger. This can
+#        be especially useful if the root logger is configured to dump to a file.
+#
+#        This class has only core python dependencies, and has been tested with python 2.7
+#        as well as python 3.6
+class Logging4Python(logging.Logger):
+
+    DEFAULT_LOGGING_FORMAT='[%(asctime)s] [%(filename)s] [%(name)s] [%(funcName)s:%(lineno)s] [%(levelname)s]: "%(message)s"'
+    BASE_HANDLER_NAME="handler"
+
+    def __init__(self,
+                 lname=os.path.splitext(os.path.basename(sys.argv[0]))[0],
+                 log_level=logging.INFO,
+                 log_format=DEFAULT_LOGGING_FORMAT,
+                 log_handler=None,
+                 root_log_level=logging.CRITICAL,
+                 root_log_format=DEFAULT_LOGGING_FORMAT,
+                 root_log_handler=None):
+        logging.Logger.__init__(self, lname)
+        self.name = lname
+        self.propagate = False
+        self.configure_logger(log_level, log_format, log_handler, root_log_level, root_log_format, root_log_handler)
+
+    def configure_logger_details(self, logger, handler, format, level):
+        if handler is None:
+            l_handler = logging.StreamHandler()
+        else:
+            l_handler = handler
+
+        l_handler.name = "{}_{}".format(logger.name, Logging4Python.BASE_HANDLER_NAME)
+        l_handler.setFormatter(logging.Formatter(format))
+        logger.addHandler(l_handler)
+        logger.setLevel(level)
+
+
+    def configure_logger(self, log_level, log_format, log_handler, root_log_level, root_log_format, root_log_handler):
+        if(len(logging.getLogger().handlers) == 0):
+            self.configure_logger_details(logging.getLogger(), root_log_handler, root_log_format, root_log_level)
+
+        self.configure_logger_details(self, log_handler, log_format, log_level)
+
+    # Will only dump the config if user is in DEBUG mode.
+    # Use this for calls you want to toggle
+    def print_logger_details(self):
+        self.dump_config(logging.DEBUG)
+
+
+    # Setting the log level to critical ensures that this will dump the information, regardless of
+    # the preset log level. Use this if you absolutely want to see this information
+    def dump_config(self, level=logging.CRITICAL):
+        self.log(level, self.name)
+        self.log(level, self.__dict__)
+
+
+    ################################################
+    #
+    # This allows the root logger to log uncaught
+    # exceptions, which, if the root logger is
+    # configured to write to a file, could be
+    # very handy.
+    #
+    def log_uncaught_exceptions(ex_cls, ex, tb):
+        logging.critical("Current PID is " + str(os.getpid()))
+        logging.critical(''.join(traceback.format_tb(tb)))
+        logging.critical('{0}: {1}'.format(ex_cls, ex))
+
+    sys.excepthook = log_uncaught_exceptions
+    #
+    # End of exception hook
+    #
+    ############################################
+
+def main():
+    try:
+        parser = argparse.ArgumentParser()
+        parser.add_argument('--logLevel', action='store', dest='logLevel', required=False, default="INFO", help='Sets the logging level, INFO by default')
+        parser.add_argument('--logFormat', action='store', dest='logFormat', required=False, default=Logging4Python.DEFAULT_LOGGING_FORMAT, help='Sets the output format of the application logs')
+        parser.add_argument('--rootLogLevel', action='store', dest='rootLogLevel', required=False, default="CRITICAL", help='Sets the root logging level, FATAL by default')
+        parser.add_argument('--rootLogFormat', action='store', dest='rootLogFormat', required=False, default=Logging4Python.DEFAULT_LOGGING_FORMAT, help='Sets the output format of the root logs')
+        results = parser.parse_args()
+    except:
+        logging.log(logging.CRITICAL, "Error while configuring the parser. Please confirm all required arguments to the add_argument() method have been provided")
+        sys.exit(0)
+
+    no_arg_logger = Logging4Python()
+    no_arg_logger.info("No Args were used for this")
+    my_logger = Logging4Python(log_level=results.logLevel, log_format=results.logFormat, root_log_level=results.rootLogLevel, root_log_handler=logging.FileHandler(filename="/tmp/critical_dump.log"), root_log_format=results.rootLogFormat)
+    my_logger.print_logger_details()
+    my_logger2 = Logging4Python("David", log_format=results.logFormat, log_handler=logging.FileHandler(filename="/tmp/my_logger2.log"), root_log_format=results.rootLogFormat)
+    my_logger.info("This should show")
+    my_logger2.info("This should show")
+    my_logger2.print_logger_details()
+    logging.getLogger().debug("This should not show")
+    sys.exit(0)
+
+if __name__ == '__main__':
+    main()
