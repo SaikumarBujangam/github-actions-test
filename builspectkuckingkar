@@ -1,85 +1,33 @@
-import psycopg2
-import time
-import uuid
-from alight.foundation.util.logging.standardlogger import StandardLogger
+import logging
+from alight.foundation.util.logging.logger import Logging4PythonConfig
 
-class PostgresPostgresDataAPI:
-    logger = StandardLogger().getDefaultLogger()
-    def __init__(self, db_name=None, db_user_name=None, db_host=None, db_port=5432, db_password=None):
-        self._conn = None
-        self._cursor = None
-        self._db_name = db_name
-        self._db_user_name = db_user_name
-        self._db_host = db_host
-        self._db_port = db_port
-        self._db_password = db_password
+# This acts sort of like a singleton, but with a caveate. It is expected that the
+# first item to call this will supply a name -- which, will become the name of the
+# logger -- which translates into the cloudwatch stream name
+# There is still some clean-up to do, and Logging4PythonConfig perhaps should really be
+# called ElementLoggerConfig, with the understanding that it "supports" cloudwatch
+# This can be done later.
+# The double-underscore dictionary and method prevents the config loader from loading and
+# re-reading the config file, as well as making the additional call to Logging4PythonConfig
+# which would make an additional call to AWS Cloudwatch if it exists in the logging config.
+# Initializing self.__logger is required, it cannot be within any conditional. This is OK
+# because logging.getLogger("name") will return a logger with that name if it already exists,
+# kind of like a singleton...
+class StandardLogger():
+    __singleton_dict = {}
 
-    def connect(self):
-        try:
-            connection_params = {
-                "dbname": self._db_name,
-                "user": self._db_user_name,
-                "password": self._db_password,
-                "host": self._db_host,
-                "port": self._db_port
-            }
-            self._conn = psycopg2.connect(**connection_params)
-            self._cursor = self._conn.cursor()
-        except Exception as e:
-            self.logger.error(f"Error connecting to the database: {e}")
-            raise
+    def __make_singleton(self, logger_class='consolelogger', logger_group_name='default', logger_config_file=None):
+        if 'logger_name' not in self.__singleton_dict:
+            self.__singleton_dict['logger_name'] = logger_class
+            self.__singleton_dict['logger_group_name'] = logger_group_name
 
-    def execute_sql(self, sql_statement, retry_attempts=500, retry_interval=1, with_event=True, parameters=None):
-        try:
-            if parameters is None:
-                self._cursor.execute(sql_statement)
-            else:
-                self._cursor.execute(sql_statement, parameters)
+        if logger_class is not None and 'logger_config_done' not in self.__singleton_dict:
+            Logging4PythonConfig(logger_group_name=self.__singleton_dict['logger_group_name'],
+                                 logger_name=logger_class, logging_config_file=logger_config_file)
+            self.__singleton_dict['logger_config_done'] = True
 
-            self._conn.commit()
-            query_id = str(uuid.uuid4())
-            status = "N/A"
-            self._cursor.execute("CREATE TABLE test_cicd.temp_query_status (query_id UUID, status VARCHAR);")
-            self._cursor.execute("INSERT INTO test_cicd.temp_query_status (query_id, status) VALUES (%s, %s);", (query_id, status))
-            self._conn.commit()
-            current_attempt = 0
-            while current_attempt < retry_attempts:
-                status = self.status_check(query_id)
-                if status in ("FAILED", "FINISHED"):
-                    self.logger.info("status is: {}".format(status))
-                    break
-                time.sleep(retry_interval)
-            return query_id, status
-        except Exception as e:
-            self.logger.error("Error executing SQL statement: {}".format(e))
-            raise
-        finally:
-            try:
-                self._cursor.execute("DROP TABLE IF EXISTS test_cicd.temp_query_status;")
-                self._conn.commit()
-            except Exception as drop_error:
-                self.logger.error("Error dropping temporary table: {}".format(drop_error))
+    def __init__(self, logger_class='consolelogger', logger_group_name='default', logger_config_file=None):
+        self.__make_singleton(logger_class, logger_group_name, logger_config_file)
 
-    def status_check(self, query_id):
-        try:
-            self._cursor.execute("SELECT status FROM test_cicd.temp_query_status WHERE query_id = %s;", (query_id,))
-            result = self._cursor.fetchone()
-            if result:
-                return result[0]
-            else:
-                return "UNKNOWN"
-        except Exception as e:
-            self.logger.error("Error checking status: {}".format(e))
-            return "ERROR"
-        finally:
-            try:
-                self._cursor.execute("DROP TABLE IF EXISTS test_cicd.temp_query_status;")
-                self._conn.commit()
-            except Exception as drop_error:
-                self.logger.error("Error dropping temporary table: {}".format(drop_error))
-
-    def close_connection(self):
-        if self._cursor:
-            self._cursor.close()
-        if self._conn:
-            self._conn.close()
+    def getDefaultLogger(self):
+        return logging.getLogger(self.__singleton_dict['logger_name'])
