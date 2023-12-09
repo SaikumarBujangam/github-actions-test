@@ -1,59 +1,30 @@
 $ python test_postgresdataapi.py
-[2023-12-09 19:15:11,465] [test_postgresdataapi] [consolelogger] [setUp:11] [INFO]: "Setting up the test."
-[2023-12-09 19:15:11,465] [test_postgresdataapi] [consolelogger] [setUp:13] [INFO]: "Connected to the database."
-[2023-12-09 19:15:12,602] [postgresdataapi] [consolelogger] [connect:26] [INFO]: "Connected to the host: adl-com-d1-cdp-dcnexus.cgs723tlzdrk.us-east-1.rds.amazonaws.com, database: postgres"
-[2023-12-09 19:15:12,887] [postgresdataapi] [consolelogger] [execute_sql:43] [INFO]: "SQL Statement executed successfully."
-[2023-12-09 19:15:12,887] [test_postgresdataapi] [consolelogger] [test_create_table:34] [ERROR]: "Test 'test_create_table' failed. Error: too many values to unpack (expected 2)"
-E[2023-12-09 19:15:12,887] [test_postgresdataapi] [consolelogger] [tearDown:20] [INFO]: "Tearing down the test."
-[2023-12-09 19:15:12,887] [test_postgresdataapi] [consolelogger] [tearDown:22] [INFO]: "Closed the database connection."
-[2023-12-09 19:15:12,887] [test_postgresdataapi] [consolelogger] [setUp:11] [INFO]: "Setting up the test."
-[2023-12-09 19:15:12,887] [test_postgresdataapi] [consolelogger] [setUp:13] [INFO]: "Connected to the database."
-[2023-12-09 19:15:14,002] [postgresdataapi] [consolelogger] [connect:26] [INFO]: "Connected to the host: adl-com-d1-cdp-dcnexus.cgs723tlzdrk.us-east-1.rds.amazonaws.com, database: postgres"
-[2023-12-09 19:15:14,288] [postgresdataapi] [consolelogger] [execute_sql:43] [INFO]: "SQL Statement executed successfully."
-[2023-12-09 19:15:14,288] [test_postgresdataapi] [consolelogger] [test_create_table:34] [ERROR]: "Test 'test_create_table' failed. Error: too many values to unpack (expected 2)"
-E[2023-12-09 19:15:14,288] [test_postgresdataapi] [consolelogger] [tearDown:20] [INFO]: "Tearing down the test."
-[2023-12-09 19:15:14,288] [test_postgresdataapi] [consolelogger] [tearDown:22] [INFO]: "Closed the database connection."
-[2023-12-09 19:15:14,288] [test_postgresdataapi] [consolelogger] [setUp:11] [INFO]: "Setting up the test."
-[2023-12-09 19:15:14,288] [test_postgresdataapi] [consolelogger] [setUp:13] [INFO]: "Connected to the database."
-[2023-12-09 19:15:14,959] [postgresdataapi] [consolelogger] [connect:26] [INFO]: "Connected to the host: adl-com-d1-cdp-dcnexus.cgs723tlzdrk.us-east-1.rds.amazonaws.com, database: postgres"
-[2023-12-09 19:15:15,144] [postgresdataapi] [consolelogger] [execute_sql:46] [INFO]: "Error executing SQL statement: relation "test_cicd.non_existent_table" does not exist
+[2023-12-09 19:25:40,285] [test_postgresdataapi] [consolelogger] [setUp:11] [INFO]: "Setting up the test."
+[2023-12-09 19:25:40,285] [test_postgresdataapi] [consolelogger] [setUp:13] [INFO]: "Connected to the database."
+[2023-12-09 19:25:41,426] [postgresdataapi] [consolelogger] [connect:26] [INFO]: "Connected to the host: adl-com-d1-cdp-dcnexus.cgs723tlzdrk.us-east-1.rds.amazonaws.com, database: postgres"
+[2023-12-09 19:25:41,705] [postgresdataapi] [consolelogger] [execute_sql:43] [INFO]: "SQL Statement executed successfully."
+[2023-12-09 19:25:41,705] [test_postgresdataapi] [consolelogger] [test_create_table:31] [INFO]: "Test 'test_create_table' passed. Status: ('FINISHED',)"
+[2023-12-09 19:25:41,705] [test_postgresdataapi] [consolelogger] [tearDown:20] [INFO]: "Tearing down the test."
+[2023-12-09 19:25:41,705] [test_postgresdataapi] [consolelogger] [tearDown:22] [INFO]: "Closed the database connection."
+.[2023-12-09 19:25:41,705] [test_postgresdataapi] [consolelogger] [setUp:11] [INFO]: "Setting up the test."
+[2023-12-09 19:25:41,705] [test_postgresdataapi] [consolelogger] [setUp:13] [INFO]: "Connected to the database."
+[2023-12-09 19:25:42,531] [postgresdataapi] [consolelogger] [connect:26] [INFO]: "Connected to the host: adl-com-d1-cdp-dcnexus.cgs723tlzdrk.us-east-1.rds.amazonaws.com, database: postgres"
+[2023-12-09 19:25:42,810] [postgresdataapi] [consolelogger] [execute_sql:43] [INFO]: "SQL Statement executed successfully."
+[2023-12-09 19:25:42,810] [test_postgresdataapi] [consolelogger] [test_create_table:31] [INFO]: "Test 'test_create_table' passed. Status: ('FINISHED',)"
+[2023-12-09 19:25:42,810] [postgresdataapi] [consolelogger] [execute_sql:46] [INFO]: "Error executing SQL statement: cursor already closed"
+[2023-12-09 19:25:42,810] [test_postgresdataapi] [consolelogger] [test_select_from_table:42] [INFO]: "Test 'test_select_from_table' passed. Status: ('FAILED',)"
+[2023-12-09 19:25:42,810] [test_postgresdataapi] [consolelogger] [tearDown:20] [INFO]: "Tearing down the test."
+[2023-12-09 19:25:42,810] [test_postgresdataapi] [consolelogger] [tearDown:22] [INFO]: "Closed the database connection."
+.[2023-12-09 19:25:42,810] [test_postgresdataapi] [consolelogger] [setUp:11] [INFO]: "Setting up the test."
+[2023-12-09 19:25:42,810] [test_postgresdataapi] [consolelogger] [setUp:13] [INFO]: "Connected to the database."
+[2023-12-09 19:25:43,496] [postgresdataapi] [consolelogger] [connect:26] [INFO]: "Connected to the host: adl-com-d1-cdp-dcnexus.cgs723tlzdrk.us-east-1.rds.amazonaws.com, database: postgres"
+[2023-12-09 19:25:43,681] [postgresdataapi] [consolelogger] [execute_sql:46] [INFO]: "Error executing SQL statement: relation "test_cicd.non_existent_table" does not exist
 LINE 1: SELECT * FROM test_cicd.non_existent_table;
                       ^
 "
-[2023-12-09 19:15:15,144] [test_postgresdataapi] [consolelogger] [test_table_not_created:56] [ERROR]: "Test 'test_table_not_created' failed. Error: too many values to unpack (expected 2)"
-E[2023-12-09 19:15:15,144] [test_postgresdataapi] [consolelogger] [tearDown:20] [INFO]: "Tearing down the test."
-[2023-12-09 19:15:15,144] [test_postgresdataapi] [consolelogger] [tearDown:22] [INFO]: "Closed the database connection."
-
-======================================================================
-ERROR: test_create_table (__main__.TestPostgresDataAPI.test_create_table)
+[2023-12-09 19:25:43,681] [test_postgresdataapi] [consolelogger] [test_table_not_created:51] [INFO]: "Test 'test_table_not_created' passed. Status: ('FAILED',)"
+[2023-12-09 19:25:43,681] [test_postgresdataapi] [consolelogger] [tearDown:20] [INFO]: "Tearing down the test."
+[2023-12-09 19:25:43,681] [test_postgresdataapi] [consolelogger] [tearDown:22] [INFO]: "Closed the database connection."
+.
 ----------------------------------------------------------------------
-Traceback (most recent call last):
-  File "D:\Users\A1086139\git_repo\adl-awsdeploy-cicd\tests\alight\foundation\postgres\test_postgresdataapi.py", line 30, in test_create_table
-    query_id, status = self.data_api.execute_sql(sql_statement)
-    ^^^^^^^^^^^^^^^^
-ValueError: too many values to unpack (expected 2)
-
-======================================================================
-ERROR: test_select_from_table (__main__.TestPostgresDataAPI.test_select_from_table)
-----------------------------------------------------------------------
-Traceback (most recent call last):
-  File "D:\Users\A1086139\git_repo\adl-awsdeploy-cicd\tests\alight\foundation\postgres\test_postgresdataapi.py", line 38, in test_select_from_table
-    self.test_create_table()
-  File "D:\Users\A1086139\git_repo\adl-awsdeploy-cicd\tests\alight\foundation\postgres\test_postgresdataapi.py", line 30, in test_create_table
-    query_id, status = self.data_api.execute_sql(sql_statement)
-    ^^^^^^^^^^^^^^^^
-ValueError: too many values to unpack (expected 2)
-
-======================================================================
-ERROR: test_table_not_created (__main__.TestPostgresDataAPI.test_table_not_created)
-----------------------------------------------------------------------
-Traceback (most recent call last):
-  File "D:\Users\A1086139\git_repo\adl-awsdeploy-cicd\tests\alight\foundation\postgres\test_postgresdataapi.py", line 52, in test_table_not_created
-    query_id, status = self.data_api.execute_sql(sql_statement)
-    ^^^^^^^^^^^^^^^^
-ValueError: too many values to unpack (expected 2)
-
-----------------------------------------------------------------------
-Ran 3 tests in 3.668s
-
-FAILED (errors=3)
+Ran 3 tests in 3.407s
