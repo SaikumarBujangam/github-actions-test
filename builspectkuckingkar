@@ -7,27 +7,54 @@ class TestPostgresDataAPI(unittest.TestCase):
     logger = StandardLogger().getDefaultLogger()
 
     def setUp(self):
-        self.data_api = PostgresDataAPI(db_name="postgres", db_user_name="dbusername", db_host="adl-com-d1-cdp-dcnexus.cgs723tlzdrk.us-east-1.rds.amazonaws.com", db_password="Password123$")
+        try:
+            self.logger.info("Setting up the test.")
+            self.data_api = PostgresDataAPI(db_name="postgres", db_user_name="dbusername", db_host="adl-com-d1-cdp-dcnexus.cgs723tlzdrk.us-east-1.rds.amazonaws.com", db_password="Password123$")
+            self.logger.info("Connected to the database.")
+        except Exception as e:
+            self.logger.error(f"Error during setup: {e}")
+            raise
 
     def tearDown(self):
-        self.data_api.close_connection()
+        try:
+            self.logger.info("Tearing down the test.")
+            self.data_api.close_connection()
+            self.logger.info("Closed the database connection.")
+        except Exception as e:
+            self.logger.error(f"Error during teardown: {e}")
+            raise
 
     def test_create_table(self):
         sql_statement = "CREATE TABLE test_cicd.sample_table (id SERIAL PRIMARY KEY, name VARCHAR);"
-        query_id, status = self.data_api.execute_sql(sql_statement)
-        self.assertEqual(status, "FINISHED")
+        try:
+            query_id, status = self.data_api.execute_sql(sql_statement)
+            self.assertEqual(status, "FINISHED")
+            self.logger.info(f"Test 'test_create_table' passed. Status: {status}")
+        except Exception as e:
+            self.logger.error(f"Test 'test_create_table' failed. Error: {e}")
+            raise
 
     def test_select_from_table(self):
         self.test_create_table()  # Ensure there's a table to select from
 
         sql_statement = "SELECT * FROM test_cicd.sample_table;"
-        query_id, status = self.data_api.execute_sql(sql_statement)
-        self.assertEqual(status, "FINISHED")
+        try:
+            query_id, status = self.data_api.execute_sql(sql_statement)
+            self.assertEqual(status, "FINISHED")
+            self.logger.info(f"Test 'test_select_from_table' passed. Status: {status}")
+        except Exception as e:
+            self.logger.error(f"Test 'test_select_from_table' failed. Error: {e}")
+            raise
 
     def test_table_not_created(self):
         sql_statement = "SELECT * FROM test_cicd.non_existent_table;"
-        query_id, status = self.data_api.execute_sql(sql_statement)
-        self.assertEqual(status, "FAILED")
+        try:
+            query_id, status = self.data_api.execute_sql(sql_statement)
+            self.assertEqual(status, "FAILED")
+            self.logger.info(f"Test 'test_table_not_created' passed. Status: {status}")
+        except Exception as e:
+            self.logger.error(f"Test 'test_table_not_created' failed. Error: {e}")
+            raise
 
 if __name__ == '__main__':
     unittest.main()
