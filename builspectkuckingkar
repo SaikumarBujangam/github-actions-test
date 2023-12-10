@@ -1,48 +1,11 @@
-import sys
-from alight.foundation.postgres.postgresdataapi import PostgresDataAPI
-from alight.foundation.util.argparsebuilder import GenerateParser
-from alight.foundation.util.logging.standardlogger import StandardLogger
-from alight.foundation.util.stringutil import StringUtil
-from alight.foundation.redshift.utils.replacement import DDLVariableReplacer
-import os
+[2023-12-11 01:47:34,176] [postgresdataapi] [consolelogger] [execute_sql:46] [ERROR]: "Error executing SQL statement: syntax error at or near "$"
+LINE 2: create table ${cicdvar:schema}.file_max_ts
 
-if __name__ == "__main__":
-    logger = StandardLogger().getDefaultLogger()
-    try:
-        command_args = GenerateParser(supports_duplicate_parameters=True).build()
-        logger.info("Running {} file on host: {}. database: {}".format(
-            command_args.artifactDdlFile, command_args.dbHost, command_args.dbName))
+The below is my ddl
 
-        # Retrieve secrets from GitHub actions context
-        db_username = os.environ.get('DB_USERNAME_SECRET_NAME')
-        db_password = os.environ.get('DB_PASSWORD_SECRET_NAME')
-
-        postgres_api = PostgresDataAPI(
-            db_name=command_args.dbName,
-            db_user_name=db_username,
-            db_host=command_args.dbHost,
-            db_port=command_args.dbPort,
-            db_password=db_password
-        )
-
-        su = StringUtil()
-        replacement_params = su.property_list_to_dict(
-            input_list=command_args.cicdVar)
-        replacer = DDLVariableReplacer(parameter_dict=replacement_params)
-
-        with open(command_args.artifactDdlFile) as ddl_file:
-            ddl_statement = replacer.replace(ddl_file.read())
-
-            execution_statement = []
-            execution_statement.append(
-                "set search_path to {}".format(command_args.dbSchema))
-            execution_statement.append(ddl_statement)
-
-            postgres_api.execute_sql(
-                sql_statement=";\n".join(execution_statement),
-                parameters=None
-            )
-
-    except Exception as e:
-        logger.error(e)
-        sys.exit(1)
+create table ${cicdvar:schema}.file_max_ts
+(
+	file_name				 varchar(50) not null ,
+	row_count				 integer null ,
+	max_ts                   timestamp null
+);
