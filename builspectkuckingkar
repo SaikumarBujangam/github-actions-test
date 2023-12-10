@@ -1,18 +1,43 @@
-default.CAT_DIMN.artifact.name=CAT_DIMN
-default.CAT_DIMN.artifact.type=TABLE
-default.CAT_DIMN.artifact.build.type=exec_redshift_build
-default.CAT_DIMN.artifact.build.phase=RECREATE
-default.CAT_DIMN.artifact.build.var.key.1=schema_rpt
-default.CAT_DIMN.artifact.build.var.mapping.1=RPT_SCHEMA_PLACEHOLDER
-default.CAT_DIMN.artifact.build.var.key.2=schema_itg
-default.CAT_DIMN.artifact.build.var.mapping.2=ITG_SCHEMA_PLACEHOLDER
-default.CAT_DIMN.artifact.build.var.key.3=CLIENT_ID
-default.CAT_DIMN.artifact.build.var.mapping.3=CLIENT_ID_PLACEHOLDER
-default.CAT_DIMN.artifact.build.namedvar.key.1=artifact-ddl-file
-default.CAT_DIMN.artifact.build.namedvar.mapping.1=ddl/consumer/rpt/CAT_DIMN.ddl
-default.CAT_DIMN.artifact.build.namedvar.key.2=db-name
-default.CAT_DIMN.artifact.build.namedvar.mapping.2=${db_consumer_database_name}
-default.CAT_DIMN.artifact.build.namedvar.key.3=db-user-name
-default.CAT_DIMN.artifact.build.namedvar.mapping.3=${redshift_user_name}
-default.CAT_DIMN.artifact.build.namedvar.key.4=db-cluster-id
-default.CAT_DIMN.artifact.build.namedvar.mapping.4=${db_consumer_cluster_id}
+import sys
+from alight.foundation.postgres.postgresdataapi import PostgresDataAPI
+from alight.foundation.util.argparsebuilder import GenerateParser
+from alight.foundation.util.logging.standardlogger import StandardLogger
+from alight.foundation.util.stringutil import StringUtil
+from alight.foundation.redshift.utils.replacement import DDLVariableReplacer
+
+if __name__ == "__main__":
+    logger = StandardLogger().getDefaultLogger()
+    try:
+        command_args = GenerateParser(supports_duplicate_parameters=True).build()
+        logger.info("Running {} file on host: {}. database: {}".format(
+            command_args.artifactDdlFile, command_args.dbHost, command_args.dbName))
+        
+        postgres_api = PostgresDataAPI(
+            db_name=command_args.dbName,
+            db_user_name=command_args.dbUserName,
+            db_host=command_args.dbHost,
+            db_port=command_args.dbPort,
+            db_password=command_args.dbPassword
+        )
+
+        su = StringUtil()
+        replacement_params = su.property_list_to_dict(
+            input_list=command_args.cicdVar)
+        replacer = DDLVariableReplacer(parameter_dict=replacement_params)
+
+        with open(command_args.artifactDdlFile) as ddl_file:
+            ddl_statement = replacer.replace(ddl_file.read())
+
+            execution_statement = []
+            execution_statement.append(
+                "set search_path to {}".format(command_args.dbSchema))
+            execution_statement.append(ddl_statement)
+
+            postgres_api.execute_sql(
+                sql_statement=";\n".join(execution_statement),
+                parameters=None
+            )
+
+    except Exception as e:
+        logger.error(e)
+        sys.exit(1)
