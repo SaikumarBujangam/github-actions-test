@@ -4,6 +4,7 @@ from alight.foundation.util.argparsebuilder import GenerateParser
 from alight.foundation.util.logging.standardlogger import StandardLogger
 from alight.foundation.util.stringutil import StringUtil
 from alight.foundation.redshift.utils.replacement import DDLVariableReplacer
+import os
 
 if __name__ == "__main__":
     logger = StandardLogger().getDefaultLogger()
@@ -11,13 +12,17 @@ if __name__ == "__main__":
         command_args = GenerateParser(supports_duplicate_parameters=True).build()
         logger.info("Running {} file on host: {}. database: {}".format(
             command_args.artifactDdlFile, command_args.dbHost, command_args.dbName))
-        
+
+        # Retrieve secrets from GitHub actions context
+        db_username = os.environ.get('DB_USERNAME_SECRET_NAME')
+        db_password = os.environ.get('DB_PASSWORD_SECRET_NAME')
+
         postgres_api = PostgresDataAPI(
             db_name=command_args.dbName,
-            db_user_name=command_args.dbUserName,
+            db_user_name=db_username,
             db_host=command_args.dbHost,
             db_port=command_args.dbPort,
-            db_password=command_args.dbPassword
+            db_password=db_password
         )
 
         su = StringUtil()
