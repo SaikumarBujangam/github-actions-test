@@ -1,77 +1,18 @@
-#!/bin/bash
-# Put your specific needs here
-# example: export CONTACT_EMAIL=your-dataproduct-admin-list@alight.com
-redshift_user_name=hwr_etl_spark_svc
-build_filter_list=".version src ddl config"
-if [[ ${APP_ENV} = "dev" ]]
-then
-  export db_producer_database_name=${PRODUCER_DB2}
-  export db_consumer_database_name=${CONSUMER_DB2}
-  export db_producer_cluster_id=${PRODUCER_CLUSTER_ID1}
-  export db_consumer_cluster_id=${CONSUMER_CLUSTER_ID1}
-elif [[ ${APP_ENV} = "qa" ]]
-then
-  export db_producer_database_name=${PRODUCER_DB2}
-  export db_consumer_database_name=${CONSUMER_DB2}
-  export db_producer_cluster_id=${PRODUCER_CLUSTER_ID1}
-  export db_consumer_cluster_id=${CONSUMER_CLUSTER_ID1}
-elif [[ ${APP_ENV} = "qc" ]]
-then
-  export db_producer_database_name=${PRODUCER_DB1}
-  export db_consumer_database_name=${CONSUMER_DB1}
-  export db_producer_cluster_id=${PRODUCER_CLUSTER_ID1}
-  export db_consumer_cluster_id=${CONSUMER_CLUSTER_ID1}
-elif [[ ${APP_ENV} = "prod" ]]
-then
-  export db_producer_database_name=${PRODUCER_DB1}
-  export db_consumer_database_name=${CONSUMER_DB1}
-  export db_producer_cluster_id=${PRODUCER_CLUSTER_ID1}
-  export db_consumer_cluster_id=${CONSUMER_CLUSTER_ID1}
-fi
-
-
-build_client_list()
-{
-  dis_schema_list=""
-  raw_schema_list=""
-  hwr_itg_schema_list=""
-  for client in $(cat client_list.txt)
-  do
-    dis_schema_list="dis_${client} ${dis_schema_list}"
-    hwr_itg_schema_list="hwr_itg_${client} ${dis_schema_list}"
-    raw_schema_list="raw_${client} ${dis_schema_list}"
-  done
-  export dis_schema_list=$(echo $dis_schema_list|tr ' ' ',')
-  export hwr_itg_schema_list=$(echo $hwr_itg_schema_list|tr ' ' ',')
-  export raw_schema_list=$(echo $raw_schema_list|tr ' ' ',')
-}
-
-build_client_list
-
-
-buildfile()
-{
-  while read p; do
-    echo "$p"
-    for FILE in $(ls adl-hwr-migration/config/view_build_complete/CAT_DIMN.dbbuild.ini)
-    do
-       var1="${FILE##*/}"
-       var="${p}"_"${var1}"
-       cp $FILE adl-hwr-migration/config/$var
-       filename1=$(basename "$FILE")
-       filename1=$(echo "$filename1" | cut -f 1 -d '.')
-       filename2=$(basename "$var")
-       filename2=$(echo "$filename2" | cut -f 1 -d '.')
-       str1="${filename1}".ddl
-       str2="${filename2}".ddl
-       sed -i "s/${filename1}/${filename2}/g" "adl-hwr-migration/config/${var}"
-       sed -i "s/${str2}/${str1}/g" "adl-hwr-migration/config/${var}"
-       sed -i "s/RPT_SCHEMA_PLACEHOLDER/hwr_rpt_${p}/g" "adl-hwr-migration/config/${var}"
-       sed -i "s/ITG_SCHEMA_PLACEHOLDER/hwr_itg_tba_cc/g" "adl-hwr-migration/config/${var}"
-       sed -i "s/CLIENT_ID_PLACEHOLDER/${p}/g" "adl-hwr-migration/config/${var}"
-       echo ${var} >> adl-hwr-migration/config/dbbuild.ini
-    done
-  done < adl-hwr-migration/client_list.txt
-}
-
-buildfile
+default.CAT_DIMN.artifact.name=CAT_DIMN
+default.CAT_DIMN.artifact.type=TABLE
+default.CAT_DIMN.artifact.build.type=exec_redshift_build
+default.CAT_DIMN.artifact.build.phase=RECREATE
+default.CAT_DIMN.artifact.build.var.key.1=schema_rpt
+default.CAT_DIMN.artifact.build.var.mapping.1=RPT_SCHEMA_PLACEHOLDER
+default.CAT_DIMN.artifact.build.var.key.2=schema_itg
+default.CAT_DIMN.artifact.build.var.mapping.2=ITG_SCHEMA_PLACEHOLDER
+default.CAT_DIMN.artifact.build.var.key.3=CLIENT_ID
+default.CAT_DIMN.artifact.build.var.mapping.3=CLIENT_ID_PLACEHOLDER
+default.CAT_DIMN.artifact.build.namedvar.key.1=artifact-ddl-file
+default.CAT_DIMN.artifact.build.namedvar.mapping.1=ddl/consumer/rpt/CAT_DIMN.ddl
+default.CAT_DIMN.artifact.build.namedvar.key.2=db-name
+default.CAT_DIMN.artifact.build.namedvar.mapping.2=${db_consumer_database_name}
+default.CAT_DIMN.artifact.build.namedvar.key.3=db-user-name
+default.CAT_DIMN.artifact.build.namedvar.mapping.3=${redshift_user_name}
+default.CAT_DIMN.artifact.build.namedvar.key.4=db-cluster-id
+default.CAT_DIMN.artifact.build.namedvar.mapping.4=${db_consumer_cluster_id}
