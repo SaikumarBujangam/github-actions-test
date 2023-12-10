@@ -1,43 +1,77 @@
-import sys
-from alight.foundation.util.argparsebuilder import GenerateParser
-from alight.foundation.util.logging.standardlogger import StandardLogger
-from alight.foundation.util.stringutil import StringUtil
-from your_project.postgres.postgresdataapi import PostgresDataAPI
-from your_project.postgres.utils.replacement import DDLVariableReplacer
+#!/bin/bash
+# Put your specific needs here
+# example: export CONTACT_EMAIL=your-dataproduct-admin-list@alight.com
+redshift_user_name=hwr_etl_spark_svc
+build_filter_list=".version src ddl config"
+if [[ ${APP_ENV} = "dev" ]]
+then
+  export db_producer_database_name=${PRODUCER_DB2}
+  export db_consumer_database_name=${CONSUMER_DB2}
+  export db_producer_cluster_id=${PRODUCER_CLUSTER_ID1}
+  export db_consumer_cluster_id=${CONSUMER_CLUSTER_ID1}
+elif [[ ${APP_ENV} = "qa" ]]
+then
+  export db_producer_database_name=${PRODUCER_DB2}
+  export db_consumer_database_name=${CONSUMER_DB2}
+  export db_producer_cluster_id=${PRODUCER_CLUSTER_ID1}
+  export db_consumer_cluster_id=${CONSUMER_CLUSTER_ID1}
+elif [[ ${APP_ENV} = "qc" ]]
+then
+  export db_producer_database_name=${PRODUCER_DB1}
+  export db_consumer_database_name=${CONSUMER_DB1}
+  export db_producer_cluster_id=${PRODUCER_CLUSTER_ID1}
+  export db_consumer_cluster_id=${CONSUMER_CLUSTER_ID1}
+elif [[ ${APP_ENV} = "prod" ]]
+then
+  export db_producer_database_name=${PRODUCER_DB1}
+  export db_consumer_database_name=${CONSUMER_DB1}
+  export db_producer_cluster_id=${PRODUCER_CLUSTER_ID1}
+  export db_consumer_cluster_id=${CONSUMER_CLUSTER_ID1}
+fi
 
-if __name__ == "__main__":
-    logger = StandardLogger().getDefaultLogger()
-    try:
-        command_args = GenerateParser(supports_duplicate_parameters=True).build()
-        logger.info("Running {} file on host: {}. database: {}".format(
-            command_args.artifactDdlFile, command_args.dbHost, command_args.dbName))
-        
-        postgres_api = PostgresDataAPI(
-            db_name=command_args.dbName,
-            db_user_name=command_args.dbUserName,
-            db_host=command_args.dbHost,
-            db_port=command_args.dbPort,
-            db_password=command_args.dbPassword
-        )
 
-        su = StringUtil()
-        replacement_params = su.property_list_to_dict(
-            input_list=command_args.cicdVar)
-        replacer = DDLVariableReplacer(parameter_dict=replacement_params)
+build_client_list()
+{
+  dis_schema_list=""
+  raw_schema_list=""
+  hwr_itg_schema_list=""
+  for client in $(cat client_list.txt)
+  do
+    dis_schema_list="dis_${client} ${dis_schema_list}"
+    hwr_itg_schema_list="hwr_itg_${client} ${dis_schema_list}"
+    raw_schema_list="raw_${client} ${dis_schema_list}"
+  done
+  export dis_schema_list=$(echo $dis_schema_list|tr ' ' ',')
+  export hwr_itg_schema_list=$(echo $hwr_itg_schema_list|tr ' ' ',')
+  export raw_schema_list=$(echo $raw_schema_list|tr ' ' ',')
+}
 
-        with open(command_args.artifactDdlFile) as ddl_file:
-            ddl_statement = replacer.replace(ddl_file.read())
+build_client_list
 
-            execution_statement = []
-            execution_statement.append(
-                "set search_path to {}".format(command_args.dbSchema))
-            execution_statement.append(ddl_statement)
 
-            postgres_api.execute_sql(
-                sql_statement=";\n".join(execution_statement),
-                parameters=None  # You can pass parameters if needed
-            )
+buildfile()
+{
+  while read p; do
+    echo "$p"
+    for FILE in $(ls adl-hwr-migration/config/view_build_complete/CAT_DIMN.dbbuild.ini)
+    do
+       var1="${FILE##*/}"
+       var="${p}"_"${var1}"
+       cp $FILE adl-hwr-migration/config/$var
+       filename1=$(basename "$FILE")
+       filename1=$(echo "$filename1" | cut -f 1 -d '.')
+       filename2=$(basename "$var")
+       filename2=$(echo "$filename2" | cut -f 1 -d '.')
+       str1="${filename1}".ddl
+       str2="${filename2}".ddl
+       sed -i "s/${filename1}/${filename2}/g" "adl-hwr-migration/config/${var}"
+       sed -i "s/${str2}/${str1}/g" "adl-hwr-migration/config/${var}"
+       sed -i "s/RPT_SCHEMA_PLACEHOLDER/hwr_rpt_${p}/g" "adl-hwr-migration/config/${var}"
+       sed -i "s/ITG_SCHEMA_PLACEHOLDER/hwr_itg_tba_cc/g" "adl-hwr-migration/config/${var}"
+       sed -i "s/CLIENT_ID_PLACEHOLDER/${p}/g" "adl-hwr-migration/config/${var}"
+       echo ${var} >> adl-hwr-migration/config/dbbuild.ini
+    done
+  done < adl-hwr-migration/client_list.txt
+}
 
-    except Exception as e:
-        logger.error(e)
-        sys.exit(1)
+buildfile
