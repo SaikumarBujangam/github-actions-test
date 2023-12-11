@@ -1,56 +1,50 @@
-import psycopg2
+import sys
+from alight.foundation.postgres.postgresdataapi import PostgresDataAPI
+from alight.foundation.util.argparsebuilder import GenerateParser
 from alight.foundation.util.logging.standardlogger import StandardLogger
+from alight.foundation.util.stringutil import StringUtil
+from alight.foundation.redshift.utils.replacement import DDLVariableReplacer
+import os
 
-class PostgresDataAPI:
+if __name__ == "__main__":
     logger = StandardLogger().getDefaultLogger()
+    try:
+        command_args = GenerateParser(supports_duplicate_parameters=True).build()
+        logger.info("Running {} file on host: {}. database: {}".format(
+            command_args.artifactDdlFile, command_args.dbHost, command_args.dbName))
 
-    def __init__(self, db_name=None, db_user_name=None, db_host=None, db_port=5432, db_password=None):
-        self._conn = None
-        self._cursor = None
-        self._db_name = db_name
-        self._db_user_name = db_user_name
-        self._db_host = db_host
-        self._db_port = db_port
-        self._db_password = db_password
+        db_username = "dbusername"
+        db_password = "Password123$"
 
-    def connect(self):
-        try:
-            connection_params = {
-                "dbname": self._db_name,
-                "user": self._db_user_name,
-                "password": self._db_password,
-                "host": self._db_host,
-                "port": self._db_port
-            }
-            self._conn = psycopg2.connect(**connection_params)
-            self.logger.info("Connected to the host: {}, database: {}".format(self._db_host, self._db_name))
-            self._cursor = self._conn.cursor()
-        except Exception as e:
-            self.logger.error(f"Error connecting to the database: {e}")
-            raise
+        postgres_api = PostgresDataAPI(
+            db_name=command_args.dbName,
+            db_user_name=db_username,
+            db_host=command_args.dbHost,
+            db_port=command_args.dbPort,
+            db_password=db_password
+        )
 
-    def execute_sql(self, sql_statement, parameters=None):
-        try:
-            if not self._cursor or self._cursor.closed:
-                self.connect()
+        su = StringUtil()
+        replacement_params = su.property_list_to_dict(input_list=command_args.cicdVar)
+        replacer = DDLVariableReplacer(parameter_dict=replacement_params)
+        with open(command_args.artifactDdlFile) as ddl_file:
+            ddl_statement = replacer.replace(ddl_file.read())
+            execution_statement = []
+            execution_statement.append(
+                "set search_path to {}".format(command_args.cicdVar))
+            execution_statement.append(ddl_statement)
 
-            if parameters is None:
-                self._cursor.execute(sql_statement)
-            else:
-                self._cursor.execute(sql_statement, parameters)
+            postgres_api.execute_sql(
+                sql_statement=";\n".join(execution_statement),parameters=None)
 
-            self._conn.commit()
-            self.logger.info("SQL Statement executed successfully.")
-            return "FINISHED"
-        except Exception as e:
-            self.logger.error("Error executing SQL statement: {}".format(e))
-            return "FAILED"
-            raise
-        finally:
-            self.close_connection()
+    except Exception as e:
+        logger.error(e)
+        sys.exit(1)
 
-    def close_connection(self):
-        if self._cursor:
-            self._cursor.close()
-        if self._conn:
-            self._conn.close()
+
+create table ${cicdvar:schema_name}.file_max_ts
+(
+	file_name				 varchar(50) not null ,
+	row_count				 integer null ,
+	max_ts                   timestamp null
+);
