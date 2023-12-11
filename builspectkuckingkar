@@ -77,6 +77,9 @@ jobs:
           echo "Installing dependencies from ${versioned_calling_repo_base_name}/requirements.txt"
           pip install -r ${versioned_calling_repo_base_name}/requirements.txt
       - name: Run CICD Pipeline
+        env:
+          POSTGRES_DB_USER_NAME: ${{ secrets.POSTGRES_DB_USER_NAME }}
+          POSTGRES_DB_PASSWORD: ${{ secrets.POSTGRES_DB_PASSWORD }}
         run: |
           versioned_calling_repo_base_name=${calling_repo_name}-${cicd_version}
           export BUILD_NUMBER=${{ github.run_number }}
