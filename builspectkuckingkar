@@ -27,14 +27,6 @@
       ]
     },
     {
-      "Sid": "AllowDDBTerraformStateLockAccess",
-      "Effect": "Allow",
-      "Action": [
-        "dynamodb:*"
-      ],
-      "Resource": "*"
-    },
-    {
       "Sid": "AllowBuildServiceToAccessCodeCommit",
       "Action": [
         "codecommit:CancelUploadArchive",
@@ -49,37 +41,6 @@
       "Effect": "Allow"
     },
     {
-      "Sid": "AllowAccessCodeBuildSSMParameters",
-      "Effect": "Allow",
-      "Action": "ssm:GetParameters",
-      "Resource": "arn:aws:ssm:*:*:parameter/*"
-    },
-    {
-      "Sid": "AllowRunningBuildInVpc",
-      "Effect": "Allow",
-      "Action": [
-        "ec2:CreateNetworkInterface",
-        "ec2:DescribeDhcpOptions",
-        "ec2:DescribeNetworkInterfaces",
-        "ec2:DeleteNetworkInterface",
-        "ec2:DescribeSubnets",
-        "ec2:DescribeSecurityGroups",
-        "ec2:DescribeVpcs"
-      ],
-      "Resource": "*"
-    },
-    {
-      "Sid": "AllowBuildServiceToCreateENI",
-      "Effect": "Allow",
-      "Action": "ec2:CreateNetworkInterfacePermission",
-      "Resource": "arn:aws:ec2:*:*:network-interface/*",
-      "Condition": {
-        "StringEquals": {
-          "ec2:AuthorizedService": "codebuild.amazonaws.com"
-        }
-      }
-    },
-    {
       "Sid": "AllowBuildServiceToAccessECR",
       "Effect": "Allow",
       "Action": [
@@ -87,138 +48,6 @@
         "cloudtrail:LookupEvents"
       ],
       "Resource": "*"
-    },
-    {
-      "Sid": "AllowBuildServiceToCreateSLR",
-      "Effect": "Allow",
-      "Action": [
-        "iam:CreateServiceLinkedRole"
-      ],
-      "Resource": "*",
-      "Condition": {
-        "StringEquals": {
-          "iam:AWSServiceName": [
-            "replication.ecr.amazonaws.com"
-          ]
-        }
-      }
-    },
-    {
-      "Action": [
-        "codeartifact:*"
-      ],
-      "Effect": "Allow",
-      "Resource": "*"
-    },
-    {
-      "Effect": "Allow",
-      "Action": "sts:GetServiceBearerToken",
-      "Resource": "*",
-      "Condition": {
-        "StringEquals": {
-          "sts:AWSServiceName": "codeartifact.amazonaws.com"
-        }
-      }
-    },
-    {
-      "Action": [
-        "s3:*",
-        "s3-object-lambda:*"
-      ],
-      "Effect": "Allow",
-      "Resource": "*"
-    },
-    {
-      "Effect": "Allow",
-      "Action": [
-        "ecr:GetAuthorizationToken",
-        "ecr:BatchCheckLayerAvailability",
-        "ecr:GetDownloadUrlForLayer",
-        "ecr:GetRepositoryPolicy",
-        "ecr:DescribeRepositories",
-        "ecr:ListImages",
-        "ecr:DescribeImages",
-        "ecr:BatchGetImage",
-        "ecr:GetLifecyclePolicy",
-        "ecr:GetLifecyclePolicyPreview",
-        "ecr:ListTagsForResource",
-        "ecr:DescribeImageScanFindings",
-        "ecr:InitiateLayerUpload",
-        "ecr:UploadLayerPart",
-        "ecr:CompleteLayerUpload",
-        "ecr:PutImage"
-      ],
-      "Resource": "*"
-    },
-    {
-      "Action": [
-          "secretsmanager:*",
-          "cloudformation:CreateChangeSet",
-          "cloudformation:DescribeChangeSet",
-          "cloudformation:DescribeStackResource",
-          "cloudformation:DescribeStacks",
-          "cloudformation:ExecuteChangeSet",
-          "ec2:DescribeSecurityGroups",
-          "ec2:DescribeSubnets",
-          "ec2:DescribeVpcs",
-          "kms:DescribeKey",
-          "kms:ListAliases",
-          "kms:ListKeys",
-          "lambda:ListFunctions",
-          "rds:DescribeDBClusters",
-          "rds:DescribeDBInstances",
-          "redshift:DescribeClusters",
-          "tag:GetResources"
-      ],
-      "Effect": "Allow",
-      "Resource": "*"
-  },
-  {
-      "Action": [
-          "lambda:AddPermission",
-          "lambda:CreateFunction",
-          "lambda:GetFunction",
-          "lambda:InvokeFunction",
-          "lambda:UpdateFunctionConfiguration"
-      ],
-      "Effect": "Allow",
-      "Resource": "arn:aws:lambda:*:*:function:SecretsManager*"
-  },
-  {
-      "Action": [
-          "serverlessrepo:CreateCloudFormationChangeSet",
-          "serverlessrepo:GetApplication"
-      ],
-      "Effect": "Allow",
-      "Resource": "arn:aws:serverlessrepo:*:*:applications/SecretsManager*"
-  },
-  {
-      "Action": [
-          "s3:GetObject"
-      ],
-      "Effect": "Allow",
-      "Resource": [
-          "arn:aws:s3:::awsserverlessrepo-changesets*",
-          "arn:aws:s3:::secrets-manager-rotation-apps-*/*"
-      ]
-  },
-  {
-    "Action": [
-        "codeartifact:*"
-    ],
-    "Effect": "Allow",
-    "Resource": "*"
-},
-{
-    "Effect": "Allow",
-    "Action": "sts:GetServiceBearerToken",
-    "Resource": "*",
-    "Condition": {
-        "StringEquals": {
-            "sts:AWSServiceName": "codeartifact.amazonaws.com"
-        }
     }
-}
   ]
 }
-Refine the policy only with codebuild, codecommit, ECR and cloudwatch logs.
