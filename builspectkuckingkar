@@ -1,11 +1,56 @@
-[2023-12-11 01:47:34,176] [postgresdataapi] [consolelogger] [execute_sql:46] [ERROR]: "Error executing SQL statement: syntax error at or near "$"
-LINE 2: create table ${cicdvar:schema}.file_max_ts
+import psycopg2
+from alight.foundation.util.logging.standardlogger import StandardLogger
 
-The below is my ddl
+class PostgresDataAPI:
+    logger = StandardLogger().getDefaultLogger()
 
-create table ${cicdvar:schema}.file_max_ts
-(
-	file_name				 varchar(50) not null ,
-	row_count				 integer null ,
-	max_ts                   timestamp null
-);
+    def __init__(self, db_name=None, db_user_name=None, db_host=None, db_port=5432, db_password=None):
+        self._conn = None
+        self._cursor = None
+        self._db_name = db_name
+        self._db_user_name = db_user_name
+        self._db_host = db_host
+        self._db_port = db_port
+        self._db_password = db_password
+
+    def connect(self):
+        try:
+            connection_params = {
+                "dbname": self._db_name,
+                "user": self._db_user_name,
+                "password": self._db_password,
+                "host": self._db_host,
+                "port": self._db_port
+            }
+            self._conn = psycopg2.connect(**connection_params)
+            self.logger.info("Connected to the host: {}, database: {}".format(self._db_host, self._db_name))
+            self._cursor = self._conn.cursor()
+        except Exception as e:
+            self.logger.error(f"Error connecting to the database: {e}")
+            raise
+
+    def execute_sql(self, sql_statement, parameters=None):
+        try:
+            if not self._cursor or self._cursor.closed:
+                self.connect()
+
+            if parameters is None:
+                self._cursor.execute(sql_statement)
+            else:
+                self._cursor.execute(sql_statement, parameters)
+
+            self._conn.commit()
+            self.logger.info("SQL Statement executed successfully.")
+            return "FINISHED"
+        except Exception as e:
+            self.logger.error("Error executing SQL statement: {}".format(e))
+            return "FAILED"
+            raise
+        finally:
+            self.close_connection()
+
+    def close_connection(self):
+        if self._cursor:
+            self._cursor.close()
+        if self._conn:
+            self._conn.close()
