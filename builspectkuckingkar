@@ -50,3 +50,51 @@ class PostgresDataAPI:
             self._cursor.close()
         if self._conn:
             self._conn.close()
+
+
+import sys
+import os
+from alight.foundation.postgres.postgresdataapi import PostgresDataAPI
+from alight.foundation.util.argparsebuilder import GenerateParser
+from alight.foundation.util.logging.standardlogger import StandardLogger
+from alight.foundation.util.stringutil import StringUtil
+from alight.foundation.redshift.utils.replacement import DDLVariableReplacer
+
+
+if __name__ == "__main__":
+    logger = StandardLogger().getDefaultLogger()
+    try:
+        command_args = GenerateParser(supports_duplicate_parameters=True).build()
+        logger.info("Running {} file on host: {}. database: {}".format(
+            command_args.artifactDdlFile, command_args.dbHost, command_args.dbName))
+
+        db_username = os.environ.get('POSTGRES_DB_USER_NAME')
+        db_password = os.environ.get('POSTGRES_DB_PASSWORD')
+
+        postgres_api = PostgresDataAPI(
+            db_name=command_args.dbName,
+            db_user_name=db_username,
+            db_host=command_args.dbHost,
+            db_port=command_args.dbPort,
+            db_password=db_password
+        )
+
+        su = StringUtil()
+        replacement_params = su.property_list_to_dict(input_list=command_args.cicdVar)
+        replacer = DDLVariableReplacer(parameter_dict=replacement_params)
+        with open(command_args.artifactDdlFile) as ddl_file:
+            ddl_statement = replacer.replace(ddl_file.read())
+            for schema_name in command_args.dbSchemaList.split(","):
+                execution_statement = []
+                if schema_name != "EMBEDDED":
+                    execution_statement.append("set search_path to {}".format(schema_name))
+                execution_statement.append(ddl_statement)
+
+            postgres_api.execute_sql(sql_statement=";\n".join(execution_statement))
+
+    except Exception as e:
+        logger.error(e)
+        sys.exit(1)
+
+
+ python /D/Users/A1086139/git_repo/adl-awsdeploy-cicd/src/alight/foundation/app/deploy/postgres.py --base-arg-parser-config-file-location /D/Users/A1086139/git_repo/adl-awsdeploy-cicd/config --base-arg-parser-config-file-name postgres-build-args.json --artifact-ddl-file /D/Users/A1086139/git_repo/local/wealth/adl-wealth-dcnexus-etl/1.0.11/ddl/tables/file_max_ts.ddl --db-name postgres --db-user-name --db-host adl-com-d1-cdp-dcnexus.cgs723tlzdrk.us-east-1.rds.amazonaws.com --db-port 5432 --cicdvar schema_name=test_cicd
