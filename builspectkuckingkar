@@ -12,6 +12,12 @@ DROP TABLE IF EXISTS ${cicdvar:schema_name}.file_max_ts_duplicate
 	max_ts                   timestamp null
 );
 
+
+[2023-12-12 13:00:20,129] [postgresdataapi] [consolelogger] [execute_sql:46] [ERROR]: "Error executing SQL statement: syntax error at or near "("
+LINE 2: (
+        ^
+
+
 DROP TABLE IF EXISTS ${cicdvar:schema_name}.file_max_ts_triplicate
 (
 	file_name				 varchar(50) not null ,
