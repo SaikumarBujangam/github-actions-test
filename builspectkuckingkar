@@ -1,26 +1,13 @@
-DROP TABLE IF EXISTS ${cicdvar:schema_name}.file_max_ts
-(
-	file_name				 varchar(50) not null ,
-	row_count				 integer null ,
-	max_ts                   timestamp null
-);
-
-DROP TABLE IF EXISTS ${cicdvar:schema_name}.file_max_ts_duplicate
-(
-	file_name				 varchar(50) not null ,
-	row_count				 integer null ,
-	max_ts                   timestamp null
-);
-
-
-[2023-12-12 13:00:20,129] [postgresdataapi] [consolelogger] [execute_sql:46] [ERROR]: "Error executing SQL statement: syntax error at or near "("
-LINE 2: (
-        ^
-
-
-DROP TABLE IF EXISTS ${cicdvar:schema_name}.file_max_ts_triplicate
-(
-	file_name				 varchar(50) not null ,
-	row_count				 integer null ,
-	max_ts                   timestamp null
-);
+[2023-12-12::16:52:27:IST)] [INFO] >>> exec_postgres_build --adl-artifact-type TABLE --var schema_name=test_cicd --artifact-ddl-file ddl/tables/file_max_ts.ddl --db-host adl-com-d1-cdp-dcnexus.cgs723tlzdrk.us-east-1.rds.amazonaws.com --db-name postgres --db-port 5432 <<<
+[2023-12-12::16:52:27:IST)] [INFO] BEGIN LOGGING EXECUTION
+[2023-12-12::16:52:27:IST)] [INFO] Command to execute:
+usage: postgres.py [-h] --base-arg-parser-config-file-name
+                   BASEARGPARSERCONFIGFILENAME
+                   --base-arg-parser-config-file-location
+                   BASEARGPARSERCONFIGFILELOCATION --artifact-ddl-file
+                   ARTIFACTDDLFILE --db-name DBNAME --db-host DBHOST --db-port
+                   DBPORT [--db-schema-list DBSCHEMALIST]
+                   [--allow-destructive-operations ALLOWDESTRUCTIVEOPERATIONS]
+                   [--cicdvar CICDVAR]
+postgres.py: error: argument --allow-destructive-operations: expected one argument
+[2023-12-12::16:52:27:IST)] [INFO] >>> python /d/Users/A1086139/git_repo/adl-awsdeploy-cicd/src/alight/foundation/app/deploy/postgres.py --base-arg-parser-config-file-location /d/Users/A1086139/git_repo/adl-awsdeploy-cicd/config --base-arg-parser-config-file-name postgres-build-args.json --artifact-ddl-file /d/Users/A1086139/git_repo/local/wealth/adl-wealth-dcnexus-etl/1.0.11/ddl/tables/file_max_ts.ddl --db-name postgres --db-user-name --db-host adl-com-d1-cdp-dcnexus.cgs723tlzdrk.us-east-1.rds.amazonaws.com --db-port 5432 --allow-destructive-operations --cicdvar schema_name=test_cicd <<<
