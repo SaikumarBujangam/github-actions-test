@@ -1,5 +1,19 @@
-drop TABLE IF EXISTS ${cicdvar:schema_name}.file_max_ts;
-
-drop TABLE IF EXISTS ${cicdvar:schema_name}.file_max_ts_duplicate;
-
-drop TABLE IF EXISTS ${cicdvar:schema_name}.file_max_ts_triplicate;
+[2023-12-12::19:53:28:IST)] [INFO] >>> python /d/Users/A1086139/git_repo/adl-awsdeploy-cicd/src/alight/foundation/app/deploy/postgres.py --base-arg-parser-config-file-location /d/Users/A1086139/git_repo/adl-awsdeploy-cicd/config --base-arg-parser-config-file-name postgres-build-args.json --artifact-ddl-file /d/Users/A1086139/git_repo/local/wealth/adl-wealth-dcnexus-etl/1.0.11/ddl/tables/file_max_ts.ddl --db-name postgres --db-user-name --db-host adl-com-d1-cdp-dcnexus.cgs723tlzdrk.us-east-1.rds.amazonaws.com --db-port 5432 --cicdvar schema_name=test_cicd <<<
+[2023-12-12 19:53:29,033] [postgres] [consolelogger] [<module>:14] [INFO]: "Running D:/Users/A1086139/git_repo/local/wealth/adl-wealth-dcnexus-etl/1.0.11/ddl/tables/file_max_ts.ddl file on host: adl-com-d1-cdp-dcnexus.cgs723tlzdrk.us-east-1.rds.amazonaws.com. database: postgres"
+[2023-12-12 19:53:29,867] [postgresdataapi] [consolelogger] [connect:27] [INFO]: "Connected to the host: adl-com-d1-cdp-dcnexus.cgs723tlzdrk.us-east-1.rds.amazonaws.com, database: postgres"
+_allow_destructive_operations: false
+_allow_destructive_operations: false
+[2023-12-12 19:53:30,162] [postgresdataapi] [consolelogger] [execute_sql:48] [INFO]: "SQL Statement executed successfully."
+[2023-12-12::19:53:30:IST)] [INFO] Execution returned a status of  0
+[2023-12-12::19:53:30:IST)] [INFO] END LOGGING EXECUTION
+[2023-12-12::19:53:30:IST)] [INFO] Execution returned a status of  0
+[2023-12-12::19:53:30:IST)] [INFO] END LOGGING EXECUTION
+[2023-12-12::19:53:31:IST)] [INFO] Execution returned a status of  0
+[2023-12-12::19:53:31:IST)] [INFO] END LOGGING EXECUTION
+[2023-12-12::19:53:31:IST)] [INFO] Execution returned a status of  0
+[2023-12-12::19:53:31:IST)] [INFO] END LOGGING EXECUTION
+[2023-12-12::19:53:31:IST)] [INFO] Execution returned a status of  0
+[2023-12-12::19:53:31:IST)] [INFO] END LOGGING EXECUTION
+[2023-12-12::19:53:32:IST)] [INFO] Execution returned a status of  0
+[2023-12-12::19:53:32:IST)] [INFO] END LOGGING EXECUTION
+[2023-12-12::19:53:32:IST)] [INFO] Execution returned a status of  0
