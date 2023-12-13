@@ -1,18 +1,85 @@
-def _contains_destructive_operations(self, sql_statement):
-    destructive_keywords = ['drop', 'delete']
-    normalized_sql = sql_statement.lower()
-    contains_destructive_ops = False  # Initialize with False
+import psycopg2
+from alight.foundation.util.logging.standardlogger import StandardLogger
 
-    for keyword in destructive_keywords:
-        if keyword in normalized_sql:
-            contains_destructive_ops = True
-            if not self._allow_destructive_operations:  # Add this condition
+class PostgresDataAPI:
+    logger = StandardLogger().getDefaultLogger()
+
+    def __init__(self, db_name=None, db_user_name=None, db_host=None, db_port=5432, db_password=None, allow_destructive_operations=False):
+        self._conn = None
+        self._cursor = None
+        self._db_name = db_name
+        self._db_user_name = db_user_name
+        self._db_host = db_host
+        self._db_port = db_port
+        self._db_password = db_password
+        self._allow_destructive_operations = allow_destructive_operations.lower() == "true"
+
+    def connect(self):
+        try:
+            connection_params = {
+                "dbname": self._db_name,
+                "user": self._db_user_name,
+                "password": self._db_password,
+                "host": self._db_host,
+                "port": self._db_port
+            }
+            self._conn = psycopg2.connect(**connection_params)
+            self.logger.info("Connected to the host: {}, database: {}".format(self._db_host, self._db_name))
+            self._cursor = self._conn.cursor()
+        except Exception as e:
+            self.logger.error(f"Error connecting to the database: {e}")
+            raise
+
+    def execute_sql(self, sql_statement):
+        try:
+            if not self._cursor or self._cursor.closed:
+                self.connect()
+            contains_destructive_ops = self._contains_destructive_operations(sql_statement)
+            print("Contains destructive operations:", contains_destructive_ops)
+            if contains_destructive_ops and not self._allow_destructive_operations:
+                print("Entered the block for destructive operations!")
+                raise ValueError("Potentially destructive operations are not allowed without confirmation.")
+            self._cursor.execute(sql_statement)
+            self._conn.commit()
+            self.logger.info("SQL Statement executed successfully.")
+            return "FINISHED"
+        except Exception as e:
+            self.logger.error("Error executing SQL statement: {}".format(e))
+            return "FAILED"
+            raise
+        finally:
+            self.close_connection()
+    
+    def _contains_destructive_operations(self, sql_statement):
+        destructive_keywords = ['drop', 'delete']
+        normalized_sql = sql_statement.lower()
+        print("Normalized SQL Statement:", normalized_sql)
+        for keyword in destructive_keywords:
+            if keyword in normalized_sql:
                 self.logger.info("Potentially destructive keyword '{}' found in SQL Statement: {}".format(keyword, sql_statement))
-                self.logger.info("Normalized SQL Statement: {}".format(normalized_sql))
-            break
+                return True
+        return False
 
-    if contains_destructive_ops and self._allow_destructive_operations:
-        self.logger.info("Potentially destructive keyword '{}' found in SQL Statement: {}".format(keyword, sql_statement))
-        self.logger.info("Normalized SQL Statement: {}".format(normalized_sql))
+    def close_connection(self):
+        if self._cursor:
+            self._cursor.close()
+        if self._conn:
+            self._conn.close()
 
-    return contains_destructive_ops
+$  python /d/Users/A1086139/git_repo/adl-awsdeploy-cicd/src/alight/foundation/app/deploy/postgres.py --base-arg-parser-config-file-location /d/Users/A1086139/git_repo/adl-awsdeploy-cicd/config --base-arg-parser-config-file-name postgres-build-args.json --artifact-ddl-file /d/Users/A1086139/git_repo/local/wealth/adl-wealth-dcnexus-etl/1.0.11/ddl/tables/file_max_ts.ddl --db-name postgres --db-user-name --db-host adl-com-d1-cdp-dcnexus.cgs723tlzdrk.us-east-1.rds.amazonaws.com --db-port 5432 --allow-destructive-operations True --cicdvar schema_name=test_cicd
+[2023-12-13 16:53:57,790] [postgres] [consolelogger] [<module>:14] [INFO]: "Running D:/Users/A1086139/git_repo/local/wealth/adl-wealth-dcnexus-etl/1.0.11/ddl/tables/file_max_ts.ddl file on host: adl-com-d1-cdp-dcnexus.cgs723tlzdrk.us-east-1.rds.amazonaws.com. database: postgres"
+[2023-12-13 16:53:58,633] [postgresdataapi] [consolelogger] [connect:27] [INFO]: "Connected to the host: adl-com-d1-cdp-dcnexus.cgs723tlzdrk.us-east-1.rds.amazonaws.com, database: postgres"
+Normalized SQL Statement: drop table if exists test_cicd.file_max_ts;
+[2023-12-13 16:53:58,633] [postgresdataapi] [consolelogger] [_contains_destructive_operations:59] [INFO]: "Potentially destructive keyword 'drop' found in SQL Statement: drop TABLE IF EXISTS test_cicd.file_max_ts;"
+Contains destructive operations: True
+[2023-12-13 16:53:58,917] [postgresdataapi] [consolelogger] [execute_sql:44] [INFO]: "SQL Statement executed successfully."
+
+A1086139@DESKTOP-899JC7U MINGW64 /d/Users/A1086139/git_repo
+$  python /d/Users/A1086139/git_repo/adl-awsdeploy-cicd/src/alight/foundation/app/deploy/postgres.py --base-arg-parser-config-file-location /d/Users/A1086139/git_repo/adl-awsdeploy-cicd/config --base-arg-parser-config-file-name postgres-build-args.json --artifact-ddl-file /d/Users/A1086139/git_repo/local/wealth/adl-wealth-dcnexus-etl/1.0.11/ddl/tables/file_max_ts.ddl --db-name postgres --db-user-name --db-host adl-com-d1-cdp-dcnexus.cgs723tlzdrk.us-east-1.rds.amazonaws.com --db-port 5432 --allow-destructive-operations False --cicdvar schema_name=test_cicd
+[2023-12-13 16:54:09,816] [postgres] [consolelogger] [<module>:14] [INFO]: "Running D:/Users/A1086139/git_repo/local/wealth/adl-wealth-dcnexus-etl/1.0.11/ddl/tables/file_max_ts.ddl file on host: adl-com-d1-cdp-dcnexus.cgs723tlzdrk.us-east-1.rds.amazonaws.com. database: postgres"
+[2023-12-13 16:54:10,656] [postgresdataapi] [consolelogger] [connect:27] [INFO]: "Connected to the host: adl-com-d1-cdp-dcnexus.cgs723tlzdrk.us-east-1.rds.amazonaws.com, database: postgres"
+Normalized SQL Statement: drop table if exists test_cicd.file_max_ts;
+[2023-12-13 16:54:10,656] [postgresdataapi] [consolelogger] [_contains_destructive_operations:59] [INFO]: "Potentially destructive keyword 'drop' found in SQL Statement: drop TABLE IF EXISTS test_cicd.file_max_ts;"
+Contains destructive operations: True
+Entered the block for destructive operations!
+[2023-12-13 16:54:10,657] [postgresdataapi] [consolelogger] [execute_sql:47] [ERROR]: "Error executing SQL statement: Potentially destructive operations are not allowed without confirmation."
