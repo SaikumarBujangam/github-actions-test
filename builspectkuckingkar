@@ -1,18 +1,18 @@
-A1086139@DESKTOP-899JC7U MINGW64 /d/Users/A1086139/git_repo
-$  python /d/Users/A1086139/git_repo/adl-awsdeploy-cicd/src/alight/foundation/app/deploy/postgres.py --base-arg-parser-config-file-location /d/Users/A1086139/git_repo/adl-awsdeploy-cicd/config --base-arg-parser-config-file-name postgres-build-args.json --artifact-ddl-file /d/Users/A1086139/git_repo/local/wealth/adl-wealth-dcnexus-etl/1.0.11/ddl/tables/file_max_ts.ddl --db-name postgres --db-user-name --db-host adl-com-d1-cdp-dcnexus.cgs723tlzdrk.us-east-1.rds.amazonaws.com --db-port 5432 --allow-destructive-operations False --cicdvar schema_name=test_cicd
-[2023-12-13 16:39:03,573] [postgres] [consolelogger] [<module>:14] [INFO]: "Running D:/Users/A1086139/git_repo/local/wealth/adl-wealth-dcnexus-etl/1.0.11/ddl/tables/file_max_ts.ddl file on host: adl-com-d1-cdp-dcnexus.cgs723tlzdrk.us-east-1.rds.amazonaws.com. database: postgres"
-[2023-12-13 16:39:04,421] [postgresdataapi] [consolelogger] [connect:27] [INFO]: "Connected to the host: adl-com-d1-cdp-dcnexus.cgs723tlzdrk.us-east-1.rds.amazonaws.com, database: postgres"
-Normalized SQL Statement: drop table if exists test_cicd.file_max_ts;
-[2023-12-13 16:39:04,421] [postgresdataapi] [consolelogger] [_contains_destructive_operations:59] [INFO]: "Potentially destructive keyword 'drop' found in SQL Statement: drop TABLE IF EXISTS test_cicd.file_max_ts;"
-Contains destructive operations: True
-Entered the block for destructive operations!
-[2023-12-13 16:39:04,421] [postgresdataapi] [consolelogger] [execute_sql:47] [ERROR]: "Error executing SQL statement: Potentially destructive operations are not allowed without confirmation."
+def _contains_destructive_operations(self, sql_statement):
+    destructive_keywords = ['drop', 'delete']
+    normalized_sql = sql_statement.lower()
+    contains_destructive_ops = False  # Initialize with False
 
-A1086139@DESKTOP-899JC7U MINGW64 /d/Users/A1086139/git_repo
-$  python /d/Users/A1086139/git_repo/adl-awsdeploy-cicd/src/alight/foundation/app/deploy/postgres.py --base-arg-parser-config-file-location /d/Users/A1086139/git_repo/adl-awsdeploy-cicd/config --base-arg-parser-config-file-name postgres-build-args.json --artifact-ddl-file /d/Users/A1086139/git_repo/local/wealth/adl-wealth-dcnexus-etl/1.0.11/ddl/tables/file_max_ts.ddl --db-name postgres --db-user-name --db-host adl-com-d1-cdp-dcnexus.cgs723tlzdrk.us-east-1.rds.amazonaws.com --db-port 5432 --allow-destructive-operations True --cicdvar schema_name=test_cicd
-[2023-12-13 16:39:10,656] [postgres] [consolelogger] [<module>:14] [INFO]: "Running D:/Users/A1086139/git_repo/local/wealth/adl-wealth-dcnexus-etl/1.0.11/ddl/tables/file_max_ts.ddl file on host: adl-com-d1-cdp-dcnexus.cgs723tlzdrk.us-east-1.rds.amazonaws.com. database: postgres"
-[2023-12-13 16:39:11,509] [postgresdataapi] [consolelogger] [connect:27] [INFO]: "Connected to the host: adl-com-d1-cdp-dcnexus.cgs723tlzdrk.us-east-1.rds.amazonaws.com, database: postgres"
-Normalized SQL Statement: drop table if exists test_cicd.file_max_ts;
-[2023-12-13 16:39:11,509] [postgresdataapi] [consolelogger] [_contains_destructive_operations:59] [INFO]: "Potentially destructive keyword 'drop' found in SQL Statement: drop TABLE IF EXISTS test_cicd.file_max_ts;"
-Contains destructive operations: True
-[2023-12-13 16:39:11,794] [postgresdataapi] [consolelogger] [execute_sql:44] [INFO]: "SQL Statement executed successfully."
+    for keyword in destructive_keywords:
+        if keyword in normalized_sql:
+            contains_destructive_ops = True
+            if not self._allow_destructive_operations:  # Add this condition
+                self.logger.info("Potentially destructive keyword '{}' found in SQL Statement: {}".format(keyword, sql_statement))
+                self.logger.info("Normalized SQL Statement: {}".format(normalized_sql))
+            break
+
+    if contains_destructive_ops and self._allow_destructive_operations:
+        self.logger.info("Potentially destructive keyword '{}' found in SQL Statement: {}".format(keyword, sql_statement))
+        self.logger.info("Normalized SQL Statement: {}".format(normalized_sql))
+
+    return contains_destructive_ops
