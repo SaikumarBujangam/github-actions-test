@@ -1,8 +1,40 @@
-create table "test_cicd"."TEMP_BATCH_CTL"
-( 
-                batch_run_key        integer  not null ,
-                batch_nm             varchar(100)  not null ,
-                batch_run_start_ts   timestamp  not null ,
-                batch_run_end_ts     timestamp  null ,
-                batch_run_status     varchar(20)  not null 
-);
+name: Execute DDL SQL on PostgreSQL
+
+on:
+  push:
+    paths:
+      - 'ddl/**/*.sql' # Trigger the workflow when changes occur in the ddl folder with SQL files
+
+jobs:
+  execute_ddl:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 2 # Fetch previous commits for comparison
+
+      - name: Identify changed SQL files
+        id: changed_files
+        run: |
+          git diff --name-only ${{ github.event.before }} ${{ github.sha }} 'ddl/' | grep '\.sql$' > changed_files.txt
+          cat changed_files.txt
+
+      - name: Set up PostgreSQL
+        uses: actions/setup-postgres@v2
+        with:
+          postgres-version: '12' # Adjust version as needed
+          postgres-password: ${{ secrets.DB_PASSWORD }}
+          postgres-db: ${{ secrets.DB_NAME }}
+          postgres-user: ${{ secrets.DB_USER }}
+          postgres-host: ${{ secrets.DB_HOST }} # If your database is hosted externally
+
+      - name: Execute changed SQL files
+        run: |
+          if [ -s changed_files.txt ]; then
+            echo "Executing changed SQL files..."
+            xargs -a changed_files.txt -I file psql -h ${{ secrets.DB_HOST }} -U ${{ secrets.DB_USER }} -d ${{ secrets.DB_NAME }} -W ${{ secrets.DB_PASSWORD }} -a -f file
+          else
+            echo "No SQL files have been added or modified in ddl directory."
+          fi
