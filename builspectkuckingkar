@@ -1,39 +1,59 @@
-name: ADL CICD Checkout Postgres Phase
-
-on:
-  workflow_call:
-    secrets:
-      envPAT:
-        required: true
-    inputs:
-      cicd_version:
-        description: 'CICD Stable Release Version'
-        type: string
-        required: false
-        default: 'd1.0.285'
-jobs:
-  adl-checkout-calling-repo:
-    runs-on: [self-hosted, devops-control-prod]
-    steps:
-    - name: Remove Existing Repository Directory
-      run: |
-        rm -rf $GITHUB_WORKSPACE
-        
-    - name: Checkout Requesting Repository Branch
-      uses: actions/checkout@master
-
-    - name: Show Repository and Branch Info
-      run: |
-        echo "Checking out Repository: " $GITHUB_REPOSITORY
-        echo "Checking out Branch: " $GITHUB_REF_NAME
-  adl-dispatch-postgres-deploy-workflow:
-    needs:
-      adl-checkout-calling-repo
-    runs-on: [self-hosted, devops-control-prod]
-    steps:
-    - name: Trigger Postgres Deploy
-      run: |
-        curl -X POST https://api.github.com/repos/AlightEngineering/adl-awsdeploy-cicd/dispatches \
-          -H "Authorization: Bearer ${{ secrets.envPAT }}" \
-          -H 'Accept: application/vnd.github.everest-preview+json' \
-          --data '{"event_type": "adl-postgres-deploy", "client_payload": { "name": "'"$GITHUB_REPOSITORY"'", "branch": "'"$GITHUB_REF_NAME"'", "cicd_version": "${{ inputs.cicd_version }}" }'
+2023-12-15T15:10:48.6475756Z Requested labels: self-hosted, devops-control-prod
+2023-12-15T15:10:48.6476119Z Job defined at: AlightEngineering/adl-awsdeploy-cicd/.github/workflows/adl-cicd-checkout-postgres-phase.yml@refs/heads/master
+2023-12-15T15:10:48.6476334Z Reusable workflow chain:
+2023-12-15T15:10:48.6476414Z AlightEngineering/adl-postgres-poc/.github/workflows/adl-cicd-initiate-postgres-deployment.yml@refs/heads/master (88eb63b5771fdb9843617f3e060f7df3dae89577)
+2023-12-15T15:10:48.6476543Z -> AlightEngineering/adl-awsdeploy-cicd/.github/workflows/adl-cicd-checkout-postgres-phase.yml@refs/heads/master (fd6ebde827522207e37edc2745d3829090691534)
+2023-12-15T15:10:48.6476696Z Waiting for a runner to pick up this job...
+2023-12-15T15:10:49.9658891Z Job is about to start running on the runner: DevOps Control Runner - PROD 3 (organization)
+2023-12-15T15:10:55.1525215Z Current runner version: '2.311.0'
+2023-12-15T15:10:55.1535694Z Runner name: 'DevOps Control Runner - PROD 3'
+2023-12-15T15:10:55.1537077Z Runner group name: 'DevOps Control Plane - PROD'
+2023-12-15T15:10:55.1538724Z Machine name: 'devops-control-github-runner-prod-3e'
+2023-12-15T15:10:55.1545345Z ##[group]GITHUB_TOKEN Permissions
+2023-12-15T15:10:55.1548535Z Actions: write
+2023-12-15T15:10:55.1549219Z Checks: write
+2023-12-15T15:10:55.1549969Z Contents: write
+2023-12-15T15:10:55.1550591Z Deployments: write
+2023-12-15T15:10:55.1551256Z Discussions: write
+2023-12-15T15:10:55.1551956Z Issues: write
+2023-12-15T15:10:55.1552538Z Metadata: read
+2023-12-15T15:10:55.1553228Z Packages: write
+2023-12-15T15:10:55.1553899Z Pages: write
+2023-12-15T15:10:55.1554478Z PullRequests: write
+2023-12-15T15:10:55.1555610Z RepositoryProjects: write
+2023-12-15T15:10:55.1556444Z SecurityEvents: write
+2023-12-15T15:10:55.1557083Z Statuses: write
+2023-12-15T15:10:55.1557736Z ##[endgroup]
+2023-12-15T15:10:55.1563926Z Secret source: Actions
+2023-12-15T15:10:55.1565466Z Prepare workflow directory
+2023-12-15T15:10:55.2755948Z Prepare all required actions
+2023-12-15T15:10:55.3012421Z Getting action download info
+2023-12-15T15:10:55.5682114Z Download action repository 'actions/checkout@master' (SHA:b4ffde65f46336ab88eb53be808477a3936bae11)
+2023-12-15T15:10:56.1252305Z Uses: AlightEngineering/adl-awsdeploy-cicd/.github/workflows/adl-cicd-checkout-postgres-phase.yml@refs/heads/master (fd6ebde827522207e37edc2745d3829090691534)
+2023-12-15T15:10:56.1256655Z ##[group] Inputs
+2023-12-15T15:10:56.1257162Z   cicd_version: d1.0.285
+2023-12-15T15:10:56.1257598Z ##[endgroup]
+2023-12-15T15:10:56.1258763Z Complete job name: adl-cicd-checkout-repo-phase / adl-checkout-calling-repo
+2023-12-15T15:10:56.3294440Z ##[group]Run rm -rf $GITHUB_WORKSPACE
+2023-12-15T15:10:56.3295540Z [36;1mrm -rf $GITHUB_WORKSPACE[0m
+2023-12-15T15:10:56.3336170Z shell: /bin/bash -e {0}
+2023-12-15T15:10:56.3336663Z ##[endgroup]
+2023-12-15T15:10:56.4395991Z ##[group]Run actions/checkout@master
+2023-12-15T15:10:56.4396778Z with:
+2023-12-15T15:10:56.4397345Z   repository: AlightEngineering/adl-postgres-poc
+2023-12-15T15:10:56.4398245Z   token: ***
+2023-12-15T15:10:56.4398628Z   ssh-strict: true
+2023-12-15T15:10:56.4399039Z   persist-credentials: true
+2023-12-15T15:10:56.4399461Z   clean: true
+2023-12-15T15:10:56.4399860Z   sparse-checkout-cone-mode: true
+2023-12-15T15:10:56.4400351Z   fetch-depth: 1
+2023-12-15T15:10:56.4400757Z   fetch-tags: false
+2023-12-15T15:10:56.4401145Z   show-progress: true
+2023-12-15T15:10:56.4401530Z   lfs: false
+2023-12-15T15:10:56.4401857Z   submodules: false
+2023-12-15T15:10:56.4402250Z   set-safe-directory: true
+2023-12-15T15:10:56.4402689Z ##[endgroup]
+2023-12-15T15:10:56.4749136Z ##[error]An error occurred trying to start process '/home/gh-runner/externals/node20/bin/node' with working directory '/home/gh-runner/_work/adl-postgres-poc/adl-postgres-poc'. No such file or directory
+2023-12-15T15:10:56.5021062Z Post job cleanup.
+2023-12-15T15:10:56.5076291Z ##[error]An error occurred trying to start process '/home/gh-runner/externals/node20/bin/node' with working directory '/home/gh-runner/_work/adl-postgres-poc/adl-postgres-poc'. No such file or directory
+2023-12-15T15:10:56.5301277Z Cleaning up orphan processes
