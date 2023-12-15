@@ -18,8 +18,11 @@ jobs:
     - name: Remove Existing Repository Directory
       run: |
         rm -rf $GITHUB_WORKSPACE
-    - uses: actions/checkout@master
+        
     - name: Checkout Requesting Repository Branch
+      uses: actions/checkout@master
+
+    - name: Show Repository and Branch Info
       run: |
         echo "Checking out Repository: " $GITHUB_REPOSITORY
         echo "Checking out Branch: " $GITHUB_REF_NAME
