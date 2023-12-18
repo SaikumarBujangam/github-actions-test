@@ -1,40 +1,95 @@
-Package python36-3.6.8-38.module+el8.9.0+20976+d3c38525.x86_64 is already installed.
-Dependencies resolved.
-Nothing to do.
-Complete!
-Installing dependencies from AlightEngineering/adl-awsdeploy-cicd-d1.0.285/requirements.txt
-Collecting boto3 (from -r AlightEngineering/adl-awsdeploy-cicd-d1.0.285/requirements.txt (line 1))
-  Downloading https://files.pythonhosted.org/packages/75/ca/d917b244919f1ebf96f7bbd5a00e4641f7e9191b0d070258f5dc10f5eaad/boto3-1.23.10-py3-none-any.whl (132kB)
-Requirement already satisfied: requests in /usr/lib/python3.6/site-packages (from -r AlightEngineering/adl-awsdeploy-cicd-d1.0.285/requirements.txt (line 2))
-Requirement already satisfied: pyyaml in /usr/local/lib64/python3.6/site-packages (from -r AlightEngineering/adl-awsdeploy-cicd-d1.0.285/requirements.txt (line 3))
-Collecting Jinja2==3.0.3 (from -r AlightEngineering/adl-awsdeploy-cicd-d1.0.285/requirements.txt (line 4))
-  Downloading https://files.pythonhosted.org/packages/20/9a/e5d9ec41927401e41aea8af6d16e78b5e612bca4699d417f646a9610a076/Jinja2-3.0.3-py3-none-any.whl (133kB)
-Collecting psycopg2 (from -r AlightEngineering/adl-awsdeploy-cicd-d1.0.285/requirements.txt (line 5))
-  Downloading https://files.pythonhosted.org/packages/9e/78/3b15ee8bbbf36f8bace9b0e6fe8a7481372650c76bcf1a7de1ed723cce96/psycopg2-2.9.8.tar.gz (383kB)
-Exception:
-Traceback (most recent call last):
-  File "/usr/lib/python3.6/site-packages/pip/utils/__init__.py", line 565, in untar_file
-    tarfile.data_filter(member.replace(name=fn), location)
-AttributeError: module 'tarfile' has no attribute 'data_filter'
+name: ADL Deploy Postgres Artifacts
+on:
+  repository_dispatch:
+    types:
+      - adl-postgres-deploy
+jobs:
+  adl-postgres-deploy:
+    env:
+      event_repo_name: ${{ github.event.client_payload.name }}
+      cicd_version: ${{ github.event.client_payload.cicd_version }}
+      event_repo_branch: ${{ github.event.client_payload.branch }}
+      calling_repo_name: ${{ github.event.repository.full_name }}
+      dispatch_repo_name: ${{ 'adl-awsdeploy-cicd' }}
+    runs-on:  [self-hosted, devops-control-prod]
+    steps:
+      - name: Log Environment Variables
+        run: |
+          echo "This is the Repo to deploy: ${event_repo_name}"
+          echo "This is the stable repo release version to deploy: ${cicd_version}"
+          echo "This is the Repo that made the request: ${calling_repo_name}"
+          echo "This is the Version Of CICD being used: ${calling_repo_name}-${cicd_version}"
 
-During handling of the above exception, another exception occurred:
+      - name: Check Calling Repository
+        run: |
+          calling_repo_base_name=${calling_repo_name##*/}
+          if [[ ${calling_repo_base_name} != ${dispatch_repo_name} ]]
+          then
+            echo "adl-aws-deploy called from invalid origin, fail and exit"
+            exit 1
+          fi
+      - name: Get Requesting Repository
+        env:
+          github_user: ${{ secrets.GH_USER_NAME }}
+          github_token: ${{ secrets.GH_CLONE_REPO }}
+        run: |
+          repo_name=$(echo ${event_repo_name} | rev | cut -d'/' -f1 | rev)
+          versioned_calling_repo_base_name=${calling_repo_name}-${cicd_version}
+          echo "This is versioned_calling_repo_base_name: ${versioned_calling_repo_base_name}"
+          rm -rf ${repo_name} ${versioned_calling_repo_base_name} ${dispatch_repo_name}
+          git clone --single-branch --depth=1 --branch=${cicd_version} https://${github_user}:${github_token}@github.com/${calling_repo_name}.git ${versioned_calling_repo_base_name}
+          rm -rf ${event_repo_name}
+          git clone --single-branch --depth=1 --branch=${event_repo_branch} https://${github_user}:${github_token}@github.com/${event_repo_name}.git
+      - name: Increment Calling Repo Version
+        run: |
+          versioned_calling_repo_base_name=${calling_repo_name}-${cicd_version}
+          event_repo_base_name=${event_repo_name##*/}
+          source ${versioned_calling_repo_base_name}/scripts/.mdshrc
+          mdsh_init ${event_repo_branch} local adl ${event_repo_base_name} localhost
+          git config --global user.email "dushyant.remivasan@alight.com"
+          git config --global user.name "Dushyant Remivasan"
+          if [[ "${mdsh_env}" = "dev" ]]
+          then
+            bump_version patch ${event_repo_base_name}
+            git -C ${event_repo_base_name} add .version
+            git -C ${event_repo_base_name} commit -m "Increments Version"
+            git -C ${event_repo_base_name} push
+          fi
+          new_git_tag=$(version ${event_repo_base_name})
+          gtag_version ${event_repo_base_name} ${mdsh_env} ${new_git_tag} "CICD Pipeline Merge To ${event_repo_branch}"
+      - name: ADL Set Environment Credentials
+        id: adl-set-env-creds
+        run: |
+          versioned_calling_repo_base_name=${calling_repo_name}-${cicd_version}
+          source ${versioned_calling_repo_base_name}/config/.cicdrc ${event_repo_branch}
+          echo "aws_access_key_id_name=ADL_${credential_env}_ACCESS_KEY" >> $GITHUB_OUTPUT
+          echo "aws_secret_access_key_name=ADL_${credential_env}_SECRET_KEY" >> $GITHUB_OUTPUT
 
-Traceback (most recent call last):
-  File "/usr/lib/python3.6/site-packages/pip/basecommand.py", line 215, in main
-    status = self.run(options, args)
-  File "/usr/lib/python3.6/site-packages/pip/commands/install.py", line 346, in run
-    requirement_set.prepare_files(finder)
-  File "/usr/lib/python3.6/site-packages/pip/req/req_set.py", line 381, in prepare_files
-    ignore_dependencies=self.ignore_dependencies))
-  File "/usr/lib/python3.6/site-packages/pip/req/req_set.py", line 623, in _prepare_file
-    session=self.session, hashes=hashes)
-  File "/usr/lib/python3.6/site-packages/pip/download.py", line 822, in unpack_url
-    hashes=hashes
-  File "/usr/lib/python3.6/site-packages/pip/download.py", line 664, in unpack_http_url
-    unpack_file(from_path, location, content_type, link)
-  File "/usr/lib/python3.6/site-packages/pip/utils/__init__.py", line 622, in unpack_file
-    untar_file(filename, location)
-  File "/usr/lib/python3.6/site-packages/pip/utils/__init__.py", line 566, in untar_file
-    except tarfile.LinkOutsideDestinationError:
-AttributeError: module 'tarfile' has no attribute 'LinkOutsideDestinationError'
-Error: Process completed with exit code 2.
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1-node16
+        env:
+          AWS_ACCESS_KEY_ID_NAME: ${{ steps.adl-set-env-creds.outputs.aws_access_key_id_name }}
+          AWS_SECRET_ACCESS_KEY_NAME: ${{ steps.adl-set-env-creds.outputs.aws_secret_access_key_name }}
+        with:
+          aws-access-key-id: ${{ secrets[env.AWS_ACCESS_KEY_ID_NAME] }}
+          aws-secret-access-key: ${{ secrets[env.AWS_SECRET_ACCESS_KEY_NAME] }}
+          aws-region: us-east-1
+      - name: Install Dependencies
+        run: |
+          sudo yum install -y python3
+          versioned_calling_repo_base_name=${calling_repo_name}-${cicd_version}
+          echo "Installing dependencies from ${versioned_calling_repo_base_name}/requirements.txt"
+          pip3 install -r ${versioned_calling_repo_base_name}/requirements.txt
+      - name: Run CICD Pipeline
+        env:
+          POSTGRES_DB_USER_NAME: ${{ secrets.POSTGRES_DB_USER_NAME }}
+          POSTGRES_DB_PASSWORD: ${{ secrets.POSTGRES_DB_PASSWORD }}
+        run: |
+          versioned_calling_repo_base_name=${calling_repo_name}-${cicd_version}
+          export BUILD_NUMBER=${{ github.run_number }}
+          event_repo_base_name=${event_repo_name##*/}
+          export PYTHONPATH=${PWD}/${versioned_calling_repo_base_name}/src:${PWD}/${event_repo_base_name}/src/:$PYTHONPATH
+          source ${versioned_calling_repo_base_name}/scripts/.mdshrc
+          adl_postgres_cicd ${event_repo_branch} ${event_repo_base_name} ${versioned_calling_repo_base_name}
+
+
