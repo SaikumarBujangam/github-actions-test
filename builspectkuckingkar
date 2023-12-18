@@ -1,3 +1,3 @@
-Run apt-get install python-pip
-/home/gh-runner/_work/_temp/2b8a88c9-b2c7-4797-b586-20443c9dca06.sh: line 1: apt-get: command not found
+Run python -m pip install --upgrade pip
+/home/gh-runner/_work/_temp/19b65edf-757a-4e23-af20-8f2c5ebf46fc.sh: line 1: python: command not found
 Error: Process completed with exit code 127.
