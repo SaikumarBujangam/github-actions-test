@@ -11,25 +11,35 @@ on:
         type: string
         required: false
         default: 'd1.0.285'
+
 jobs:
   adl-checkout-calling-repo:
     runs-on: [self-hosted, devops-control-prod]
 
     steps:
-    - uses: actions/checkout@master
+    - name: Debug
+      run: |
+        pwd
+        ls -al
+
+    - name: Checkout Repository
+      uses: actions/checkout@master
+
     - name: Checkout Requesting Repository Branch
       run: |
-        echo "Checking out Repository: " $GITHUB_REPOSITORY
-        echo "Checking out Branch: " $GITHUB_REF_NAME
+        echo "Checking out Repository: $GITHUB_REPOSITORY"
+        echo "Checking out Branch: $GITHUB_REF_NAME"
 
     - name: Show Repository and Branch Info
       run: |
-        echo "Checking out Repository: " $GITHUB_REPOSITORY
-        echo "Checking out Branch: " $GITHUB_REF_NAME
+        echo "Checking out Repository: $GITHUB_REPOSITORY"
+        echo "Checking out Branch: $GITHUB_REF_NAME"
+
   adl-dispatch-postgres-deploy-workflow:
     needs:
-      adl-checkout-calling-repo
+      - adl-checkout-calling-repo
     runs-on: [self-hosted, devops-control-prod]
+
     steps:
     - name: Trigger Postgres Deploy
       run: |
@@ -37,22 +47,3 @@ jobs:
           -H "Authorization: Bearer ${{ secrets.envPAT }}" \
           -H 'Accept: application/vnd.github.everest-preview+json' \
           --data '{"event_type": "adl-postgres-deploy", "client_payload": { "name": "'"$GITHUB_REPOSITORY"'", "branch": "'"$GITHUB_REF_NAME"'", "cicd_version": "${{ inputs.cicd_version }}" }'
-
-
-For the above workflow, why I am getting the below error?
-
-Run actions/checkout@master
-  with:
-    repository: AlightEngineering/adl-postgres-poc
-    token: ***
-    ssh-strict: true
-    persist-credentials: true
-    clean: true
-    sparse-checkout-cone-mode: true
-    fetch-depth: 1
-    fetch-tags: false
-    show-progress: true
-    lfs: false
-    submodules: false
-    set-safe-directory: true
-Error: An error occurred trying to start process '/home/gh-runner/externals/node20/bin/node' with working directory '/home/gh-runner/_work/adl-postgres-poc/adl-postgres-poc'. No such file or directory
