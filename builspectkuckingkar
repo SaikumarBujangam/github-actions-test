@@ -1,3 +1,2 @@
-Run python -m pip install --upgrade pip
-/home/gh-runner/_work/_temp/19b65edf-757a-4e23-af20-8f2c5ebf46fc.sh: line 1: python: command not found
-Error: Process completed with exit code 127.
+Linux devops-control-github-runner-prod-3e 4.18.0-477.27.1.el8_8.x86_64 #1 SMP Thu Aug 31 10:29:22 EDT 2023 x86_64 x86_64 x86_64 GNU/Linux
+which: no python in (/home/gh-runner/.local/bin:/home/gh-runner/bin:/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin)
