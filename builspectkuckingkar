@@ -1,25 +1,22 @@
-name: Manual ADL Deploy Postgres Artifacts
-
-on:
-  workflow_dispatch:
-    inputs:
-      name:
-        description: 'Repository name to deploy'
-        required: true
-      cicd_version:
-        description: 'CICD version'
-        required: true
-      branch:
-        description: 'Repository branch'
-        required: true
-
-jobs:
-  adl-postgres-deploy:
-    env:
-      event_repo_name: ${{ github.event.inputs.name }}
-      cicd_version: ${{ github.event.inputs.cicd_version }}
-      event_repo_branch: ${{ github.event.inputs.branch }}
-      calling_repo_name: ${{ github.repository.full_name }}
-      dispatch_repo_name: 'adl-awsdeploy-cicd' # Updated from ${{ 'adl-awsdeploy-cicd' }}
-
-    # Rest of the steps remain unchanged...
+Run repo_name=$(echo $***event_repo_name*** | rev | cut -d'/' -f1 | rev)
+  repo_name=$(echo $***event_repo_name*** | rev | cut -d'/' -f1 | rev)
+  versioned_calling_repo_base_name=$***calling_repo_name***-$***cicd_version***
+  echo "This is versioned_calling_repo_base_name: $***versioned_calling_repo_base_name***"
+  rm -rf $***repo_name*** $***versioned_calling_repo_base_name*** $***dispatch_repo_name***
+  git clone --single-branch --depth=1 --branch=$***cicd_version*** https://$***github_user***:$***github_token***@github.com/$***calling_repo_name***.git $***versioned_calling_repo_base_name***
+  rm -rf $***event_repo_name***
+  git clone --single-branch --depth=1 --branch=$***event_repo_branch*** https://$***github_user***:$***github_token***@github.com/$***event_repo_name***.git
+  shell: /bin/bash -e ***0***
+  env:
+    event_repo_name: 
+    cicd_version: 
+    event_repo_branch: 
+    calling_repo_name: AlightEngineering/adl-awsdeploy-cicd
+    dispatch_repo_name: adl-awsdeploy-cicd
+    github_user: ***
+    github_token: ***
+This is versioned_calling_repo_base_name: AlightEngineering/adl-awsdeploy-cicd-
+Cloning into 'AlightEngineering/adl-awsdeploy-cicd-'...
+warning: Could not find remote branch  to clone.
+fatal: Remote branch  not found in upstream origin
+Error: Process completed with exit code 128.
