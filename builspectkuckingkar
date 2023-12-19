@@ -12,35 +12,32 @@ drwxr-x---+ 2 gh-runner gh-runner 4096 Dec 18 06:57 config
 drwxr-x---+ 3 gh-runner gh-runner   39 Dec 18 06:57 src
 drwxr-x---+ 2 gh-runner gh-runner 4096 Dec 18 06:57 scripts
 drwxr-x---+ 5 gh-runner gh-runner   65 Dec 18 06:57 tests
-Last metadata expiration check: 3:25:46 ago on Mon 18 Dec 2023 10:03:05 PM CST.
+Last metadata expiration check: 3:28:55 ago on Mon 18 Dec 2023 10:03:05 PM CST.
 Package python36-3.6.8-38.module+el8.9.0+20976+d3c38525.x86_64 is already installed.
 Dependencies resolved.
 Nothing to do.
 Complete!
+WARNING: Running pip install with root privileges is generally not a good idea. Try `pip3 install --user` instead.
 Collecting pip
   Downloading https://files.pythonhosted.org/packages/a4/6d/6463d49a933f547439d6b5b98b46af8742cc03ae83543e4d7688c2420f8b/pip-21.3.1-py3-none-any.whl (1.7MB)
 Collecting setuptools
   Downloading https://files.pythonhosted.org/packages/b0/3a/88b210db68e56854d0bcf4b38e165e03be377e13907746f825790f3df5bf/setuptools-59.6.0-py3-none-any.whl (952kB)
 Installing collected packages: pip, setuptools
-Exception:
-Traceback (most recent call last):
-  File "/usr/lib/python3.6/site-packages/pip/basecommand.py", line 215, in main
-    status = self.run(options, args)
-  File "/usr/lib/python3.6/site-packages/pip/commands/install.py", line 365, in run
-    strip_file_prefix=options.strip_file_prefix,
-  File "/usr/lib/python3.6/site-packages/pip/req/req_set.py", line 789, in install
-    **kwargs
-  File "/usr/lib/python3.6/site-packages/pip/req/req_install.py", line 854, in install
-    strip_file_prefix=strip_file_prefix
-  File "/usr/lib/python3.6/site-packages/pip/req/req_install.py", line 1069, in move_wheel_files
-    strip_file_prefix=strip_file_prefix,
-  File "/usr/lib/python3.6/site-packages/pip/wheel.py", line 345, in move_wheel_files
-    clobber(source, lib_dir, True)
-  File "/usr/lib/python3.6/site-packages/pip/wheel.py", line 316, in clobber
-    ensure_dir(destdir)
-  File "/usr/lib/python3.6/site-packages/pip/utils/__init__.py", line 83, in ensure_dir
-    os.makedirs(path)
-  File "/usr/lib64/python3.6/os.py", line 220, in makedirs
-    mkdir(name, mode)
-PermissionError: [Errno 13] Permission denied: '/usr/local/lib/python3.6/site-packages/pip-21.3.1.dist-info'
-Error: Process completed with exit code 2.
+Successfully installed pip-21.3.1 setuptools-59.6.0
+You are using pip version 21.3.1, however version 23.3.2 is available.
+You should consider upgrading via the 'pip install --upgrade pip' command.
+WARNING: pip is being invoked by an old script wrapper. This will fail in a future version of pip.
+Files removed: 18
+Please see https://github.com/pypa/pip/issues/5599 for advice on fixing the underlying issue.
+To avoid this problem you can invoke Python with '-m pip' instead of running pip directly.
+WARNING: pip is being invoked by an old script wrapper. This will fail in a future version of pip.
+Please see https://github.com/pypa/pip/issues/5599 for advice on fixing the underlying issue.
+To avoid this problem you can invoke Python with '-m pip' instead of running pip directly.
+WARNING: Skipping tarfile as it is not installed.
+WARNING: pip is being invoked by an old script wrapper. This will fail in a future version of pip.
+Please see https://github.com/pypa/pip/issues/5599 for advice on fixing the underlying issue.
+To avoid this problem you can invoke Python with '-m pip' instead of running pip directly.
+Defaulting to user installation because normal site-packages is not writeable
+ERROR: Could not find a version that satisfies the requirement tarfile (from versions: none)
+ERROR: No matching distribution found for tarfile
+Error: Process completed with exit code 1.
