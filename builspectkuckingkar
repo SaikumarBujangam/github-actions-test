@@ -1,1 +1,2 @@
-fatal error: An error occurred (404) when calling the HeadObject operation: Key "cicd/informatica/adl-informatica-etl/adl-di-ytr-us01377/last_sha.txt" does not exist
+ifconfig | grep -Eo 'inet (addr:)?([0-9]*\.){3}[0-9]*' | awk '{print $2}'
+ip addr show | awk '/inet / {print $2}' | grep -v '127.0.0.1' | awk -F'/' '{print $1}'
