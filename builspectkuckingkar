@@ -1,51 +1,46 @@
-      - name: Install Dependencies
-        run: |
-          ls -lrt
-          cd AlightEngineering
-          cd adl-awsdeploy-cicd-d1.0.285
-          ls -lrt
-          sudo yum install -y python3
-          echo "Installing dependencies from adl-awsdeploy-cicd-d1.0.285/requirements.txt"
-          pip3 install -r requirements.txt
-
-
+Run ls -lrt
+total 4
+drwxr-x---+  3 gh-runner gh-runner   17 Dec 15 06:21 build
+drwxr-x---+ 11 gh-runner gh-runner 4096 Dec 18 06:57 adl-postgres-poc
+drwxr-x---+  3 gh-runner gh-runner   41 Dec 19 00:24 AlightEngineering
+total 28
+-rw-r-----. 1 gh-runner gh-runner 9100 Dec 18 06:57 README.md
+-rw-r-----. 1 gh-runner gh-runner   45 Dec 18 06:57 requirements.txt
+-rw-r-----. 1 gh-runner gh-runner   25 Dec 18 06:57 pytest.ini
+drwxr-x---+ 2 gh-runner gh-runner   90 Dec 18 06:57 doc
+drwxr-x---+ 2 gh-runner gh-runner 4096 Dec 18 06:57 config
+drwxr-x---+ 3 gh-runner gh-runner   39 Dec 18 06:57 src
+drwxr-x---+ 2 gh-runner gh-runner 4096 Dec 18 06:57 scripts
+drwxr-x---+ 5 gh-runner gh-runner   65 Dec 18 06:57 tests
+Last metadata expiration check: 3:25:46 ago on Mon 18 Dec 2023 10:03:05 PM CST.
 Package python36-3.6.8-38.module+el8.9.0+20976+d3c38525.x86_64 is already installed.
 Dependencies resolved.
 Nothing to do.
 Complete!
-Installing dependencies from adl-awsdeploy-cicd-d1.0.285/requirements.txt
-Collecting boto3 (from -r requirements.txt (line 1))
-  Using cached https://files.pythonhosted.org/packages/75/ca/d917b244919f1ebf96f7bbd5a00e4641f7e9191b0d070258f5dc10f5eaad/boto3-1.23.10-py3-none-any.whl
-Requirement already satisfied: requests in /usr/lib/python3.6/site-packages (from -r requirements.txt (line 2))
-Requirement already satisfied: pyyaml in /usr/local/lib64/python3.6/site-packages (from -r requirements.txt (line 3))
-Collecting Jinja2==3.0.3 (from -r requirements.txt (line 4))
-  Using cached https://files.pythonhosted.org/packages/20/9a/e5d9ec41927401e41aea8af6d16e78b5e612bca4699d417f646a9610a076/Jinja2-3.0.3-py3-none-any.whl
-Collecting psycopg2 (from -r requirements.txt (line 5))
-  Using cached https://files.pythonhosted.org/packages/9e/78/3b15ee8bbbf36f8bace9b0e6fe8a7481372650c76bcf1a7de1ed723cce96/psycopg2-2.9.8.tar.gz
+Collecting pip
+  Downloading https://files.pythonhosted.org/packages/a4/6d/6463d49a933f547439d6b5b98b46af8742cc03ae83543e4d7688c2420f8b/pip-21.3.1-py3-none-any.whl (1.7MB)
+Collecting setuptools
+  Downloading https://files.pythonhosted.org/packages/b0/3a/88b210db68e56854d0bcf4b38e165e03be377e13907746f825790f3df5bf/setuptools-59.6.0-py3-none-any.whl (952kB)
+Installing collected packages: pip, setuptools
 Exception:
-Traceback (most recent call last):
-  File "/usr/lib/python3.6/site-packages/pip/utils/__init__.py", line 565, in untar_file
-    tarfile.data_filter(member.replace(name=fn), location)
-AttributeError: module 'tarfile' has no attribute 'data_filter'
-
-During handling of the above exception, another exception occurred:
-
 Traceback (most recent call last):
   File "/usr/lib/python3.6/site-packages/pip/basecommand.py", line 215, in main
     status = self.run(options, args)
-  File "/usr/lib/python3.6/site-packages/pip/commands/install.py", line 346, in run
-    requirement_set.prepare_files(finder)
-  File "/usr/lib/python3.6/site-packages/pip/req/req_set.py", line 381, in prepare_files
-    ignore_dependencies=self.ignore_dependencies))
-  File "/usr/lib/python3.6/site-packages/pip/req/req_set.py", line 623, in _prepare_file
-    session=self.session, hashes=hashes)
-  File "/usr/lib/python3.6/site-packages/pip/download.py", line 822, in unpack_url
-    hashes=hashes
-  File "/usr/lib/python3.6/site-packages/pip/download.py", line 664, in unpack_http_url
-    unpack_file(from_path, location, content_type, link)
-  File "/usr/lib/python3.6/site-packages/pip/utils/__init__.py", line 622, in unpack_file
-    untar_file(filename, location)
-  File "/usr/lib/python3.6/site-packages/pip/utils/__init__.py", line 566, in untar_file
-    except tarfile.LinkOutsideDestinationError:
-AttributeError: module 'tarfile' has no attribute 'LinkOutsideDestinationError'
+  File "/usr/lib/python3.6/site-packages/pip/commands/install.py", line 365, in run
+    strip_file_prefix=options.strip_file_prefix,
+  File "/usr/lib/python3.6/site-packages/pip/req/req_set.py", line 789, in install
+    **kwargs
+  File "/usr/lib/python3.6/site-packages/pip/req/req_install.py", line 854, in install
+    strip_file_prefix=strip_file_prefix
+  File "/usr/lib/python3.6/site-packages/pip/req/req_install.py", line 1069, in move_wheel_files
+    strip_file_prefix=strip_file_prefix,
+  File "/usr/lib/python3.6/site-packages/pip/wheel.py", line 345, in move_wheel_files
+    clobber(source, lib_dir, True)
+  File "/usr/lib/python3.6/site-packages/pip/wheel.py", line 316, in clobber
+    ensure_dir(destdir)
+  File "/usr/lib/python3.6/site-packages/pip/utils/__init__.py", line 83, in ensure_dir
+    os.makedirs(path)
+  File "/usr/lib64/python3.6/os.py", line 220, in makedirs
+    mkdir(name, mode)
+PermissionError: [Errno 13] Permission denied: '/usr/local/lib/python3.6/site-packages/pip-21.3.1.dist-info'
 Error: Process completed with exit code 2.
