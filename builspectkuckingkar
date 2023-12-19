@@ -1,22 +1,52 @@
-Run repo_name=$(echo $***event_repo_name*** | rev | cut -d'/' -f1 | rev)
-  repo_name=$(echo $***event_repo_name*** | rev | cut -d'/' -f1 | rev)
-  versioned_calling_repo_base_name=$***calling_repo_name***-$***cicd_version***
-  echo "This is versioned_calling_repo_base_name: $***versioned_calling_repo_base_name***"
-  rm -rf $***repo_name*** $***versioned_calling_repo_base_name*** $***dispatch_repo_name***
-  git clone --single-branch --depth=1 --branch=$***cicd_version*** https://$***github_user***:$***github_token***@github.com/$***calling_repo_name***.git $***versioned_calling_repo_base_name***
-  rm -rf $***event_repo_name***
-  git clone --single-branch --depth=1 --branch=$***event_repo_branch*** https://$***github_user***:$***github_token***@github.com/$***event_repo_name***.git
-  shell: /bin/bash -e ***0***
-  env:
-    event_repo_name: 
-    cicd_version: 
-    event_repo_branch: 
-    calling_repo_name: AlightEngineering/adl-awsdeploy-cicd
-    dispatch_repo_name: adl-awsdeploy-cicd
-    github_user: ***
-    github_token: ***
-This is versioned_calling_repo_base_name: AlightEngineering/adl-awsdeploy-cicd-
-Cloning into 'AlightEngineering/adl-awsdeploy-cicd-'...
-warning: Could not find remote branch  to clone.
-fatal: Remote branch  not found in upstream origin
-Error: Process completed with exit code 128.
+      - name: Install Dependencies
+        run: |
+          ls -lrt
+          cd AlightEngineering
+          cd adl-awsdeploy-cicd-d1.0.285
+          ls -lrt
+          sudo yum install -y python3
+          echo "Installing dependencies from adl-awsdeploy-cicd-d1.0.285/requirements.txt"
+          pip3 install -r requirements.txt
+For the abov code, I am getting the errors.
+
+Last metadata expiration check: 2:36:33 ago on Mon 18 Dec 2023 10:03:05 PM CST.
+Package python36-3.6.8-38.module+el8.9.0+20976+d3c38525.x86_64 is already installed.
+Dependencies resolved.
+Nothing to do.
+Complete!
+Installing dependencies from adl-awsdeploy-cicd-d1.0.285/requirements.txt
+Collecting boto3 (from -r requirements.txt (line 1))
+  Using cached https://files.pythonhosted.org/packages/75/ca/d917b244919f1ebf96f7bbd5a00e4641f7e9191b0d070258f5dc10f5eaad/boto3-1.23.10-py3-none-any.whl
+Requirement already satisfied: requests in /usr/lib/python3.6/site-packages (from -r requirements.txt (line 2))
+Requirement already satisfied: pyyaml in /usr/local/lib64/python3.6/site-packages (from -r requirements.txt (line 3))
+Collecting Jinja2==3.0.3 (from -r requirements.txt (line 4))
+  Using cached https://files.pythonhosted.org/packages/20/9a/e5d9ec41927401e41aea8af6d16e78b5e612bca4699d417f646a9610a076/Jinja2-3.0.3-py3-none-any.whl
+Collecting psycopg2 (from -r requirements.txt (line 5))
+  Using cached https://files.pythonhosted.org/packages/9e/78/3b15ee8bbbf36f8bace9b0e6fe8a7481372650c76bcf1a7de1ed723cce96/psycopg2-2.9.8.tar.gz
+Exception:
+Traceback (most recent call last):
+  File "/usr/lib/python3.6/site-packages/pip/utils/__init__.py", line 565, in untar_file
+    tarfile.data_filter(member.replace(name=fn), location)
+AttributeError: module 'tarfile' has no attribute 'data_filter'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/usr/lib/python3.6/site-packages/pip/basecommand.py", line 215, in main
+    status = self.run(options, args)
+  File "/usr/lib/python3.6/site-packages/pip/commands/install.py", line 346, in run
+    requirement_set.prepare_files(finder)
+  File "/usr/lib/python3.6/site-packages/pip/req/req_set.py", line 381, in prepare_files
+    ignore_dependencies=self.ignore_dependencies))
+  File "/usr/lib/python3.6/site-packages/pip/req/req_set.py", line 623, in _prepare_file
+    session=self.session, hashes=hashes)
+  File "/usr/lib/python3.6/site-packages/pip/download.py", line 822, in unpack_url
+    hashes=hashes
+  File "/usr/lib/python3.6/site-packages/pip/download.py", line 664, in unpack_http_url
+    unpack_file(from_path, location, content_type, link)
+  File "/usr/lib/python3.6/site-packages/pip/utils/__init__.py", line 622, in unpack_file
+    untar_file(filename, location)
+  File "/usr/lib/python3.6/site-packages/pip/utils/__init__.py", line 566, in untar_file
+    except tarfile.LinkOutsideDestinationError:
+AttributeError: module 'tarfile' has no attribute 'LinkOutsideDestinationError'
+Error: Process completed with exit code 2.
