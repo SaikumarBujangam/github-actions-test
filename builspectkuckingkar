@@ -1,7 +1,5 @@
-{# cdp_build_afterinstall.template.txt #}
-
 #!/bin/bash
- echo "Starting AfterInstall at $date"
+echo "Starting AfterInstall at $date"
 
 SOURCE_DIR="{{APP_LAND_DIR}}/stage"
 DEST_DIR="/apps"
@@ -14,106 +12,88 @@ ls -al {{APP_DATAPRODUCT_DIR}}/{{APP_SUBJECT_AREA}}
 sudo -i -u {{DATAPRODUCT_USER}} mkdir {{APP_INSTALL_DIR}}
 sudo -i -u {{DATAPRODUCT_USER}} mkdir -p {{APP_LAND_DIR}}/stage
 sudo -i -u {{DATAPRODUCT_USER}} tar -xvf {{APP_LAND_DIR}}/{{APP_SUBJECT_AREA}}-{{APP_VERSION}}.tar --directory {{APP_LAND_DIR}}/stage
-AUTO_INFLATE_FLAG={{AUTO_INFLATE_FLAG}}
-
 
 if [[ ${AUTO_INFLATE_FLAG} != "True" ]]
 then
-  exit 0
+    exit 0
 else
-  cd {{APP_LAND_DIR}}/stage
-  # CI/CD should not create the top-level directories, this needs to be done at EC2 provisioning time..
-  if [[ -d "/apps/edh/prod" && -d "/apps/ben" ]]
-  then
-      ls -al {{APP_LAND_DIR}}/stage
+    cd {{APP_LAND_DIR}}/stage
+    if [[ -d "/apps/edh/prod" && -d "/apps/ben" ]]
+    then
+        ls -al {{APP_LAND_DIR}}/stage
 
-      for install_path in $(find . -type f)
-      do
-        # Separate the TAR entry into its file name and file path parts.
-        install_file=$(echo ${install_path##*/})
-        install_directory=$(echo ${install_path%/*} | cut -c3- )
-        # Create the subdirectory where the file will be copied. Create all required
-        # parent directories, and exit if there is an error in directory creation
-        # create the directories as the migration id, NOT as root, which yields a default 755 permission set.
-	#if [ -e "${DEST_DIR}/${install_directory}/${install_file}" ];
-	#then
-	#  source_checksum=$(md5sum "${SOURCE_DIR}/${install_directory}/${install_file}" | awk '{print $1}')
-	#  dest_checksum=$(md5sum "${DEST_DIR}/${install_directory}/${install_file}" | awk '{print $1}')
-    #      if [ "${source_checksum}" = "${dest_checksum}" ];
-    #      then
-	#    echo "File unchanged: ${DEST_DIR}/${install_directory}/${install_file}. Skipping ..."
-	#    continue
-	#  fi
-	#fi
-        echo $install_path
-        echo "creating this directory /apps/$install_directory"
-        echo "sudo -i -u {{DATAPRODUCT_USER}} mkdir -p /apps/${install_directory}"
-        sudo -i -u {{DATAPRODUCT_USER}} mkdir -p /apps/${install_directory}
-
-        if [[ ${install_directory} == *"/edh"* || ${install_directory} == *"/ben"*  ]]; then
-          chmod -R 775 /apps/${install_directory}
-        else
-          chmod -R 775 /apps/${install_directory}
-        fi
-
-
-        if [[ $? -ne "0" ]]
-        then
-          echo "Could not create directory: /apps/${install_directory}"
-          exit 1
-        fi
-	update_grp_dir="/apps"
-        # Split the created directory into its distinct directory parts, as
-        # as each of these nested directories will need to have its
-        # group updated to the migration id's group. By default the group is not the correct migration id's group.
-        for subdir in $(echo ${install_directory} | tr "/" " ")
+        for install_path in $(find . -type f)
         do
-          if [[ ${update_grp_dir} == "" ]]
-          then
-            update_grp_dir=${subdir}
-          else
-            update_grp_dir=${update_grp_dir}/${subdir}
-          fi
-          # Skip if the directory part is one of the base directories.
-          if [[ ${update_grp_dir} == "/apps" || ${update_grp_dir} == "/apps/edh" || ${update_grp_dir} == "/apps/edh/prod" || ${update_grp_dir} == "/apps/ben" ]]
-          then
-            echo "Base Directories, no action"
-          else
-            chgrp {{DATAPRODUCT_GROUP}} ${update_grp_dir}
+            install_file=$(echo ${install_path##*/})
+            install_directory=$(echo ${install_path%/*} | cut -c3- )
+
+            echo $install_path
+            echo "creating this directory /apps/$install_directory"
+            echo "sudo -i -u {{DATAPRODUCT_USER}} mkdir -p /apps/${install_directory}"
+            sudo -i -u {{DATAPRODUCT_USER}} mkdir -p /apps/${install_directory}
+
+            if [[ ${install_directory} == *"/edh"* || ${install_directory} == *"/ben"* ]]
+            then
+                chmod -R 775 /apps/${install_directory}
+            else
+                chmod -R 775 /apps/${install_directory}
+            fi
+
             if [[ $? -ne "0" ]]
             then
-              echo "Could not chgrp to: {{DATAPRODUCT_GROUP}} on ${update_grp_dir}"
-              exit 1
+                echo "Could not create directory: /apps/${install_directory}"
+                exit 1
             fi
-          fi
+            update_grp_dir="/apps"
+
+            for subdir in $(echo ${install_directory} | tr "/" " ")
+            do
+                if [[ ${update_grp_dir} == "" ]]
+                then
+                    update_grp_dir=${subdir}
+                else
+                    update_grp_dir=${update_grp_dir}/${subdir}
+                fi
+
+                if [[ ${update_grp_dir} == "/apps" || ${update_grp_dir} == "/apps/edh" || ${update_grp_dir} == "/apps/edh/prod" || ${update_grp_dir} == "/apps/ben" ]]
+                then
+                    echo "Base Directories, no action"
+                else
+                    chgrp {{DATAPRODUCT_GROUP}} ${update_grp_dir}
+                    if [[ $? -ne "0" ]]
+                    then
+                        echo "Could not chgrp to: {{DATAPRODUCT_GROUP}} on ${update_grp_dir}"
+                        exit 1
+                    fi
+                fi
+            done
+
+            echo "Starting the copy of {{APP_LAND_DIR}}/stage/${install_directory}/${install_file} at $date"
+            sudo -i -u {{DATAPRODUCT_USER}} cp {{APP_LAND_DIR}}/stage/${install_directory}/${install_file} /apps/${install_directory}/${install_file} && \
+            chgrp {{DATAPRODUCT_GROUP}} /apps/${install_directory}/${install_file} && \
+            chmod 755 /apps/${install_directory}/${install_file}
+            echo "Ending the copy of {{APP_LAND_DIR}}/stage/${install_directory}/${install_file} at $date"
+
+            if [[ $? -ne "0" ]]
+            then
+                echo "Could not write file to: /apps/${install_directory}/${install_file}"
+                exit 1
+            fi
+
+            if [[ ${install_path} == *"bin/"* || ${install_path} == *"scripts/"* ]]
+            then
+                sudo -i -u {{DATAPRODUCT_USER}} chmod +x /apps/${install_directory}/${install_file}
+            fi
         done
 
-        # Copy the file into its target directory, update the group on the new file.
-        echo "Starting the copy of {{APP_LAND_DIR}}/stage/${install_directory}/${install_file} at $date"
-        sudo -i -u {{DATAPRODUCT_USER}} cp {{APP_LAND_DIR}}/stage/${install_directory}/${install_file} /apps/${install_directory}/${install_file} && \
-          chgrp {{DATAPRODUCT_GROUP}} /apps/${install_directory}/${install_file} && \
-          chmod 755 /apps/${install_directory}/${install_file}
-           echo "Ending the copy of {{APP_LAND_DIR}}/stage/${install_directory}/${install_file} at $date"
-        if [[ $? -ne "0" ]]
-        then
-          echo "Could not write file to: /apps/${install_directory}/${install_file}"
-          exit 1
-        fi
-        # If the target directory contains either bin or scripts, make the copied file executable
-        if [[ ${install_path} == *"bin/"* || ${install_path} == *"scripts/"* ]]
-        then
-          sudo -i -u {{DATAPRODUCT_USER}} chmod +x /apps/${install_directory}/${install_file}
-
-        fi
-      done
-      cd {{APP_LAND_DIR}}
-      rm -rf stage
-      cp -f /opt/codedeploy-agent/deployment-root/deployment-logs/codedeploy-agent-deployments.log /tmp/codedeploy-agent-deployments.log
-      chmod 755 /tmp/codedeploy-agent-deployments.log
-      chown  {{DATAPRODUCT_USER}}:{{DATAPRODUCT_GROUP}} /tmp/codedeploy-agent-deployments.log
-       echo "Finishing AfterInstall at $date"
-  else
-    echo "Error: Required top level directories, /apps and /apps/edh/prod, do not exist. Please review the setup of the instance on which this deployment was attemmpted."
-    exit 1
-  fi
+        cd {{APP_LAND_DIR}}
+        rm -rf stage
+        cp -f /opt/codedeploy-agent/deployment-root/deployment-logs/codedeploy-agent-deployments.log /tmp/codedeploy-agent-deployments.log
+        chmod 755 /tmp/codedeploy-agent-deployments.log
+        chown  {{DATAPRODUCT_USER}}:{{DATAPRODUCT_GROUP}} /tmp/codedeploy-agent-deployments.log
+        echo "Finishing AfterInstall at $date"
+    else
+        echo "Error: Required top level directories, /apps and /apps/edh/prod, do not exist. Please review the setup of the instance on which this deployment was attempted."
+        exit 1
+    fi
 fi
