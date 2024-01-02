@@ -1,5 +1,3 @@
-{# informatica_config_build_afterinstall.template #}
-
 #!/bin/bash
 # Note: Some of the directory creation and chmod
 # should be removed once the informatica EC2 instances
@@ -14,24 +12,17 @@ chown -R {{DATAPRODUCT_USER}}:{{DATAPRODUCT_GROUP}} {{APP_DATAPRODUCT_DIR}}/{{AP
 sudo -i -u {{DATAPRODUCT_USER}} mkdir -p {{APP_LAND_DIR}}/install
 sudo -i -u {{DATAPRODUCT_USER}} tar -xvf {{APP_LAND_DIR}}/{{APP_SUBJECT_AREA}}-{{APP_VERSION}}.tar --directory {{APP_LAND_DIR}}/install
 UPPERCASE_DATA_PRODUCT_NAME=$(echo {{DATA_PRODUCT_NAME}} | tr '[a-z]' '[A-Z]')
-AUTO_INFLATE_FLAG={{AUTO_INFLATE_FLAG}}
-if [[ ${AUTO_INFLATE_FLAG} != "True" ]]
-then
-  exit 0
-else
-  cd {{APP_LAND_DIR}}/install
-  for install_path in $(find . -type f)
-  do
-    install_file=$(echo ${install_path##*/})
-    install_directory=$(echo ${install_path%/*} | cut -c3- )
-    sudo -i -u {{DATAPRODUCT_USER}} mkdir -p /apps/${UPPERCASE_DATA_PRODUCT_NAME}/${install_directory}
-    chgrp {{DATAPRODUCT_GROUP}} /apps/${UPPERCASE_DATA_PRODUCT_NAME}/${install_directory}
-    sudo -i -u {{DATAPRODUCT_USER}} cp {{APP_LAND_DIR}}/install/${install_directory}/${install_file} /apps/${UPPERCASE_DATA_PRODUCT_NAME}/${install_directory}/${install_file} && \
-      chgrp {{DATAPRODUCT_GROUP}} /apps/${UPPERCASE_DATA_PRODUCT_NAME}/${install_directory}/${install_file} && \
-      chmod 755 /apps/${UPPERCASE_DATA_PRODUCT_NAME}/${install_directory}/${install_file}
-  done
-  cd {{APP_LAND_DIR}}
-  rm -rf install
-fi
 
-
+cd {{APP_LAND_DIR}}/install
+for install_path in $(find . -type f)
+do
+  install_file=$(echo ${install_path##*/})
+  install_directory=$(echo ${install_path%/*} | cut -c3- )
+  sudo -i -u {{DATAPRODUCT_USER}} mkdir -p /apps/${UPPERCASE_DATA_PRODUCT_NAME}/${install_directory}
+  chgrp {{DATAPRODUCT_GROUP}} /apps/${UPPERCASE_DATA_PRODUCT_NAME}/${install_directory}
+  sudo -i -u {{DATAPRODUCT_USER}} cp {{APP_LAND_DIR}}/install/${install_directory}/${install_file} /apps/${UPPERCASE_DATA_PRODUCT_NAME}/${install_directory}/${install_file} && \
+    chgrp {{DATAPRODUCT_GROUP}} /apps/${UPPERCASE_DATA_PRODUCT_NAME}/${install_directory}/${install_file} && \
+    chmod 755 /apps/${UPPERCASE_DATA_PRODUCT_NAME}/${install_directory}/${install_file}
+done
+cd {{APP_LAND_DIR}}
+rm -rf install
