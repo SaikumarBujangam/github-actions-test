@@ -18,44 +18,20 @@ on:
 jobs:
   adl-cicd-check-pull-request:
     if: github.event_name == 'pull_request'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Set up Git repository
-        uses: actions/checkout@v2
-
-      # Set event_repo_name and event_repo_branch
-      - name: Set event_repo_name and event_repo_branch
-        run: |
-          echo "event_repo_name=${{ github.event.repository.name }}" >> $GITHUB_ENV
-          echo "event_repo_branch=${{ github.event.pull_request.head.ref }}" >> $GITHUB_ENV
-
-      - name: Run the actual check
-        uses: AlightEngineering/adl-awsdeploy-cicd/.github/workflows/adl-cicd-check-pull-request.yml@master
-        env:
-          envPAT: ${{ secrets.REPO_PAT }}
+    uses: AlightEngineering/adl-awsdeploy-cicd/.github/workflows/adl-cicd-check-pull-request.yml@master
+    secrets:
+      envPAT: ${{ secrets.REPO_PAT }}
 
   adl-cicd-checkout-repo-phase:
     if: github.event_name == 'push'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Set up Git repository
-        uses: actions/checkout@v2
-
-      # Set event_repo_name and event_repo_branch
-      - name: Set event_repo_name and event_repo_branch
-        run: |
-          echo "event_repo_name=${{ github.repository }}" >> $GITHUB_ENV
-          echo "event_repo_branch=${{ github.ref }}" >> $GITHUB_ENV
-
-      - name: Run the actual checkout and deploy steps
-        uses: AlightEngineering/adl-awsdeploy-cicd/.github/workflows/adl-cicd-deploy-repo-phase.yml@feature/ADLCICD-284
-        env:
-          envPAT: ${{ secrets.REPO_PAT }}
-        with:
-          event_repo_name: ${{ github.event.repository.name }}
-          event_repo_branch: ${{ github.ref }}
-          calling_repo_name: ${{ 'AlightEngineering/adl-awsdeploy-cicd' }}
-          dispatch_repo_name: ${{ 'adl-awsdeploy-cicd' }}
+    uses: AlightEngineering/adl-awsdeploy-cicd/.github/workflows/adl-cicd-deploy-repo-phase.yml@feature/ADLCICD-284
+    secrets:
+      envPAT: ${{ secrets.REPO_PAT }}
+    with:
+      event_repo_name: ${{ github.repository }}
+      event_repo_branch: ${{ github.ref }}
+      calling_repo_name: ${{ 'AlightEngineering/adl-awsdeploy-cicd' }}
+      dispatch_repo_name: ${{ 'adl-awsdeploy-cicd' }}
 
   adl-log-event:
     runs-on: ubuntu-latest
@@ -63,3 +39,5 @@ jobs:
       - name: Default
         run: |
           echo ${{ github.event_name }}
+Error in line 38 with the syntax
+
