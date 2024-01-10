@@ -24,17 +24,9 @@ jobs:
 
   adl-cicd-checkout-repo-phase:
     if: github.event_name == 'push'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Deploy Artifacts Phase
-        uses: AlightEngineering/adl-awsdeploy-cicd/.github/workflows/adl-cicd-deploy-repo-phase.yml@master
-        env:
-          event_repo_name: ${{ github.repository }}
-          event_repo_branch: ${{ github.ref#refs/heads/ }}
-          calling_repo_name: ${{ 'AlightEngineering/adl-awsdeploy-cicd' }}
-          dispatch_repo_name: ${{ 'adl-awsdeploy-cicd' }}
-        secrets:
-          envPAT: ${{ secrets.REPO_PAT }}
+    uses: AlightEngineering/adl-awsdeploy-cicd/.github/workflows/adl-cicd-checkout-repo-phase.yml@master
+    secrets:
+      envPAT: ${{ secrets.REPO_PAT }}
 
   adl-log-event:
     runs-on: ubuntu-latest
