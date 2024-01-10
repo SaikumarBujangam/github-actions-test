@@ -1,3 +1,5 @@
-1 error
 Invalid workflow file: .github/workflows/adl-cicd-initiate-deployment.yml#L28
-The workflow is not valid. In .github/workflows/adl-cicd-initiate-deployment.yml (Line: 28, Col: 11): Error from called workflow AlightEngineering/adl-awsdeploy-cicd/.github/workflows/adl-cicd-deploy-repo-phase.yml@feature/ADLCICD-284 (Line: 12, Col: 1): Unexpected value 'inputs'
+error parsing called workflow
+".github/workflows/adl-cicd-initiate-deployment.yml"
+-> "AlightEngineering/adl-awsdeploy-cicd/.github/workflows/adl-cicd-deploy-repo-phase.yml@feature/ADLCICD-284" (source branch with sha:7f1fbbd8403b95fe076aa90681e8bcb3af5e692b)
+: Invalid type for `on`
