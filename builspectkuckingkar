@@ -1,2 +1,2 @@
-Invalid workflow file: .github/workflows/adl-cicd-initiate-deployment.yml#L29
-The workflow is not valid. .github/workflows/adl-cicd-initiate-deployment.yml (Line: 29, Col: 15): Unrecognized named-value: 'secrets'. Located at position 1 within expression: secrets.REPO_PAT
+Invalid workflow file: .github/workflows/adl-cicd-initiate-deployment.yml#L31
+The workflow is not valid. .github/workflows/adl-cicd-initiate-deployment.yml (Line: 31, Col: 24): Invalid input, event_repo_name is not defined in the referenced workflow. .github/workflows/adl-cicd-initiate-deployment.yml (Line: 32, Col: 26): Invalid input, event_repo_branch is not defined in the referenced workflow.
