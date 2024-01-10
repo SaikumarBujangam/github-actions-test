@@ -1,112 +1,19 @@
-Invalid workflow file: .github/workflows/adl-cicd-initiate-deployment.yml#L28
-error parsing called workflow
-".github/workflows/adl-cicd-initiate-deployment.yml"
--> "AlightEngineering/adl-awsdeploy-cicd/.github/workflows/adl-cicd-deploy-repo-phase.yml@feature/ADLCICD-284" (source branch with sha:7f1fbbd8403b95fe076aa90681e8bcb3af5e692b)
-: Invalid type for `on`
-
-
-name: ADL Deploy Artifacts
-
-on:
-  workflow_call:
-    secrets:
-      envPAT:
-        required: true
-    inputs:
-      event_repo_name:
-        description: Enter the event repo to be deployed
-        type: string
-        required: true
-      event_repo_branch:
-        description: Enter the event branch
-        type: string
-        required: true
-        default: 'master'
-      calling_repo_name:
-        description: Enter the target deployment environment
-        type: string
-        required: true
-        default: 'AlightEngineering/adl-awsdeploy-cicd'
-      calling_repo_name:
-        description: Enter the target deployment environment
-        type: string
-        required: true
-        default: 'adl-awsdeploy-cicd'
-
-jobs:
-  adl-aws-deploy:
-    runs-on: ubuntu-latest
-    steps:   
-    - name: Log Environment Variables
-      run: |
-        echo "This is the Repo to deploy: ${event_repo_name}"
-        echo "This is the stable repo release version to deploy: ${cicd_version}"
-        echo "This is the Repo that made the request: ${calling_repo_name}"
-        echo "This is the Version Of CICD being used: ${calling_repo_name}-${cicd_version}"
-
-    - name: Check Calling Repository
-      run: |
-        calling_repo_base_name=${calling_repo_name##*/}
-        if [[ ${calling_repo_base_name} != ${dispatch_repo_name} ]]
-        then
-          echo "adl-aws-deploy called from invalid origin, fail and exit"
-          exit 1
-        fi
-    - name: Get Requesting Repository
-      env:
-        github_user: ${{ secrets.GH_USER_NAME }}
-        github_token: ${{ secrets.GH_CLONE_REPO }}
-      run: |
-        versioned_calling_repo_base_name=${calling_repo_name}-${cicd_version}
-        echo "This is versioned_calling_repo_base_name: ${versioned_calling_repo_base_name}"
-        git clone --single-branch --depth=1 --branch=${cicd_version} https://${github_user}:${github_token}@github.com/${calling_repo_name}.git ${versioned_calling_repo_base_name}
-        git clone --single-branch --depth=1 --branch=${event_repo_branch} https://${github_user}:${github_token}@github.com/${event_repo_name}.git
-    - name: Increment Calling Repo Version
-      run: |
-        versioned_calling_repo_base_name=${calling_repo_name}-${cicd_version}
-        event_repo_base_name=${event_repo_name##*/}
-        source ${versioned_calling_repo_base_name}/scripts/.mdshrc
-        mdsh_init ${event_repo_branch} local adl ${event_repo_base_name} localhost
-        git config --global user.email "dushyant.remivasan@alight.com"
-        git config --global user.name "Dushyant Remivasan"
-        if [[ "${mdsh_env}" = "dev" ]]
-        then
-          bump_version patch ${event_repo_base_name}
-          git -C ${event_repo_base_name} add .version
-          git -C ${event_repo_base_name} commit -m "Increments Version"
-          git -C ${event_repo_base_name} push
-        fi
-        new_git_tag=$(version ${event_repo_base_name})
-        gtag_version ${event_repo_base_name} ${mdsh_env} ${new_git_tag} "CICD Pipeline Merge To ${event_repo_branch}"
-    - name: ADL Set Environment Credentials
-      id: adl-set-env-creds
-      run: |
-        versioned_calling_repo_base_name=${calling_repo_name}-${cicd_version}
-        source ${versioned_calling_repo_base_name}/config/.cicdrc ${event_repo_branch}
-        echo "aws_access_key_id_name=ADL_${credential_env}_ACCESS_KEY" >> $GITHUB_OUTPUT
-        echo "aws_secret_access_key_name=ADL_${credential_env}_SECRET_KEY" >> $GITHUB_OUTPUT
-
-    - name: Configure AWS Credentials
-      uses: aws-actions/configure-aws-credentials@v1-node16
-      env:
-        AWS_ACCESS_KEY_ID_NAME: ${{ steps.adl-set-env-creds.outputs.aws_access_key_id_name }}
-        AWS_SECRET_ACCESS_KEY_NAME: ${{ steps.adl-set-env-creds.outputs.aws_secret_access_key_name }}
-      with:
-        aws-access-key-id: ${{ secrets[env.AWS_ACCESS_KEY_ID_NAME] }}
-        aws-secret-access-key: ${{ secrets[env.AWS_SECRET_ACCESS_KEY_NAME] }}
-        aws-region: us-east-1
-    - name: Install Dependencies
-      run: |
-        versioned_calling_repo_base_name=${calling_repo_name}-${cicd_version}
-        echo "Installing dependencies from ${versioned_calling_repo_base_name}/requirements.txt"
-        pip install -r ${versioned_calling_repo_base_name}/requirements.txt
-    - name: Run CICD Pipeline
-      run: |
-        versioned_calling_repo_base_name=${calling_repo_name}-${cicd_version}
-        export BUILD_NUMBER=${{ github.run_number }}
-        event_repo_base_name=${event_repo_name##*/}
-        export PYTHONPATH=${PWD}/${versioned_calling_repo_base_name}/src:${PWD}/${event_repo_base_name}/src/:$PYTHONPATH
-        source ${versioned_calling_repo_base_name}/scripts/.mdshrc
-        adl_repo_cicd ${event_repo_branch} ${event_repo_base_name} ${versioned_calling_repo_base_name}
-
-
+2024-01-10T11:26:35.4370308Z Download action repository 'aws-actions/configure-aws-credentials@v1-node16' (SHA:023daa7fe5f7f817faa31fc0fc4a8d0fb6224ed0)
+2024-01-10T11:26:36.3481529Z Uses: AlightEngineering/adl-awsdeploy-cicd/.github/workflows/adl-cicd-deploy-repo-phase.yml@refs/heads/feature/ADLCICD-284 (e4b15ed3933162885f1320091ed6b884c79fb3bf)
+2024-01-10T11:26:36.3485453Z ##[group] Inputs
+2024-01-10T11:26:36.3486143Z   event_repo_name: AlightEngineering/adl-test-workflow
+2024-01-10T11:26:36.3486922Z   event_repo_branch: master
+2024-01-10T11:26:36.3487602Z   calling_repo_name: AlightEngineering/adl-awsdeploy-cicd
+2024-01-10T11:26:36.3489213Z   dispatch_repo_name: adl-awsdeploy-cicd
+2024-01-10T11:26:36.3489961Z ##[endgroup]
+2024-01-10T11:26:36.3491209Z Complete job name: adl-cicd-deploy-phase / adl-aws-deploy
+2024-01-10T11:26:36.4870776Z ##[group]Run echo "This is the Repo to deploy: ${event_repo_name}"
+2024-01-10T11:26:36.4872047Z [36;1mecho "This is the Repo to deploy: ${event_repo_name}"[0m
+2024-01-10T11:26:36.4873258Z [36;1mecho "This is the stable repo release version to deploy: ${cicd_version}"[0m
+2024-01-10T11:26:36.4874567Z [36;1mecho "This is the Repo that made the request: ${calling_repo_name}"[0m
+2024-01-10T11:26:36.4876203Z [36;1mecho "This is the Version Of CICD being used: ${calling_repo_name}-${cicd_version}"[0m
+2024-01-10T11:26:36.4940419Z shell: /usr/bin/bash -e {0}
+2024-01-10T11:26:36.4940995Z ##[endgroup]
+2024-01-10T11:26:36.5258490Z This is the Repo to deploy: 
+2024-01-10T11:26:36.5259306Z This is the stable repo release version to deploy: 
+2024-01-10T11:26:36.5260105Z This is the Repo that made the request: 
