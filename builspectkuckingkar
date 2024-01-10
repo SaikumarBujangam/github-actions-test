@@ -1,2 +1,36 @@
-> git clone codecommit::us-west-2://posit-poc-v2 c:\Users\umababy.kannan\Downloads\posit-poc-v2-1 --progress
-git: 'remote-codecommit' is not a git command. See 'git --help'.
+# DO NOT MODIFY OR DELETE THIS WORKFLOW!!
+
+name: ADL CICD Initiate Deployment
+
+on:
+  pull_request:
+    branches: [ master, release/qa, release/qc, release/prod ]
+    types: [opened, reopened, edited]
+  push:
+    branches: [master, release/qa, release/qc, release/prod ]
+    paths-ignore:
+      - '.version'
+      - '.github/**'
+      - 'README.md'
+      - 'CODEOWNERS'
+      - '.group'
+
+jobs:
+  adl-cicd-check-pull-request:
+    if: github.event_name == 'pull_request'
+    uses: AlightEngineering/adl-awsdeploy-cicd/.github/workflows/adl-cicd-check-pull-request.yml@master
+    secrets:
+      envPAT: ${{ secrets.REPO_PAT }}
+
+  adl-cicd-checkout-repo-phase:
+    if: github.event_name == 'push'
+    uses: AlightEngineering/adl-awsdeploy-cicd/.github/workflows/adl-cicd-checkout-repo-phase.yml@master
+    secrets:
+      envPAT: ${{ secrets.REPO_PAT }}
+
+  adl-log-event:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Default
+        run: |
+          echo ${{ github.event_name }}
