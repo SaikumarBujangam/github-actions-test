@@ -1,36 +1,88 @@
-# DO NOT MODIFY OR DELETE THIS WORKFLOW!!
-
-name: ADL CICD Initiate Deployment
-
+name: ADL Deploy Artifacts
 on:
-  pull_request:
-    branches: [ master, release/qa, release/qc, release/prod ]
-    types: [opened, reopened, edited]
-  push:
-    branches: [master, release/qa, release/qc, release/prod ]
-    paths-ignore:
-      - '.version'
-      - '.github/**'
-      - 'README.md'
-      - 'CODEOWNERS'
-      - '.group'
-
+  repository_dispatch:
+    types:
+      - adl-aws-deploy
 jobs:
-  adl-cicd-check-pull-request:
-    if: github.event_name == 'pull_request'
-    uses: AlightEngineering/adl-awsdeploy-cicd/.github/workflows/adl-cicd-check-pull-request.yml@master
-    secrets:
-      envPAT: ${{ secrets.REPO_PAT }}
-
-  adl-cicd-checkout-repo-phase:
-    if: github.event_name == 'push'
-    uses: AlightEngineering/adl-awsdeploy-cicd/.github/workflows/adl-cicd-checkout-repo-phase.yml@master
-    secrets:
-      envPAT: ${{ secrets.REPO_PAT }}
-
-  adl-log-event:
+  adl-aws-deploy:
+    env:
+      event_repo_name: ${{ github.event.client_payload.name }}
+      cicd_version: ${{ github.event.client_payload.cicd_version }}
+      event_repo_branch: ${{ github.event.client_payload.branch }}
+      calling_repo_name: ${{ github.event.repository.full_name }}
+      dispatch_repo_name: ${{ 'adl-awsdeploy-cicd' }}
     runs-on: ubuntu-latest
     steps:
-      - name: Default
+      - name: Log Environment Variables
         run: |
-          echo ${{ github.event_name }}
+          echo "This is the Repo to deploy: ${event_repo_name}"
+          echo "This is the stable repo release version to deploy: ${cicd_version}"
+          echo "This is the Repo that made the request: ${calling_repo_name}"
+          echo "This is the Version Of CICD being used: ${calling_repo_name}-${cicd_version}"
+
+      - name: Check Calling Repository
+        run: |
+          calling_repo_base_name=${calling_repo_name##*/}
+          if [[ ${calling_repo_base_name} != ${dispatch_repo_name} ]]
+          then
+            echo "adl-aws-deploy called from invalid origin, fail and exit"
+            exit 1
+          fi
+      - name: Get Requesting Repository
+        env:
+          github_user: ${{ secrets.GH_USER_NAME }}
+          github_token: ${{ secrets.GH_CLONE_REPO }}
+        run: |
+          versioned_calling_repo_base_name=${calling_repo_name}-${cicd_version}
+          echo "This is versioned_calling_repo_base_name: ${versioned_calling_repo_base_name}"
+          git clone --single-branch --depth=1 --branch=${cicd_version} https://${github_user}:${github_token}@github.com/${calling_repo_name}.git ${versioned_calling_repo_base_name}
+          git clone --single-branch --depth=1 --branch=${event_repo_branch} https://${github_user}:${github_token}@github.com/${event_repo_name}.git
+      - name: Increment Calling Repo Version
+        run: |
+          versioned_calling_repo_base_name=${calling_repo_name}-${cicd_version}
+          event_repo_base_name=${event_repo_name##*/}
+          source ${versioned_calling_repo_base_name}/scripts/.mdshrc
+          mdsh_init ${event_repo_branch} local adl ${event_repo_base_name} localhost
+          git config --global user.email "dushyant.remivasan@alight.com"
+          git config --global user.name "Dushyant Remivasan"
+          if [[ "${mdsh_env}" = "dev" ]]
+          then
+            bump_version patch ${event_repo_base_name}
+            git -C ${event_repo_base_name} add .version
+            git -C ${event_repo_base_name} commit -m "Increments Version"
+            git -C ${event_repo_base_name} push
+          fi
+          new_git_tag=$(version ${event_repo_base_name})
+          gtag_version ${event_repo_base_name} ${mdsh_env} ${new_git_tag} "CICD Pipeline Merge To ${event_repo_branch}"
+      - name: ADL Set Environment Credentials
+        id: adl-set-env-creds
+        run: |
+          versioned_calling_repo_base_name=${calling_repo_name}-${cicd_version}
+          source ${versioned_calling_repo_base_name}/config/.cicdrc ${event_repo_branch}
+          echo "aws_access_key_id_name=ADL_${credential_env}_ACCESS_KEY" >> $GITHUB_OUTPUT
+          echo "aws_secret_access_key_name=ADL_${credential_env}_SECRET_KEY" >> $GITHUB_OUTPUT
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1-node16
+        env:
+          AWS_ACCESS_KEY_ID_NAME: ${{ steps.adl-set-env-creds.outputs.aws_access_key_id_name }}
+          AWS_SECRET_ACCESS_KEY_NAME: ${{ steps.adl-set-env-creds.outputs.aws_secret_access_key_name }}
+        with:
+          aws-access-key-id: ${{ secrets[env.AWS_ACCESS_KEY_ID_NAME] }}
+          aws-secret-access-key: ${{ secrets[env.AWS_SECRET_ACCESS_KEY_NAME] }}
+          aws-region: us-east-1
+      - name: Install Dependencies
+        run: |
+          versioned_calling_repo_base_name=${calling_repo_name}-${cicd_version}
+          echo "Installing dependencies from ${versioned_calling_repo_base_name}/requirements.txt"
+          pip install -r ${versioned_calling_repo_base_name}/requirements.txt
+      - name: Run CICD Pipeline
+        run: |
+          versioned_calling_repo_base_name=${calling_repo_name}-${cicd_version}
+          export BUILD_NUMBER=${{ github.run_number }}
+          event_repo_base_name=${event_repo_name##*/}
+          export PYTHONPATH=${PWD}/${versioned_calling_repo_base_name}/src:${PWD}/${event_repo_base_name}/src/:$PYTHONPATH
+          source ${versioned_calling_repo_base_name}/scripts/.mdshrc
+          adl_repo_cicd ${event_repo_branch} ${event_repo_base_name} ${versioned_calling_repo_base_name}
+
+
