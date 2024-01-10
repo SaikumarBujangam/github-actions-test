@@ -1,43 +1,33 @@
-# DO NOT MODIFY OR DELETE THIS WORKFLOW!!
-
-name: ADL CICD Initiate Deployment
+name: ADL CICD Checkout Repository Phase
 
 on:
-  pull_request:
-    branches: [ master, release/qa, release/qc, release/prod ]
-    types: [opened, reopened, edited]
-  push:
-    branches: [master, release/qa, release/qc, release/prod ]
-    paths-ignore:
-      - '.version'
-      - '.github/**'
-      - 'Explore/**'
-      - 'README.md'
-      - 'CODEOWNERS'
-      - '.group'
-      
+  workflow_call:
+    secrets:
+      envPAT:
+        required: true
+    inputs:
+      cicd_version:
+        description: 'CICD Stable Release Version'
+        type: string
+        required: false
+        default: 'd1.0.288'
 jobs:
-  adl-cicd-check-pull-request:
-    if: github.event_name == 'pull_request'
-    uses: AlightEngineering/adl-awsdeploy-cicd/.github/workflows/adl-cicd-check-pull-request.yml@master
-    secrets:
-      envPAT: ${{ secrets.REPO_PAT }}
-
-  adl-cicd-check-pull-request-hotfix:
-    if: github.event_name == 'pull_request'
-    uses: AlightEngineering/adl-awsdeploy-cicd/.github/workflows/adl-cicd-check-pull-request-hotfix.yml@master
-    secrets:
-      envPAT: ${{ secrets.REPO_PAT }}
-
-  adl-cicd-checkout-repo-phase:
-    if: github.event_name == 'push'
-    uses: AlightEngineering/adl-awsdeploy-cicd/.github/workflows/adl-cicd-checkout-repo-phase.yml@master
-    secrets:
-      envPAT: ${{ secrets.REPO_PAT }}
-
-  adl-log-event:
+  adl-checkout-calling-repo:
     runs-on: ubuntu-latest
     steps:
-      - name: Default
-        run: |
-          echo ${{ github.event_name }}
+    - uses: actions/checkout@master
+    - name: Checkout Requesting Repository Branch
+      run: |
+        echo "Checking out Repository: " $GITHUB_REPOSITORY
+        echo "Checking out Branch: " $GITHUB_REF_NAME
+  adl-dispatch-aws-deploy-workflow:
+    needs:
+      adl-checkout-calling-repo
+    runs-on: ubuntu-latest
+    steps:
+    - name: Trigger Deploy
+      run: |
+        curl -X POST https://api.github.com/repos/AlightEngineering/adl-awsdeploy-cicd/dispatches \
+          -H "Authorization: Bearer ${{ secrets.envPAT }}" \
+          -H 'Accept: application/vnd.github.everest-preview+json' \
+          --data '{"event_type": "adl-aws-deploy", "client_payload": { "name": "'"$GITHUB_REPOSITORY"'", "branch": "'"$GITHUB_REF_NAME"'", "cicd_version": "${{ inputs.cicd_version }}" }'
