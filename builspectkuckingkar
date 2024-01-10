@@ -29,7 +29,7 @@ jobs:
     secrets:
       envPAT: ${{ secrets.REPO_PAT }}
     with:
-      event_repo_name: 'AlightEngineering/adl-test-workflow'
+      event_repo_name: ${{ github.repository }}
       event_repo_branch: 'master'
       calling_repo_name: 'AlightEngineering/adl-awsdeploy-cicd'
       dispatch_repo_name: 'adl-awsdeploy-cicd'
