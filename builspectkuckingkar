@@ -1,16 +1,1 @@
-Run git clone https://$***github_user***:$***github_token***@github.com/$***calling_repo_name***.git
-  git clone https://$***github_user***:$***github_token***@github.com/$***calling_repo_name***.git
-  git clone --single-branch --depth=1 --branch=$***event_repo_branch*** https://$***github_user***:$***github_token***@github.com/$***event_repo_name***.git
-  shell: /usr/bin/bash -e ***0***
-  env:
-    event_repo_name: AlightEngineering/adl-test-workflow
-    event_repo_branch: master
-    calling_repo_name: AlightEngineering/adl-awsdeploy-cicd
-    dispatch_repo_name: adl-awsdeploy-cicd
-    github_user: ***
-    github_token: ***
-Cloning into 'adl-awsdeploy-cicd'...
-remote: Support for password authentication was removed on August 13, 2021.
-remote: Please see https://docs.github.com/en/get-started/getting-started-with-git/about-remote-repositories#cloning-with-https-urls for information on currently recommended modes of authentication.
-fatal: Authentication failed for 'https://github.com/AlightEngineering/adl-awsdeploy-cicd.git/'
-Error: Process completed with exit code 128.
+git clone --single-branch --depth=1 --branch=${event_repo_branch} https://${gh_user}:${gh_token}@github.com/${calling_repo_name}.git
