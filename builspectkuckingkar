@@ -1,136 +1,17 @@
-name: ADL Deploy Artifacts
-
-on:
-  workflow_call:
-    inputs:
-      event_repo_name:
-        description: Enter the Event Repo to be Deployed
-        type: string
-        required: true
-      event_repo_branch:
-        description: Enter the Event Branch
-        type: string
-        required: true
-        default: 'master'
-      calling_repo_name:
-        description: Enter the CICD Repository Full Reference
-        type: string
-        required: false
-        default: 'AlightEngineering/adl-awsdeploy-cicd'
-      dispatch_repo_name:
-        description: Enter the CICD Repository Name
-        type: string
-        required: false
-        default: 'adl-awsdeploy-cicd'
-
-jobs:
-  adl-cicd-deploy:
-    env:
-      event_repo_name: ${{ inputs.event_repo_name }}
-      event_repo_branch: ${{ inputs.event_repo_branch }}
-      calling_repo_name: ${{ inputs.calling_repo_name }}
-      dispatch_repo_name: ${{ inputs.dispatch_repo_name }}
-      gh_user: ${{ secrets.GH_USER_NAME }}
-      gh_token: ${{ secrets.GH_CLONE_REPO }}
-    runs-on: ubuntu-latest  
-    steps:   
-    - name: Log Environment Variables
-      run: |
-        echo "This is the Repo to deploy: ${event_repo_name}"
-        echo "This is the Branch: ${event_repo_branch}"
-        echo "gh_user: ${gh_user}"
-        echo "gh_token: ${gh_token}"
-    - name: Get Client Repository
-      uses: actions/checkout@master
-      with:
-        path: 'adl-test-workflow'
-
-    - name: Get CICD Repository
-      uses: actions/checkout@master
-      with:
-        repository: 'AlightEngineering/adl-awsdeploy-cicd' 
-        token: ${{ secrets.REPO_PAT }} 
-        path: 'adl-awsdeploy-cicd'  
-      
-    - name: Increment Calling Repo Version
-      run: |
-        ls -lrt
-        event_repo_base_name=${event_repo_name##*/}
-        source ${dispatch_repo_name}/scripts/.mdshrc
-        mdsh_init ${event_repo_branch} local adl ${event_repo_base_name} localhost
-        git config --global user.email "dushyant.remivasan@alight.com"
-        git config --global user.name "Dushyant Remivasan"
-        if [[ "${mdsh_env}" = "dev" ]]
-        then
-          bump_version patch ${event_repo_base_name}
-          git -C ${event_repo_base_name} add .version
-          git -C ${event_repo_base_name} commit -m "Increments Version"
-          git -C ${event_repo_base_name} push
-        fi
-        new_git_tag=$(version ${event_repo_base_name})
-        gtag_version ${event_repo_base_name} ${mdsh_env} ${new_git_tag} "CICD Pipeline Merge To ${event_repo_branch}"
-    - name: ADL Set Environment Credentials
-      id: adl-set-env-creds
-      run: |
-        source ${dispatch_repo_name}/config/.cicdrc ${event_repo_branch}
-        echo "aws_access_key_id_name=ADL_${credential_env}_ACCESS_KEY" >> $GITHUB_OUTPUT
-        echo "aws_secret_access_key_name=ADL_${credential_env}_SECRET_KEY" >> $GITHUB_OUTPUT
-
-    - name: Configure AWS Credentials
-      uses: aws-actions/configure-aws-credentials@v1-node16
-      env:
-        AWS_ACCESS_KEY_ID_NAME: ${{ steps.adl-set-env-creds.outputs.aws_access_key_id_name }}
-        AWS_SECRET_ACCESS_KEY_NAME: ${{ steps.adl-set-env-creds.outputs.aws_secret_access_key_name }}
-      with:
-        aws-access-key-id: ${{ secrets[env.AWS_ACCESS_KEY_ID_NAME] }}
-        aws-secret-access-key: ${{ secrets[env.AWS_SECRET_ACCESS_KEY_NAME] }}
-        aws-region: us-east-1
-    - name: Install Dependencies
-      run: |
-        echo "Installing dependencies from ${dispatch_repo_name}/requirements.txt"
-        pip install -r ${dispatch_repo_name}/requirements.txt
-    - name: Run CICD Pipeline
-      run: |
-        export BUILD_NUMBER=${{ github.run_number }}
-        event_repo_base_name=${event_repo_name##*/}
-        export PYTHONPATH=${PWD}/${dispatch_repo_name}/src:${PWD}/${event_repo_base_name}/src/:$PYTHONPATH
-        source ${dispatch_repo_name}/scripts/.mdshrc
-        adl_repo_cicd ${event_repo_branch} ${event_repo_base_name} ${dispatch_repo_name}
-
-
-Run ls -lrt
-  ls -lrt
-  event_repo_base_name=$***event_repo_name##*/***
-  source $***dispatch_repo_name***/scripts/.mdshrc
-  mdsh_init $***event_repo_branch*** local adl $***event_repo_base_name*** localhost
-  git config --global user.email "dushyant.remivasan@alight.com"
-  git config --global user.name "Dushyant Remivasan"
-  if [[ "$***mdsh_env***" = "dev" ]]
-  then
-    bump_version patch $***event_repo_base_name***
-    git -C $***event_repo_base_name*** add .version
-    git -C $***event_repo_base_name*** commit -m "Increments Version"
-    git -C $***event_repo_base_name*** push
-  fi
-  new_git_tag=$(version $***event_repo_base_name***)
-  gtag_version $***event_repo_base_name*** $***mdsh_env*** $***new_git_tag*** "CICD Pipeline Merge To $***event_repo_branch***"
-  shell: /usr/bin/bash -e ***0***
-  env:
-    event_repo_name: AlightEngineering/adl-test-workflow
-    event_repo_branch: master
-    calling_repo_name: AlightEngineering/adl-awsdeploy-cicd
-    dispatch_repo_name: adl-awsdeploy-cicd
-    gh_user: ***
-    gh_token: ***
-total 8
-drwxr-xr-x 11 runner docker 4096 Jan 11 14:45 adl-test-workflow
-drwxr-xr-x  9 runner docker 4096 Jan 11 14:45 adl-awsdeploy-cicd
-[master 65d17fa] Increments Version
- 1 file changed, 1 insertion(+), 1 deletion(-)
-remote: error: GH006: Protected branch update failed for refs/heads/master.        
-remote: error: Changes must be made through a pull request.        
-To https://github.com/AlightEngineering/adl-test-workflow
- ! [remote rejected] master -> master (protected branch hook declined)
-error: failed to push some refs to 'https://github.com/AlightEngineering/adl-test-workflow'
-Error: Process completed with exit code 1.
-
+ - name: Increment Calling Repo Version
+        run: |
+          versioned_calling_repo_base_name=${calling_repo_name}-${cicd_version}
+          event_repo_base_name=${event_repo_name##*/}
+          source ${versioned_calling_repo_base_name}/scripts/.mdshrc
+          mdsh_init ${event_repo_branch} local adl ${event_repo_base_name} localhost
+          git config --global user.email "dushyant.remivasan@alight.com"
+          git config --global user.name "Dushyant Remivasan"
+          if [[ "${mdsh_env}" = "dev" ]]
+          then
+            bump_version patch ${event_repo_base_name}
+            git -C ${event_repo_base_name} add .version
+            git -C ${event_repo_base_name} commit -m "Increments Version"
+            git -C ${event_repo_base_name} push
+          fi
+          new_git_tag=$(version ${event_repo_base_name})
+          gtag_version ${event_repo_base_name} ${mdsh_env} ${new_git_tag} "CICD Pipeline Merge To ${event_repo_branch}"
