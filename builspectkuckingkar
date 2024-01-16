@@ -1,10 +1,19 @@
-# ...
-
-run: |
-  # List secrets in the source repository
+Run secrets_list=$(gh secret list -R $SOURCE_REPO --json name,value)
   secrets_list=$(gh secret list -R $SOURCE_REPO --json name,value)
-
-  # Loop through each secret and add it to the target repository
   echo $secrets_list | jq -r '.[] | "\(.name) \(.value)"' | while read -r secret_name secret_value; do
     gh secret set $secret_name --repo $TARGET_REPO --body "$secret_value"
   done
+  shell: /usr/bin/bash -e {0}
+  env:
+    GH_TOKEN: ***
+    github_user: ***
+    SOURCE_REPO: AlightEngineering/adl-awsdeploy-cicd
+    TARGET_REPO: AlightEngineering/adl-test-secrets
+Unknown JSON field: "value"
+Available fields:
+  name
+  numSelectedRepos
+  selectedReposURL
+  updatedAt
+  visibility
+Error: Process completed with exit code 1.
