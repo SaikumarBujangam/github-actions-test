@@ -1,5 +1,15 @@
-- name: Set up secret file
-      env:
-        TEST_GH_USER_NAME: ${{ secrets.TEST_GH_USER_NAME }}
-      run: |
-        echo ${{secrets.TEST_GH_USER_NAME}} | sed 's/./& /g'
+ - name: Add All Secrets to New Repository
+        env:
+          GH_TOKEN: ${{ secrets.GH_CLONE_REPO }}
+          github_user: ${{ secrets.GH_USER_NAME }}
+          SOURCE_REPO: 'AlightEngineering/adl-awsdeploy-cicd'
+          TARGET_REPO: ${{ inputs.org-name }}/${{ inputs.repo-division-name }}-${{ inputs.repo-group-name }}-${{ inputs.repo-subject-area }}
+        run: |
+          # List secrets in the source repository
+          secrets_list=$(gh secret list -R $SOURCE_REPO --json name)
+
+          # Loop through each secret and add it to the target repository
+          for secret_name in $(echo $secrets_list | jq -r '.[].name'); do
+            secret_value=$(echo $secrets_list | jq -r --arg secret "$secret_name" '.[] | select(.name==$secret) | .value')
+            gh secret set $secret_name --repo $TARGET_REPO --body "$secret_value"
+          done
