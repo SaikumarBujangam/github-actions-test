@@ -1,7 +1,7 @@
-Run secrets_list=$(gh secret list -R $SOURCE_REPO --json name)
-  secrets_list=$(gh secret list -R $SOURCE_REPO --json name)
-  echo $secrets_list | jq -r '.[].name' | while read -r secret_name; do
-    secret_value=$(gh secret get $secret_name -R $SOURCE_REPO --json value | jq -r '.value')
+Run secrets_list=$(gh api list --silent "/repos/$SOURCE_REPO/actions/secrets")
+  secrets_list=$(gh api list --silent "/repos/$SOURCE_REPO/actions/secrets")
+  for secret_name in $(echo "$secrets_list" | jq -r '.secrets[].name');do
+    secret_value=$(gh api --silent "repos/$SOURCE_REPO/actions/secrets/$secret_name" | jq -r '.value')
     gh secret set $secret_name --repo $TARGET_REPO --body "$secret_value"
   done
   shell: /usr/bin/bash -e {0}
@@ -10,12 +10,5 @@ Run secrets_list=$(gh secret list -R $SOURCE_REPO --json name)
     github_user: ***
     SOURCE_REPO: AlightEngineering/adl-awsdeploy-cicd
     TARGET_REPO: AlightEngineering/adl-test-secretss
-unknown flag: --json
-
-Usage:  gh secret <command> [flags]
-
-Available commands:
-  delete
-  list
-  set
-
+accepts 1 arg(s), received 2
+Error: Process completed with exit code 1.
