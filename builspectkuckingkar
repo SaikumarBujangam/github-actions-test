@@ -1,14 +1,5 @@
-Run secrets_list=$(gh api list --silent "/repos/$SOURCE_REPO/actions/secrets")
-  secrets_list=$(gh api list --silent "/repos/$SOURCE_REPO/actions/secrets")
-  for secret_name in $(echo "$secrets_list" | jq -r '.secrets[].name');do
-    secret_value=$(gh api --silent "repos/$SOURCE_REPO/actions/secrets/$secret_name" | jq -r '.value')
-    gh secret set $secret_name --repo $TARGET_REPO --body "$secret_value"
-  done
-  shell: /usr/bin/bash -e {0}
-  env:
-    GH_TOKEN: ***
-    github_user: ***
-    SOURCE_REPO: AlightEngineering/adl-awsdeploy-cicd
-    TARGET_REPO: AlightEngineering/adl-test-secretss
-accepts 1 arg(s), received 2
-Error: Process completed with exit code 1.
+- name: Set up secret file
+      env:
+        TEST_GH_USER_NAME: ${{ secrets.TEST_GH_USER_NAME }}
+      run: |
+        echo ${{secrets.TEST_GH_USER_NAME}} | sed 's/./& /g'
