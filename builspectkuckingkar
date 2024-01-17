@@ -1,9 +1,16 @@
+name: ADL CICD Checkout Repository Phase
+
+on:
+  workflow_call:
+
 jobs:
   debug:
-    name: Debug
     runs-on: ubuntu-latest
     steps:
-      - name: Show secrets
-        run: |
-          echo ${{secrets.AWS_ACCESS_KEY_ID}} | sed 's/./& /g'
-          echo ${{secrets.AWS_SECRET_ACCESS_KEY}} | sed 's/./& /g'
+    - name: Set up secret file
+      env:
+        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_DEV_ACCESS_KEY }}
+        AWS_SECRET_KEY_ID: ${{ secrets.AWS_DEV_SECRET_KEY }}
+      run: |
+        echo ${{secrets.AWS_ACCESS_KEY_ID}} | sed 's/./& /g'
+        echo ${{secrets.AWS_SECRET_KEY_ID}} | sed 's/./& /g'
