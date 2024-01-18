@@ -1,40 +1,102 @@
-# DO NOT MODIFY OR DELETE THIS WORKFLOW!!
+source ${dispatch_repo_name}/config/.cicdrc ${event_repo_branch}
 
-name: ADL CICD Initiate Deployment
+Previously I used to use the above line
 
-on:
-  pull_request:
-    branches: [ master ]
-    types: [opened, reopened, edited]
-  push:
-    branches: [master, feature/* ]
-    paths-ignore:
-      - '.version'
-      - '.github/**'
-      - 'Explore/**'
-      - 'README.md'
-      - 'CODEOWNERS'
-      - '.group'
-      
-jobs:
-  adl-cicd-check-pull-request:
-    if: github.event_name == 'pull_request'
-    uses: AlightEngineering/adl-awsdeploy-cicd/.github/workflows/adl-cicd-check-pull-request.yml@master
-    secrets:
-      envPAT: ${{ secrets.REPO_PAT }}
+#!/bin/bash
+if [[ $# = 0 ]]
+then
+  github_branch=master
+else
+  github_branch=${1}
+fi
+#
+# environment names
+dev_mdsh_env=dev
+master_mdsh_env=dev
+qa_mdsh_env=qa
+qc_mdsh_env=qc
+prod_mdsh_env=prod
+mapped_mdsh_env=${github_branch##*/}_mdsh_env
+export mdsh_env=${!mapped_mdsh_env}
+#
+# CDP environment migration names
+dev_cdp_mig_mdsh_env=dev
+master_cdp_mig_mdsh_env=dev
+qa_cdp_mig_mdsh_env=qa
+qc_cdp_mig_mdsh_env=qc
+prod_cdp_mig_mdsh_env=prd
+mapped_cdp_mig_mdsh_env=${github_branch##*/}_cdp_mig_mdsh_env
+export cdp_mig_mdsh_env=${!mapped_cdp_mig_mdsh_env}
+# environment credential names
+test_credential_env=TEST
+dev_credential_env=DEV
+master_credential_env=DEV
+qa_credential_env=QA
+qc_credential_env=QC
+prod_credential_env=PROD
+mapped_credential_env=${github_branch##*/}_credential_env
+export credential_env=${!mapped_credential_env}
+#
+# environment short name
+dev_lifecycle_env=d1
+master_lifecycle_env=d1
+qa_lifecycle_env=q1
+qc_lifecycle_env=u1
+prod_lifecycle_env=p1
+mapped_lifecycle_env=${github_branch##*/}_lifecycle_env
+export lifecycle_env=${!mapped_lifecycle_env}
+#
+# Deployment Buckets
+test_deployment_bucket=adl-com-d1-all-codebase-us-east-1-wlxartd
+dev_deployment_bucket=adl-com-d1-all-codebase-us-east-1-wlxartd
+master_deployment_bucket=adl-com-d1-all-codebase-us-east-1-wlxartd
+qa_deployment_bucket=adl-com-q1-all-codebase-us-east-1-4jljb2g
+qc_deployment_bucket=adl-com-u1-all-codebase-us-east-1-w2hb0bx
+prod_deployment_bucket=adl-com-p1-all-codebase-us-east-1-hdo8paj
+mapped_deployment_bucket=${github_branch##*/}_deployment_bucket
+export deployment_bucket=${!mapped_deployment_bucket}
 
-  adl-cicd-deploy-phase:
-    if: github.event_name == 'push'
-    uses: AlightEngineering/adl-awsdeploy-cicd/.github/workflows/adl-cicd-deploy-repo-phase.yml@feature/permissionchange
-    secrets: inherit
-    with:
-      event_repo_name: ${{ github.repository }}
-      event_repo_branch: ${{ github.ref_name }}
-      deploy_env: ${{ (github.ref_name == 'master' && github.event.pull_request.merged) && 'prod' || 'dev' }}
-      
-  adl-log-event:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Default
-        run: |
-          echo ${{ github.event_name }}
+# Dependancy Buckets
+dev_dependency_lib_bucket=adl-com-d1-data-all-edhtransfers-us-east-1-pxpvcxe
+qa_dependency_lib_bucket=adl-com-q1-data-all-edhtransfers-us-east-1-6s53zjb
+qc_dependency_lib_bucket=adl-com-u1-data-all-edhtransfers-us-east-1-ynoqnta
+prod_dependency_lib_bucket=adl-com-p1-data-all-edhtransfers-us-east-1-sijxwc0
+mapped_dependency_lib_bucket=${github_branch##*/}_dependency_lib_bucket
+export dependency_lib_bucket=${!mapped_dependency_lib_bucket}
+# Airflow Buckets
+test_airflow_bucket=adl-com-d1-mwaa-code-us-east-1-wpwsnh8
+dev_airflow_bucket=adl-com-d1-mwaa-code-us-east-1-wpwsnh8
+master_airflow_bucket=adl-com-d1-mwaa-code-us-east-1-wpwsnh8
+qa_airflow_bucket=adl-com-d1-mwaa-code-us-east-1-wpwsnh8
+qc_airflow_bucket=adl-com-d1-mwaa-code-us-east-1-wpwsnh8
+prod_airflow_bucket=adl-com-p1-mwaa-code-us-east-1-8fl3xit
+mapped_airflow_bucket=${github_branch##*/}_airflow_bucket
+export airflow_bucket=${!mapped_airflow_bucket}
+#
+# Redshift database and cluster indo
+export PRODUCER_DB1=rsproducerdb01
+export PRODUCER_DB2=rsproducerdb02
+export CONSUMER_DB1=rsconsumer1db01
+export CONSUMER_DB2=rsconsumer1db02
+export PRODUCER_CLUSTER_ID1=adl-com-${lifecycle_env}-data-rsproducer
+export CONSUMER_CLUSTER_ID1=adl-com-${lifecycle_env}-data-rsconsumer1
+export PRODUCER_CLUSTER_ID2=adl-com-${lifecycle_env}-data-rsproducer
+export CONSUMER_CLUSTER_ID2=adl-com-${lifecycle_env}-data-rsconsumer2
+# Informatica Cloud Base URLS
+iics_protocol="https"
+iics_base_dm_url="dm-us.informaticacloud.com"
+iics_region="use6"
+iics_base_path="saas"
+iics_api_version_path="public/core/v3"
+iics_diapi_version_path="v1"
+export iics_base_login_url=${iics_protocol}"://"${iics_base_dm_url}
+export iics_base_pod_url=${iics_protocol}"://"${iics_region}.${iics_base_dm_url}
+
+# Postgres database Info
+
+export DB_PORT=5432
+export DEV_HOST_NAME=adl-com-${lifecycle_env}-cdp-dcnexus.cgs723tlzdrk.us-east-1.rds.amazonaws.com
+export QC_HOST_NAME=adl-com-${lifecycle_env}-cdp-dcnexus.cwt2fpgqt8u0.us-east-1.rds.amazonaws.com
+export PROD_HOST_NAME=adl-com-${lifecycle_env}-cdp-dcnexus.cibk8wxqmdut.us-east-1.rds.amazonaws.com
+
+But now I want to use my deploy_env as argument here. How to change this script?
