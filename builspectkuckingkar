@@ -1,19 +1,13 @@
-The below is the current workflow file in my Client repository from where the CICD processes begin.
-
-We used to have four branches.
-
-master, release/qa, release/qc and release/prod
-
 # DO NOT MODIFY OR DELETE THIS WORKFLOW!!
 
 name: ADL CICD Initiate Deployment
 
 on:
   pull_request:
-    branches: [ master, release/qa, release/qc, release/prod ]
+    branches: [ master ]
     types: [opened, reopened, edited]
   push:
-    branches: [master, release/qa, release/qc, release/prod ]
+    branches: [master, feature/* ]
     paths-ignore:
       - '.version'
       - '.github/**'
@@ -36,6 +30,7 @@ jobs:
     with:
       event_repo_name: ${{ github.repository }}
       event_repo_branch: ${{ github.ref_name }}
+      deploy_env: ${{ (github.ref_name == 'master' && github.event.pull_request.merged) && 'prod' || 'dev' }}
       
   adl-log-event:
     runs-on: ubuntu-latest
@@ -43,6 +38,3 @@ jobs:
       - name: Default
         run: |
           echo ${{ github.event_name }}
-		  
-Now we are trying to remove the branches and keep only feature branches and master branch and PR can happen only from feature branches to master branch
-
