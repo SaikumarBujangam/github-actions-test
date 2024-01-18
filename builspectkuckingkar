@@ -5,7 +5,7 @@ name: ADL CICD Initiate Deployment
 on:
   pull_request:
     branches: [ master ]
-    types: [opened, reopened, edited, synchronize]
+    types: [opened, reopened, edited]
   push:
     branches: [master, feature/* ]
     paths-ignore:
@@ -38,7 +38,7 @@ jobs:
     with:
       event_repo_name: ${{ github.repository }}
       event_repo_branch: ${{ github.ref_name }}
-      deploy_env: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.deploy_env || (github.ref_name == 'master' && github.event.pull_request.merged) && 'prod' || 'dev' }}
+      deploy_env: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.deploy_env || (github.event.pull_request.merged == 'true' ) && 'prod' || 'dev' }}
       
   adl-log-event:
     runs-on: ubuntu-latest
