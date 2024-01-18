@@ -1,16 +1,48 @@
-name: ADL Test
- 
+The below is the current workflow file in my Client repository from where the CICD processes begin.
+
+We used to have four branches.
+
+master, release/qa, release/qc and release/prod
+
+# DO NOT MODIFY OR DELETE THIS WORKFLOW!!
+
+name: ADL CICD Initiate Deployment
+
 on:
-  workflow_dispatch:
- 
+  pull_request:
+    branches: [ master, release/qa, release/qc, release/prod ]
+    types: [opened, reopened, edited]
+  push:
+    branches: [master, release/qa, release/qc, release/prod ]
+    paths-ignore:
+      - '.version'
+      - '.github/**'
+      - 'Explore/**'
+      - 'README.md'
+      - 'CODEOWNERS'
+      - '.group'
+      
 jobs:
-  debug:
+  adl-cicd-check-pull-request:
+    if: github.event_name == 'pull_request'
+    uses: AlightEngineering/adl-awsdeploy-cicd/.github/workflows/adl-cicd-check-pull-request.yml@master
+    secrets:
+      envPAT: ${{ secrets.REPO_PAT }}
+
+  adl-cicd-deploy-phase:
+    if: github.event_name == 'push'
+    uses: AlightEngineering/adl-awsdeploy-cicd/.github/workflows/adl-cicd-deploy-repo-phase.yml@feature/permissionchange
+    secrets: inherit
+    with:
+      event_repo_name: ${{ github.repository }}
+      event_repo_branch: ${{ github.ref_name }}
+      
+  adl-log-event:
     runs-on: ubuntu-latest
     steps:
-    - name: Set up secret file
-      env:
-        ADL_DEV_ACCESS_KEY: ${{ secrets.ADL_DEV_ACCESS_KEY }}
-        ADL_DEV_SECRET_KEY: ${{ secrets.ADL_DEV_SECRET_KEY }}
-      run: |
-        echo ${{secrets.ADL_DEV_ACCESS_KEY}} | sed 's/./& /g'
-        echo ${{secrets.ADL_DEV_SECRET_KEY}} | sed 's/./& /g'
+      - name: Default
+        run: |
+          echo ${{ github.event_name }}
+		  
+Now we are trying to remove the branches and keep only feature branches and master branch and PR can happen only from feature branches to master branch
+
