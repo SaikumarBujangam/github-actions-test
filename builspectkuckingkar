@@ -1,12 +1,24 @@
-      - name: Add All Secrets to New Repository
+     - name: Add Secret
         env:
-          GH_TOKEN: ${{ secrets.GH_CLONE_REPO }}
-          github_user: ${{ secrets.GH_USER_NAME }}
-          SOURCE_REPO: 'AlightEngineering/adl-awsdeploy-cicd'
-          TARGET_REPO: ${{ inputs.org-name }}/${{ inputs.repo-division-name }}-${{ inputs.repo-group-name }}-${{ inputs.repo-subject-area }}
+          GH_TOKEN:
+            ${{ secrets.GH_CLONE_REPO }}
+          SHARED_REPO_PAT:
+            ${{ secrets.REPO_PAT }}
+          GH_USER_NAME:
+            ${{ secrets.GH_USER_NAME }}
+          ADL_DEV_ACCESS_KEY:
+            ${{ secrets.ADL_DEV_ACCESS_KEY }}
+          ADL_DEV_SECRET_KEY:
+            ${{ secrets.ADL_DEV_SECRET_KEY }}
+          ADL_QA_ACCESS_KEY:
+            ${{ secrets.ADL_QA_ACCESS_KEY }}
+          ADL_QA_SECRET_KEY:
+            ${{ secrets.ADL_QA_SECRET_KEY }}
         run: |
-          secrets_list=$(gh secret list -R $SOURCE_REPO)
-          for secret_name in $(echo "$secrets_list");do
-            secret_value=${!secret_name}
-            gh secret set $secret_name --repo $TARGET_REPO --body "$secret_value"
-          done
+          gh secret set REPO_PAT --repo ${{ inputs.org-name }}/${{ inputs.repo-division-name }}-${{ inputs.repo-group-name }}-${{ inputs.repo-subject-area }} --body "${SHARED_REPO_PAT}"
+          gh secret set GH_USER_NAME --repo ${{ inputs.org-name }}/${{ inputs.repo-division-name }}-${{ inputs.repo-group-name }}-${{ inputs.repo-subject-area }} --body "${GH_USER_NAME}"
+          gh secret set GH_CLONE_REPO --repo ${{ inputs.org-name }}/${{ inputs.repo-division-name }}-${{ inputs.repo-group-name }}-${{ inputs.repo-subject-area }} --body "${GH_TOKEN}"
+          gh secret set ADL_DEV_ACCESS_KEY --repo ${{ inputs.org-name }}/${{ inputs.repo-division-name }}-${{ inputs.repo-group-name }}-${{ inputs.repo-subject-area }} --body "${ADL_DEV_ACCESS_KEY}"
+          gh secret set ADL_DEV_SECRET_KEY --repo ${{ inputs.org-name }}/${{ inputs.repo-division-name }}-${{ inputs.repo-group-name }}-${{ inputs.repo-subject-area }} --body "${ADL_DEV_SECRET_KEY}"
+          gh secret set ADL_QA_ACCESS_KEY --repo ${{ inputs.org-name }}/${{ inputs.repo-division-name }}-${{ inputs.repo-group-name }}-${{ inputs.repo-subject-area }} --body "${ADL_QA_ACCESS_KEY}"
+          gh secret set ADL_QA_SECRET_KEY --repo ${{ inputs.org-name }}/${{ inputs.repo-division-name }}-${{ inputs.repo-group-name }}-${{ inputs.repo-subject-area }} --body "${ADL_QA_SECRET_KEY}"
