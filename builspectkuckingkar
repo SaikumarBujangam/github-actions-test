@@ -1,6 +1,6 @@
 # DO NOT MODIFY OR DELETE THIS WORKFLOW!!
 
-name: ADL CICD Initiate Deployment
+name: ADL CICD Deployment Pipeline
 
 on:
   pull_request:
@@ -38,7 +38,7 @@ jobs:
     with:
       event_repo_name: ${{ github.repository }}
       event_repo_branch: ${{ github.ref_name }}
-      deploy_env: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.deploy_env || (github.event.pull_request.merged == 'true' ) && 'prod' || 'dev' }}
+      deploy_env: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' && 'prod' || github.event_name == 'workflow_dispatch' && github.event.inputs.deploy_env || github.event_name == 'push' && startsWith(github.ref, 'refs/heads/feature/') && 'dev' }}
       
   adl-log-event:
     runs-on: ubuntu-latest
