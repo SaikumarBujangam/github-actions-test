@@ -1,48 +1,12 @@
-# DO NOT MODIFY OR DELETE THIS WORKFLOW!!
-
-name: ADL CICD Deployment Pipeline
-
-on:
-  pull_request:
-    branches: [ master ]
-    types: [opened, reopened, edited]
-  push:
-    branches: [master, feature/* ]
-    paths-ignore:
-      - '.version'
-      - '.github/**'
-      - 'Explore/**'
-      - 'README.md'
-      - 'CODEOWNERS'
-      - '.group'
-  workflow_dispatch:
-    inputs:
-      deploy_env:
-        description: 'Deployment Environment (e.g., qa, qc)'
-        required: true
-        type: choice
-        options:
-          - 'qa'
-          - 'qc'      
-jobs:
-  adl-cicd-check-pull-request:
-    if: github.event_name == 'pull_request'
-    uses: AlightEngineering/adl-awsdeploy-cicd/.github/workflows/adl-cicd-check-pull-request.yml@master
-    secrets:
-      envPAT: ${{ secrets.REPO_PAT }}
-
-  adl-cicd-deploy-phase:
-    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
-    uses: AlightEngineering/adl-awsdeploy-cicd/.github/workflows/adl-cicd-deploy-repo-phase.yml@feature/workflowrefactor
-    secrets: inherit
-    with:
-      event_repo_name: ${{ github.repository }}
-      event_repo_branch: ${{ github.ref_name }}
-      deploy_env: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' && 'prod' || github.event_name == 'workflow_dispatch' && github.event.inputs.deploy_env || github.event_name == 'push' && startsWith(github.ref, 'refs/heads/feature/') && 'dev' }}
-      
-  adl-log-event:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Default
+      - name: Add All Secrets to New Repository
+        env:
+          GH_TOKEN: ${{ secrets.GH_CLONE_REPO }}
+          github_user: ${{ secrets.GH_USER_NAME }}
+          SOURCE_REPO: 'AlightEngineering/adl-awsdeploy-cicd'
+          TARGET_REPO: ${{ inputs.org-name }}/${{ inputs.repo-division-name }}-${{ inputs.repo-group-name }}-${{ inputs.repo-subject-area }}
         run: |
-          echo ${{ github.event_name }}
+          secrets_list=$(gh secret list -R $SOURCE_REPO)
+          for secret_name in $(echo "$secrets_list");do
+            secret_value=${!secret_name}
+            gh secret set $secret_name --repo $TARGET_REPO --body "$secret_value"
+          done
