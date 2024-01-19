@@ -1,24 +1,48 @@
-     - name: Add Secret
-        env:
-          GH_TOKEN:
-            ${{ secrets.GH_CLONE_REPO }}
-          SHARED_REPO_PAT:
-            ${{ secrets.REPO_PAT }}
-          GH_USER_NAME:
-            ${{ secrets.GH_USER_NAME }}
-          ADL_DEV_ACCESS_KEY:
-            ${{ secrets.ADL_DEV_ACCESS_KEY }}
-          ADL_DEV_SECRET_KEY:
-            ${{ secrets.ADL_DEV_SECRET_KEY }}
-          ADL_QA_ACCESS_KEY:
-            ${{ secrets.ADL_QA_ACCESS_KEY }}
-          ADL_QA_SECRET_KEY:
-            ${{ secrets.ADL_QA_SECRET_KEY }}
+# DO NOT MODIFY OR DELETE THIS WORKFLOW!!
+
+name: ADL CICD Deployment Pipeline
+
+on:
+  pull_request:
+    branches: [ master ]
+    types: [opened, reopened, edited]
+  push:
+    branches: [master, feature/* ]
+    paths-ignore:
+      - '.version'
+      - '.github/**'
+      - 'Explore/**'
+      - 'README.md'
+      - 'CODEOWNERS'
+      - '.group'
+  workflow_dispatch:
+    inputs:
+      deploy_env:
+        description: 'Deployment Environment (e.g., qa, qc)'
+        required: true
+        type: choice
+        options:
+          - 'qa'
+          - 'qc'      
+jobs:
+  adl-cicd-check-pull-request:
+    if: github.event_name == 'pull_request'
+    uses: AlightEngineering/adl-awsdeploy-cicd/.github/workflows/adl-cicd-check-pull-request.yml@master
+    secrets:
+      envPAT: ${{ secrets.REPO_PAT }}
+
+  adl-cicd-deploy-phase:
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    uses: AlightEngineering/adl-awsdeploy-cicd/.github/workflows/adl-cicd-deploy-repo-phase.yml@feature/workflowrefactor
+    secrets: inherit
+    with:
+      event_repo_name: ${{ github.repository }}
+      event_repo_branch: ${{ github.ref_name }}
+      deploy_env: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' && 'prod' || github.event_name == 'workflow_dispatch' && github.event.inputs.deploy_env || github.event_name == 'push' && startsWith(github.ref, 'refs/heads/feature/') && 'dev' }}
+      
+  adl-log-event:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Default
         run: |
-          gh secret set REPO_PAT --repo ${{ inputs.org-name }}/${{ inputs.repo-division-name }}-${{ inputs.repo-group-name }}-${{ inputs.repo-subject-area }} --body "${SHARED_REPO_PAT}"
-          gh secret set GH_USER_NAME --repo ${{ inputs.org-name }}/${{ inputs.repo-division-name }}-${{ inputs.repo-group-name }}-${{ inputs.repo-subject-area }} --body "${GH_USER_NAME}"
-          gh secret set GH_CLONE_REPO --repo ${{ inputs.org-name }}/${{ inputs.repo-division-name }}-${{ inputs.repo-group-name }}-${{ inputs.repo-subject-area }} --body "${GH_TOKEN}"
-          gh secret set ADL_DEV_ACCESS_KEY --repo ${{ inputs.org-name }}/${{ inputs.repo-division-name }}-${{ inputs.repo-group-name }}-${{ inputs.repo-subject-area }} --body "${ADL_DEV_ACCESS_KEY}"
-          gh secret set ADL_DEV_SECRET_KEY --repo ${{ inputs.org-name }}/${{ inputs.repo-division-name }}-${{ inputs.repo-group-name }}-${{ inputs.repo-subject-area }} --body "${ADL_DEV_SECRET_KEY}"
-          gh secret set ADL_QA_ACCESS_KEY --repo ${{ inputs.org-name }}/${{ inputs.repo-division-name }}-${{ inputs.repo-group-name }}-${{ inputs.repo-subject-area }} --body "${ADL_QA_ACCESS_KEY}"
-          gh secret set ADL_QA_SECRET_KEY --repo ${{ inputs.org-name }}/${{ inputs.repo-division-name }}-${{ inputs.repo-group-name }}-${{ inputs.repo-subject-area }} --body "${ADL_QA_SECRET_KEY}"
+          echo ${{ github.event_name }}
