@@ -1,98 +1,32 @@
-data "aws_caller_identity" "current" {}
-data "aws_region" "current" {}
-
-############################################
-# Configuring an Amazon API Gateway REST API
-############################################
-
-resource "aws_api_gateway_rest_api" "webhook_rest_api" {
-  body = templatefile("${path.module}/templates/api_gateway_spec.tpl", {
-    region                   = data.aws_region.current.name,
-    account_id               = data.aws_caller_identity.current.account_id,
-    sqs_name                 = aws_sqs_queue.code_sync_queue.name,
-    codesync-apigateway-role = aws_iam_role.api_gateway_role.arn
-  })
-  name = "${var.platform}-gitlab-repo-webhook"
-  endpoint_configuration {
-    types = ["REGIONAL"]
-  }
-  disable_execute_api_endpoint = false
+resource "aws_sqs_queue" "code_sync_queue" {
+  name                       = "${var.platform}-gitlab-webhook-queue"
+  delay_seconds              = 0
+  max_message_size           = 262144
+  message_retention_seconds  = 345600
+  receive_wait_time_seconds  = 0
+  visibility_timeout_seconds = 300
 }
 
-resource "aws_api_gateway_deployment" "gitlab_webhook_deployment" {
-  rest_api_id = aws_api_gateway_rest_api.webhook_rest_api.id
-
-  triggers = {
-    redeployment = sha1(jsonencode(aws_api_gateway_rest_api.webhook_rest_api.body))
-  }
-
-  lifecycle {
-    create_before_destroy = true
-  }
-}
-
-resource "aws_api_gateway_stage" "gitlab_webhook_api_gateway_stage" {
-  deployment_id = aws_api_gateway_deployment.gitlab_webhook_deployment.id
-  rest_api_id   = aws_api_gateway_rest_api.webhook_rest_api.id
-  stage_name    = "devops"
-}
-
-
-   api_gateway_spec.tpl
-
+resource "aws_sqs_queue_policy" "code_sync_queue_policy" {
+  queue_url = aws_sqs_queue.code_sync_queue.id
+  policy    = <<POLICY
 {
-  "openapi" : "3.0.1",
-  "info" : {
-    "title" : "rest-api",
-    "version" : "2023-01-27T15:40:06Z"
-  },
-  "servers" : [ {
-    "x-amazon-apigateway-endpoint-configuration" : {
-      "disableExecuteApiEndpoint" : false
+  "Version": "2008-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Principal": {
+        "AWS": "*"
+      },
+      "Action": "SQS:*",
+      "Resource": "${aws_sqs_queue.code_sync_queue.arn}"
     }
-  } ],
-  "paths" : {
-    "/code-sync" : {
-      "post" : {
-        "responses" : {
-          "200" : {
-            "description" : "200 response",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/Empty"
-                }
-              }
-            }
-          }
-        },
-        "x-amazon-apigateway-integration" : {
-          "type" : "aws",
-          "uri" : "arn:aws:apigateway:${region}:sqs:path/${account_id}/${sqs_name}",
-          "credentials" : "${codesync-apigateway-role}",
-          "httpMethod" : "POST",
-          "responses" : {
-            "default" : {
-              "statusCode" : "200"
-            }
-          },
-          "requestParameters" : {
-            "integration.request.header.Content-Type" : "'application/x-www-form-urlencoded'"
-          },
-          "requestTemplates" : {
-            "application/json" : "Action=SendMessage&MessageBody=$util.urlEncode($input.body)"
-          },
-          "passthroughBehavior" : "never"
-        }
-      }
-    }
-  },
-  "components" : {
-    "schemas" : {
-      "Empty" : {
-        "title" : "Empty Schema",
-        "type" : "object"
-      }
-    }
-  }
+  ]
+}
+POLICY
+}
+
+resource "aws_lambda_event_source_mapping" "lambda_codesync_event" {
+  event_source_arn = aws_sqs_queue.code_sync_queue.arn
+  function_name    = aws_lambda_function.lambda_codesync_function.arn
 }
