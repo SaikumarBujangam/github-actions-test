@@ -1,61 +1,15 @@
-# DO NOT MODIFY OR DELETE THIS WORKFLOW!!
-
-name: ADL CICD Deployment Pipeline
-
-on:
-  pull_request:
-    branches: [ master ]
-    types: [opened, reopened, edited]
-  push:
-    branches: [master, feature/* ]
-    paths-ignore:
-      - '.version'
-      - '.github/**'
-      - 'Explore/**'
-      - 'README.md'
-      - 'CODEOWNERS'
-      - '.group'
-  workflow_dispatch:
-    inputs:
-      deploy_env:
-        description: 'Deployment Environment (e.g., qa, qc)'
-        required: true
-        type: choice
-        options:
-          - 'qa'
-          - 'qc'    
-      feature_branch_name:
-        description: 'Enter the branch (e.g., feature/your-branch-name)'
-        required: true
-        default: 'feature/your-branch-name'  
-jobs:
-  adl-cicd-check-pull-request:
-    if: github.event_name == 'pull_request'
-    uses: AlightEngineering/adl-awsdeploy-cicd/.github/workflows/adl-cicd-check-pull-request.yml@master
-    secrets:
-      envPAT: ${{ secrets.REPO_PAT }}
-
-  adl-cicd-deploy-phase:
-    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check feature branch name for workflow_dispatch
-        if: github_event_name == 'workflow_dispatch'
-        run: |
-          if [[ "${{ github.event.inputs.feature_branch_name }}" ! = feature/* ]]; then
-            echo "Error: The feature_branch_name is an invalid branch and must start with 'feature/'."
-            exit 1
-          fi
-      - name: Use ADL CICD Deployment Phase Action
-        uses: AlightEngineering/adl-awsdeploy-cicd/.github/workflows/adl-cicd-deploy-repo-phase.yml@feature/workflowrefactor
-        with:
-         event_repo_name: ${{ github.repository }}
-         event_repo_branch: ${{ github.ref_name }}
-         deploy_env: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' && 'prod' || github.event_name == 'workflow_dispatch' && startsWith(github.event.inputs.feature_branch_name, 'refs/heads/feature/' || 'error') && github.event.inputs.deploy_env || github.event_name == 'push' && startsWith(github.ref, 'refs/heads/feature/') && 'dev' }}
-      
-  adl-log-event:
+ adl-log-event:
     runs-on: ubuntu-latest
     steps:
       - name: Default
         run: |
           echo ${{ github.event_name }}
+          if: github.event_name == 'workflow_dispatch'
+          runs-on: ubuntu-latest
+          steps:
+            - name: check feature_branch_name for workflow_dispatch
+              run: |
+                if [[ "${{ github.event.inputs.feature_branch_name }}" != feature/* ]]; then
+                  echo "Error: The feature_branch_name is an invalid branch and must start with 'feature/'."
+                  exit 1
+                fi
