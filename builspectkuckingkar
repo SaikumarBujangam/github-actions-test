@@ -1,16 +1,52 @@
-    - name: Increment Calling Repo Version
-      run: |
-        event_repo_base_name=${event_repo_name##*/}
-        source ${dispatch_repo_name}/scripts/.mdshrc
-        mdsh_init ${deploy_env} local adl ${event_repo_base_name} localhost
-        git config --global user.email "dushyant.remivasan@alight.com"
-        git config --global user.name "Dushyant Remivasan"
-        if [[ "${deploy_env}" = "prod" ]]
-        then
-          bump_version patch ${event_repo_base_name}
-          git -C ${event_repo_base_name} add .version
-          git -C ${event_repo_base_name} commit -m "Increments Version"
-          git -C ${event_repo_base_name} push
-          new_git_tag=$(version ${event_repo_base_name})
-          gtag_version ${event_repo_base_name} ${mdsh_env} ${new_git_tag} "CICD Pipeline Merge To ${event_repo_branch}"
-        fi
+# DO NOT MODIFY OR DELETE THIS WORKFLOW!!
+
+name: ADL CICD Deployment Pipeline
+
+on:
+  pull_request:
+    branches: [ master ]
+    types: [opened, reopened, edited]
+  push:
+    branches: [master, feature/* ]
+    paths-ignore:
+      - '.version'
+      - '.github/**'
+      - 'Explore/**'
+      - 'README.md'
+      - 'CODEOWNERS'
+      - '.group'
+  workflow_dispatch:
+    inputs:
+      deploy_env:
+        description: 'Deployment Environment (e.g., qa, qc)'
+        required: true
+        type: choice
+        options:
+          - 'qa'
+          - 'qc'    
+      feature_branch_name:
+        description: 'Enter the branch (e.g., feature/your-branch-name)'
+        required: true
+        default: 'feature/your-branch-name'  
+jobs:
+  adl-cicd-check-pull-request:
+    if: github.event_name == 'pull_request'
+    uses: AlightEngineering/adl-awsdeploy-cicd/.github/workflows/adl-cicd-check-pull-request.yml@master
+    secrets:
+      envPAT: ${{ secrets.REPO_PAT }}
+
+  adl-cicd-deploy-phase:
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    uses: AlightEngineering/adl-awsdeploy-cicd/.github/workflows/adl-cicd-deploy-repo-phase.yml@feature/workflowrefactor
+    secrets: inherit
+    with:
+      event_repo_name: ${{ github.repository }}
+      event_repo_branch: ${{ github.ref_name }}
+      deploy_env: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' && 'prod' || github.event_name == 'workflow_dispatch' && github.event.inputs.deploy_env || github.event_name == 'push' && startsWith(github.ref, 'refs/heads/feature/') && 'dev' }}
+      
+  adl-log-event:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Default
+        run: |
+          echo ${{ github.event_name }}
