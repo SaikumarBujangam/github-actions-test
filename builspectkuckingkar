@@ -1,112 +1,36 @@
-data "aws_caller_identity" "current" {}
-data "aws_region" "current" {}
-
-############################################
-# Configuring an Amazon API Gateway REST API
-############################################
-
-resource "aws_api_gateway_rest_api" "webhook_rest_api" {
-  body = templatefile("${path.module}/templates/api_gateway_spec.tpl", {
-    region                   = data.aws_region.current.name,
-    account_id               = data.aws_caller_identity.current.account_id,
-    sqs_name                 = aws_sqs_queue.code_sync_queue.name,
-    codesync-apigateway-role = aws_iam_role.api_gateway_role.arn
-  })
-  name = "${var.platform}-gitlab-repo-webhook"
-  endpoint_configuration {
-    types = ["REGIONAL"]
-  }
-  disable_execute_api_endpoint = false
-}
-
-resource "aws_api_gateway_deployment" "gitlab_webhook_deployment" {
-  rest_api_id = aws_api_gateway_rest_api.webhook_rest_api.id
-
-  triggers = {
-    redeployment = sha1(jsonencode(aws_api_gateway_rest_api.webhook_rest_api.body))
-  }
-
-  lifecycle {
-    create_before_destroy = true
-  }
-}
-
-resource "aws_api_gateway_stage" "gitlab_webhook_api_gateway_stage" {
-  deployment_id = aws_api_gateway_deployment.gitlab_webhook_deployment.id
-  rest_api_id   = aws_api_gateway_rest_api.webhook_rest_api.id
-  stage_name    = "devops"
-}
-=============================================================================
-api_gateway_spec.tpl is shown below
-{
-  "openapi" : "3.0.1",
-  "info" : {
-    "title" : "rest-api",
-    "version" : "2023-01-27T15:40:06Z"
-  },
-  "servers" : [ {
-    "x-amazon-apigateway-endpoint-configuration" : {
-      "disableExecuteApiEndpoint" : false
-    }
-  } ],
-  "paths" : {
-    "/code-sync" : {
-      "post" : {
-        "responses" : {
-          "200" : {
-            "description" : "200 response",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/Empty"
-                }
-              }
-            }
-          }
-        },
-        "x-amazon-apigateway-integration" : {
-          "type" : "aws",
-          "uri" : "arn:aws:apigateway:${region}:sqs:path/${account_id}/${sqs_name}",
-          "credentials" : "${codesync-apigateway-role}",
-          "httpMethod" : "POST",
-          "responses" : {
-            "default" : {
-              "statusCode" : "200"
-            }
-          },
-          "requestParameters" : {
-            "integration.request.header.Content-Type" : "'application/x-www-form-urlencoded'"
-          },
-          "requestTemplates" : {
-            "application/json" : "Action=SendMessage&MessageBody=$util.urlEncode($input.body)"
-          },
-          "passthroughBehavior" : "never"
-        }
-      }
-    }
-  },
-  "components" : {
-    "schemas" : {
-      "Empty" : {
-        "title" : "Empty Schema",
-        "type" : "object"
-      }
-    }
-  }
-}
-
-Explain in detail what is happening here, I am preparing for the interview
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+      - name: Add Secret
+        env:
+          GH_TOKEN:
+            ${{ secrets.GH_CLONE_REPO }}
+          SHARED_REPO_PAT:
+            ${{ secrets.REPO_PAT }}
+          GH_USER_NAME:
+            ${{ secrets.GH_USER_NAME }}
+          ADL_DEV_ACCESS_KEY:
+            ${{ secrets.ADL_DEV_ACCESS_KEY }}
+          ADL_DEV_SECRET_KEY:
+            ${{ secrets.ADL_DEV_SECRET_KEY }}
+          ADL_QA_ACCESS_KEY:
+            ${{ secrets.ADL_QA_ACCESS_KEY }}
+          ADL_QA_SECRET_KEY:
+            ${{ secrets.ADL_QA_SECRET_KEY }}
+          ADL_QC_ACCESS_KEY:
+            ${{ secrets.ADL_QC_ACCESS_KEY }}
+          ADL_QC_SECRET_KEY:
+            ${{ secrets.ADL_QC_SECRET_KEY }}
+          ADL_PROD_ACCESS_KEY:
+            ${{ secrets.ADL_PROD_ACCESS_KEY }}
+          ADL_PROD_SECRET_KEY:
+            ${{ secrets.ADL_PROD_SECRET_KEY }}
+        run: |
+          gh secret set REPO_PAT --repo ${{ inputs.org-name }}/${{ inputs.repo-division-name }}-${{ inputs.repo-group-name }}-${{ inputs.repo-subject-area }} --body "${SHARED_REPO_PAT}"
+          gh secret set GH_USER_NAME --repo ${{ inputs.org-name }}/${{ inputs.repo-division-name }}-${{ inputs.repo-group-name }}-${{ inputs.repo-subject-area }} --body "${GH_USER_NAME}"
+          gh secret set GH_CLONE_REPO --repo ${{ inputs.org-name }}/${{ inputs.repo-division-name }}-${{ inputs.repo-group-name }}-${{ inputs.repo-subject-area }} --body "${GH_TOKEN}"
+          gh secret set ADL_DEV_ACCESS_KEY --repo ${{ inputs.org-name }}/${{ inputs.repo-division-name }}-${{ inputs.repo-group-name }}-${{ inputs.repo-subject-area }} --body "${ADL_DEV_ACCESS_KEY}"
+          gh secret set ADL_DEV_SECRET_KEY --repo ${{ inputs.org-name }}/${{ inputs.repo-division-name }}-${{ inputs.repo-group-name }}-${{ inputs.repo-subject-area }} --body "${ADL_DEV_SECRET_KEY}"
+          gh secret set ADL_QA_ACCESS_KEY --repo ${{ inputs.org-name }}/${{ inputs.repo-division-name }}-${{ inputs.repo-group-name }}-${{ inputs.repo-subject-area }} --body "${ADL_QA_ACCESS_KEY}"
+          gh secret set ADL_QA_SECRET_KEY --repo ${{ inputs.org-name }}/${{ inputs.repo-division-name }}-${{ inputs.repo-group-name }}-${{ inputs.repo-subject-area }} --body "${ADL_QA_SECRET_KEY}"
+	  gh secret set ADL_QC_ACCESS_KEY --repo ${{ inputs.org-name }}/${{ inputs.repo-division-name }}-${{ inputs.repo-group-name }}-${{ inputs.repo-subject-area }} --body "${ADL_QC_ACCESS_KEY}"
+          gh secret set ADL_QC_SECRET_KEY --repo ${{ inputs.org-name }}/${{ inputs.repo-division-name }}-${{ inputs.repo-group-name }}-${{ inputs.repo-subject-area }} --body "${ADL_QC_SECRET_KEY}"
+          gh secret set ADL_PROD_ACCESS_KEY --repo ${{ inputs.org-name }}/${{ inputs.repo-division-name }}-${{ inputs.repo-group-name }}-${{ inputs.repo-subject-area }} --body "${ADL_PROD_ACCESS_KEY}"
+          gh secret set ADL_PROD_SECRET_KEY --repo ${{ inputs.org-name }}/${{ inputs.repo-division-name }}-${{ inputs.repo-group-name }}-${{ inputs.repo-subject-area }} --body "${ADL_PROD_SECRET_KEY}"
