@@ -1,32 +1,33 @@
-resource "aws_sqs_queue" "code_sync_queue" {
-  name                       = "${var.platform}-gitlab-webhook-queue"
-  delay_seconds              = 0
-  max_message_size           = 262144
-  message_retention_seconds  = 345600
-  receive_wait_time_seconds  = 0
-  visibility_timeout_seconds = 300
-}
-
-resource "aws_sqs_queue_policy" "code_sync_queue_policy" {
-  queue_url = aws_sqs_queue.code_sync_queue.id
-  policy    = <<POLICY
-{
-  "Version": "2008-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Principal": {
-        "AWS": "*"
-      },
-      "Action": "SQS:*",
-      "Resource": "${aws_sqs_queue.code_sync_queue.arn}"
-    }
-  ]
-}
-POLICY
-}
-
-resource "aws_lambda_event_source_mapping" "lambda_codesync_event" {
-  event_source_arn = aws_sqs_queue.code_sync_queue.arn
-  function_name    = aws_lambda_function.lambda_codesync_function.arn
-}
+version: 0.2
+phases:
+  install:
+    runtime-versions:
+        docker: 19
+    commands:
+      - nohup /usr/local/bin/dockerd --host=unix:///var/run/docker.sock --host=tcp://127.0.0.1:2375 --storage-driver=overlay2&
+      - timeout 15 sh -c "until docker info; do echo .; sleep 1; done"
+  pre_build:
+    commands:
+      - aws --version
+      - echo "Logging in to Amazon ECR..."
+      - $(aws ecr get-login --region eu-central-1 --no-include-email)
+      - aws s3 cp s3://${bucket_name}/bootstrap .
+      - aws s3 cp s3://${bucket_name}/Dockerfile .
+      - aws s3 cp s3://${bucket_name}/function.sh .
+      - REPOSITORY_URI="${ecr_repo_uri}"
+      - APPLICATION_NAME="lambda-image"
+  build:
+    commands:
+      - echo Build started on `date`
+      - echo Building the Docker image...
+      - docker build -t $REPOSITORY_URI:$APPLICATION_NAME-latest .
+  post_build:
+    commands:
+      - echo Build completed on `date`
+      - echo Pushing the Docker images...
+      - docker push $REPOSITORY_URI:$APPLICATION_NAME-latest
+      - echo Writing image definitions file...
+      - printf '{"ImageURI":"%s"}' $REPOSITORY_URI:$APPLICATION_NAME-latest > imageDetail.json
+artifacts:
+  files:
+    - imageDetail.json
