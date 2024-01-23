@@ -1,1 +1,38 @@
-git clone --single-branch --depth=1 --branch=${feature_branch_name} https://${gh_user}:${gh_token}@github.com/${event_repo_name}.git
+# DO NOT MODIFY OR DELETE THIS WORKFLOW!!
+
+name: ADL CICD Rollback Pipeline
+on:
+  workflow_dispatch:
+    inputs:
+      deploy_env:
+        description: 'Deployment Environment'
+        required: true
+        type: choice
+        options:
+          - 'dev'
+          - 'qa'
+          - 'qc'  
+          - 'prod'
+      repo_tag:
+        description: 'Repo Tag (e.g., r1.0.0)'
+        required: true
+        type: string
+
+jobs:
+  adl-cicd-rollback-phase:
+    if: github.event_name == 'workflow_dispatch'
+    uses: AlightEngineering/adl-awsdeploy-cicd/.github/workflows/adl-cicd-rollback-repo-phase.yml@feature/workflowrefactor
+    secrets: inherit
+    with:
+      event_repo_name: ${{ github.repository }}
+      event_repo_branch: ${{ github.ref_name }}
+      deploy_env: ${{ github.event.inputs.deploy_env }}
+      repo_tag: ${{ github.event.inputs.repo_tag }}
+      
+  adl-log-event:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Default
+        run: |
+          echo "Deployment Environemnt: ${{ github.event.inputs.deploy_env }}"
+          echo "Deployment Repo Tag: ${{ github.event.inputs.repo_tag }}"
