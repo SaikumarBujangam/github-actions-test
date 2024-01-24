@@ -1,1 +1,45 @@
-executepclustercreate describeCommand::: /bin/sh -c aws sts get-caller-identity && pcluster describe-cluster -n indch1702446434117 -r eu-central-1 | tee | jq .cloudFormationStackStatus
+name: Check Pull Request Branches
+
+on:
+  pull_request:
+    branches: [ master ]
+    types: [opened, reopened, edited]
+    
+  workflow_call:
+    secrets:
+      envPAT:
+        required: false
+jobs:
+  adl-cicd-check-pull-request-hotfix:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check Branches
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "Pull Request on $GITHUB_REPOSITORY $GITHUB_HEAD_REF into $GITHUB_BASE_REF"
+          base_branch_category=${GITHUB_BASE_REF%%/*}
+          head_branch_category=${GITHUB_HEAD_REF%%/*}
+          if [[ ${base_branch_category} == "master" ]]
+          then
+            if [[ "${head_branch_category}" == "feature" ]]
+            then
+              echo "Merging a ${head_branch_category} branch into ${base_branch_category} is allowed"
+              exit 0
+            else
+              echo "Merging a non-feature branch into ${base_branch_category} is not allowed"
+              exit 1
+            fi
+          fi
+          if [[ "${head_branch_category}" == "hotfix" && ${GITHUB_BASE_REF} == "master" ]]
+          then
+            num_open_pr=$(gh api /repos/$GITHUB_REPOSITORY/pulls?state=open\&base=$GITHUB_BASE_REF | jq "keys | length")
+            echo "This is the num_open_pr: ${num_open_pr}"
+            if [[ ${num_open_pr} != "1" ]]
+            then
+              echo "Only 1 PR is allowed to be open at a time"
+              exit 1
+            else
+              echo "Merging a ${head_branch_category} branch into ${GITHUB_BASE_REF} is allowed"
+              exit 0
+            fi
