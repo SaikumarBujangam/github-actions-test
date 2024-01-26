@@ -1,18 +1,66 @@
-resource "aws_sqs_queue_policy" "code_sync_queue_policy" {
-  queue_url = aws_sqs_queue.code_sync_queue.id
-  policy    = <<POLICY
-{
-  "Version": "2008-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Principal": {
-        "AWS": "*"
-      },
-      "Action": "SQS:*",
-      "Resource": "${aws_sqs_queue.code_sync_queue.arn}"
-    }
-  ]
-}
-POLICY
-}
+# DO NOT MODIFY OR DELETE THIS WORKFLOW!!
+
+name: ADL CICD Deployment Pipeline
+
+on:
+  pull_request:
+    branches: [ master ]
+    types: [opened, reopened, edited]
+  push:
+    branches: [master, feature/*, hotfix/* ]
+    paths-ignore:
+      - '.version'
+      - '.github/**'
+      - 'Explore/**'
+      - 'README.md'
+      - 'CODEOWNERS'
+      - '.group'
+  workflow_dispatch:
+    inputs:
+      deploy_env:
+        description: 'Deployment Environment (e.g., qa, qc)'
+        required: true
+        type: choice
+        options:
+          - 'qa'
+          - 'qc'    
+      feature_branch_name:
+        description: 'Enter the branch (e.g., feature/your-branch-name)'
+        required: true
+        default: 'feature/your-branch-name'  
+jobs:
+  adl-cicd-check-pull-request:
+    if: github.event_name == 'pull_request'
+    uses: AlightEngineering/adl-awsdeploy-cicd/.github/workflows/adl-cicd-check-pull-request.yml@feature/workflowrefactor
+    secrets: inherit
+
+  adl-cicd-deploy-phase:
+    if: github.event_name == 'push' && (startsWith(github.ref, 'refs/heads/hotfix/') != true )|| (github.event_name == 'workflow_dispatch' && startsWith(github.event.inputs.feature_branch_name, 'feature/'))
+    uses: AlightEngineering/adl-awsdeploy-cicd/.github/workflows/adl-cicd-deploy-repo-phase.yml@feature/workflowrefactor
+    secrets: inherit
+    with:
+      event_repo_name: ${{ github.repository }}
+      event_repo_branch: ${{ github.ref_name }}
+      deploy_env: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' && 'prod' || github.event_name == 'workflow_dispatch' && github.event.inputs.deploy_env || github.event_name == 'push' && startsWith(github.ref, 'refs/heads/feature/') && 'dev' }}
+ 
+  adl-cicd-hotfix-phase:
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/heads/hotfix/')
+    uses: AlightEngineering/adl-awsdeploy-cicd/.github/workflows/adl-cicd-deploy-repo-phase.yml@feature/workflowrefactor
+    secrets: inherit
+    with:
+      event_repo_name: ${{ github.repository }}
+      event_repo_branch: ${{ github.ref_name }}
+      deploy_env: prod
+           
+  adl-log-event:
+    runs-on: ubuntu-latest
+    steps:
+      - name: GitHub Event Name
+        run: echo ${{ github.event_name }}
+      - name: Check Feature Branch 
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          if [[ "${{ github.event.inputs.feature_branch_name }}" != feature/* ]]; then
+            echo "Error: The feature_branch_name is an invalid branch and must start with 'feature/'."
+            exit 1
+          fi
