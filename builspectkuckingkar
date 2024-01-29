@@ -1,3 +1,66 @@
+This workflow is working perfectly fine and handling the job dependency perfectly.
+
+# DO NOT MODIFY OR DELETE THIS WORKFLOW!!
+
+name: ADL CICD Rollback Pipeline
+on:
+  workflow_dispatch:
+    inputs:
+      deploy_env:
+        description: 'Deployment Environment'
+        required: true
+        type: choice
+        options:
+          - 'dev'
+          - 'qa'
+          - 'qc'  
+          - 'prod'
+      repo_tag:
+        description: 'Repo Tag (e.g., r1.0.0)'
+        required: true
+        type: string
+
+jobs:
+
+  adl-cicd-qc-prod-approval:
+    if: github.event_name == 'workflow_dispatch' && (github.event.inputs.deploy_env == 'qc' || github.event.inputs.deploy_env == 'prod')
+    runs-on: ubuntu-latest
+    environment: hotfix
+    steps:
+      - name: Await Rollback Deployment Approval in Higher Lifecycles
+        run: echo "Awaiting approval for Rollback deployment in higher lifecycles . . ."  
+        
+  adl-cicd-rollback-dev-qa-phase:
+    if: github.event_name == 'workflow_dispatch' && (github.event.inputs.deploy_env == 'dev' || github.event.inputs.deploy_env == 'qa')
+    uses: AlightEngineering/adl-awsdeploy-cicd/.github/workflows/adl-cicd-rollback-repo-phase.yml@feature/workflowrefactor
+    secrets: inherit
+    with:
+      event_repo_name: ${{ github.repository }}
+      event_repo_branch: ${{ github.ref_name }}
+      deploy_env: ${{ github.event.inputs.deploy_env }}
+      repo_tag: ${{ github.event.inputs.repo_tag }}
+
+  adl-cicd-rollback-qc-prod-phase:
+    if: github.event_name == 'workflow_dispatch' && (github.event.inputs.deploy_env == 'qc' || github.event.inputs.deploy_env == 'prod')
+    needs: adl-cicd-qc-prod-approval
+    uses: AlightEngineering/adl-awsdeploy-cicd/.github/workflows/adl-cicd-rollback-repo-phase.yml@feature/workflowrefactor
+    secrets: inherit
+    with:
+      event_repo_name: ${{ github.repository }}
+      event_repo_branch: ${{ github.ref_name }}
+      deploy_env: ${{ github.event.inputs.deploy_env }}
+      repo_tag: ${{ github.event.inputs.repo_tag }}
+      
+  adl-log-event:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Default
+        run: |
+          echo "Deployment Environemnt: ${{ github.event.inputs.deploy_env }}"
+          echo "Deployment Repo Tag: ${{ github.event.inputs.repo_tag }}"
+
+but the below workflow is not handling the job dependency correctly. why?
+
 # DO NOT MODIFY OR DELETE THIS WORKFLOW!!
 
 name: ADL CICD Deployment Pipeline
@@ -46,14 +109,14 @@ jobs:
   adl-cicd-hotfix-approval:
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/heads/hotfix/')
     runs-on: ubuntu-latest
+    environment: hotfix
     steps:
       - name: Await Hotfix Deployment Approval
-        uses: actions/wait-for-deployment-approval@v1
-        with:
-          environment: hotfix
+        run: echo "Awaiting approval for hotfix deployment . . ." 
           
   adl-cicd-hotfix-phase:
-    needs: [adl-cicd-hotfix-approval]
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/heads/hotfix/')
+    needs: adl-cicd-hotfix-approval
     uses: AlightEngineering/adl-awsdeploy-cicd/.github/workflows/adl-cicd-deploy-repo-phase.yml@feature/workflowrefactor
     secrets: inherit
     with:
