@@ -1,11 +1,35 @@
+Skip to content
+AlightEngineering
+/
+adl-foundation-etl-test
+
+Type / to search
+
+Code
+Issues
+Pull requests
+Actions
+Projects
+Wiki
+Security
+Insights
+Settings
+.github/workflows/adl-cicd-deployment-pipeline.yml
+Update adl-cicd-deployment-pipeline.yml #77
+Jobs
+Run details
+Workflow file for this run
+.github/workflows/adl-cicd-deployment-pipeline.yml at 9dd1bb7
+# DO NOT MODIFY OR DELETE THIS WORKFLOW!!
+
 name: ADL CICD Deployment Pipeline
 
 on:
   pull_request:
-    branches: [master]
+    branches: [ master ]
     types: [opened, reopened, edited]
   push:
-    branches: [master, feature/*, hotfix/*]
+    branches: [master, feature/*, hotfix/* ]
     paths-ignore:
       - '.version'
       - '.github/**'
@@ -26,21 +50,19 @@ on:
         description: 'Enter the branch (e.g., feature/your-branch-name)'
         required: true
         default: 'feature/your-branch-name'  
-
 jobs:
   adl-cicd-check-pull-request:
     if: github.event_name == 'pull_request'
     uses: AlightEngineering/adl-awsdeploy-cicd/.github/workflows/adl-cicd-check-pull-request.yml@feature/workflowrefactor
     secrets: inherit
 
-  adl-cicd-deploy-phase:
-    if: github.event_name == 'push' && (startsWith(github.ref, 'refs/heads/hotfix/') != true )|| (github.event_name == 'workflow_dispatch' && startsWith(github.event.inputs.feature_branch_name, 'feature/'))
-    uses: AlightEngineering/adl-awsdeploy-cicd/.github/workflows/adl-cicd-deploy-repo-phase.yml@feature/workflowrefactor
-    secrets: inherit
-    with:
-      event_repo_name: ${{ github.repository }}
-      event_repo_branch: ${{ github.ref_name }}
-      deploy_env: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' && 'prod' || github.event_name == 'workflow_dispatch' && github.event.inputs.deploy_env || github.event_name == 'push' && startsWith(github.ref, 'refs/heads/feature/') && 'dev' }}
+  adl-cicd-qc-approval:
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.deploy_env == 'qc'
+    runs-on: ubuntu-latest
+    environment: hotfix
+    steps:
+      - name: Await QC Deployment Approval
+        run: echo "Awaiting approval for QC deployment . . ." 
 
   adl-cicd-hotfix-approval:
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/heads/hotfix/')
@@ -50,30 +72,69 @@ jobs:
       - name: Await Hotfix Deployment Approval
         run: echo "Awaiting approval for hotfix deployment . . ." 
 
-  # Add an approval phase for "qc" deployment
-  adl-cicd-qc-approval:
-    if: github.event_name == 'workflow_dispatch' && github.event.inputs.deploy_env == 'qc'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Await QC Deployment Approval
-        # Use GitHub Actions' approval mechanism or other methods to await approval
+  adl-cicd-dev-deploy-phase:
+    if: github.event_name == 'push' && (startsWith(github.ref, 'refs/heads/feature/')
+    uses: AlightEngineering/adl-awsdeploy-cicd/.github/workflows/adl-cicd-deploy-repo-phase.yml@feature/workflowrefactor
+    secrets: inherit
+    with:
+      event_repo_name: ${{ github.repository }}
+      event_repo_branch: ${{ github.ref_name }}
+      deploy_env: dev
+ Check failure on line 60 in .github/workflows/adl-cicd-deployment-pipeline.yml
 
-  # Add jobs that depend on the approval phase
-  adl-cicd-deploy-qc-phase:
-    if: github.event_name == 'workflow_dispatch' && github.event.inputs.deploy_env == 'qc'
-    needs: [adl-cicd-qc-approval]
+GitHub Actions
+/ .github/workflows/adl-cicd-deployment-pipeline.yml
+Invalid workflow file
+You have an error in your yaml syntax on line 60
+	  
+  adl-cicd-qa-deploy-phase:
+    if: github.event_name == 'push' && github.event_name == 'workflow_dispatch' && startsWith(github.event.inputs.feature_branch_name, 'feature/') && github.event.inputs.deploy_env == 'qa'
+    uses: AlightEngineering/adl-awsdeploy-cicd/.github/workflows/adl-cicd-deploy-repo-phase.yml@feature/workflowrefactor
+    secrets: inherit
+    with:
+      event_repo_name: ${{ github.repository }}
+      event_repo_branch: ${{ github.ref_name }}
+      deploy_env: qa
+	  
+  adl-cicd-qc-deploy-phase:
+    if: github.event_name == 'push' && github.event_name == 'workflow_dispatch' && startsWith(github.event.inputs.feature_branch_name, 'feature/') && github.event.inputs.deploy_env == 'qc'
     uses: AlightEngineering/adl-awsdeploy-cicd/.github/workflows/adl-cicd-deploy-repo-phase.yml@feature/workflowrefactor
     secrets: inherit
     with:
       event_repo_name: ${{ github.repository }}
       event_repo_branch: ${{ github.ref_name }}
       deploy_env: qc
-
-  adl-cicd-deploy-dev-qa-phase:
-    if: github.event_name == 'workflow_dispatch' && (github.event.inputs.deploy_env == 'dev' || github.event.inputs.deploy_env == 'qa')
+    needs: adl-cicd-qc-approval
+	  
+  adl-cicd-prod-deploy-phase:
+    if: github.event_name == 'push' && (github.event_name == 'workflow_dispatch' && startsWith(github.event.inputs.feature_branch_name, 'feature/')) && github.event.inputs.deploy_env == 'prod'
     uses: AlightEngineering/adl-awsdeploy-cicd/.github/workflows/adl-cicd-deploy-repo-phase.yml@feature/workflowrefactor
     secrets: inherit
     with:
       event_repo_name: ${{ github.repository }}
       event_repo_branch: ${{ github.ref_name }}
-      deploy_env: ${{ github.event.inputs.deploy_env }}
+      deploy_env: prod
+
+  adl-cicd-hotfix-phase:
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/heads/hotfix/')
+    needs: adl-cicd-hotfix-approval
+    uses: AlightEngineering/adl-awsdeploy-cicd/.github/workflows/adl-cicd-deploy-repo-phase.yml@feature/workflowrefactor
+    secrets: inherit
+    with:
+      event_repo_name: ${{ github.repository }}
+      event_repo_branch: ${{ github.ref_name }}
+      deploy_env: prod
+
+  adl-log-event:
+    runs-on: ubuntu-latest
+    steps:
+      - name: GitHub Event Name
+        run: echo ${{ github.event_name }}
+      - name: Check Feature Branch 
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          if [[ "${{ github.event.inputs.feature_branch_name }}" != feature/* ]]; then
+            echo "Error: The feature_branch_name is an invalid branch and must start with 'feature/'."
+            exit 1
+          fi
+Update adl-cicd-deployment-pipeline.yml · AlightEngineering/adl-foundation-etl-test@9dd1bb7
