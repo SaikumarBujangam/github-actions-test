@@ -43,8 +43,18 @@ jobs:
       event_repo_branch: ${{ github.ref_name }}
       deploy_env: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' && 'prod' || github.event_name == 'workflow_dispatch' && github.event.inputs.deploy_env || github.event_name == 'push' && startsWith(github.ref, 'refs/heads/feature/') && 'dev' }}
  
-  adl-cicd-hotfix-phase:
+
+  adl-cicd-hotfix-approval:
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/heads/hotfix/')
+    runs-on: ubuntu-latest
+    environment: hotfix
+    steps:
+      - name: Await Hotfix Deployment Approval
+        run: echo "Awaiting approval for hotfix deployment . . ."
+        
+  adl-cicd-hotfix-phase:
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/heads/hotfix/') && needs.adl-cicd-hotfix-approval.result == 'success'
+    needs: adl-cicd-hotfix-approval
     uses: AlightEngineering/adl-awsdeploy-cicd/.github/workflows/adl-cicd-deploy-repo-phase.yml@feature/workflowrefactor
     secrets: inherit
     with:
@@ -64,3 +74,4 @@ jobs:
             echo "Error: The feature_branch_name is an invalid branch and must start with 'feature/'."
             exit 1
           fi
+
