@@ -1,42 +1,11 @@
-resource "aws_cloud9_environment_ec2" "cloud9_ide" {
-  instance_type = "t3.medium"
-  image_id      = "amazonlinux-2-x86_64"
-  subnet_id     = "${data.aws_subnet.private[0].id}"
-  name          = lower(format("%s%s%s%s%s",var.org_key,"-",var.project_key,"-", (element(split("@",var.user_email),0))))
-  connection_type = "CONNECT_SSM"
-  owner_arn = "arn:aws:sts::${data.aws_caller_identity.current.account_id}:assumed-role/${var.role_name}/${var.user_name}"
-  tags = merge(
-    {
-      "project" = "${var.project_key}"
-    }, 
-    {
-      "platform" = "${var.platform}"
-    },
-    {
-      "organization" = "${var.org_key}"
-    },
-   )
-}
+resource "null_resource" "resize_root_volume" {
+  depends_on = [aws_cloud9_environment_ec2.cloud9_ide]
 
-resource "null_resource" "update_ec2_sg" {
   provisioner "local-exec" {
-    command = "aws ec2 modify-instance-attribute --instance-id ${data.aws_instance.cloud9.id} --groups ${data.aws_security_group.sg.id} --region ${var.region}"
-  }   
-}
-
-data "external" "json" {
-program = ["sh", "-c", "aws ec2 describe-iam-instance-profile-associations --filters Name=instance-id,Values=${data.aws_instance.cloud9.id} --region ${var.region} --query 'IamInstanceProfileAssociations[0].{id:AssociationId}' --output json"]
-
-}
-
-resource "null_resource" "profile_association" {
-  provisioner "local-exec" {
-    command = "aws ec2 replace-iam-instance-profile-association --iam-instance-profile Name=${data.aws_iam_instance_profile.profile.name} --region ${var.region} --association-id ${data.external.json.result["id"]}"
-  }   
-}
-
-resource "null_resource" "resize_volume" {
-  provisioner "local-exec" {
-    command = "${path.module}/resize_volume.sh"
-  }   
+    command = <<EOF
+      INSTANCE_ID=$(aws ec2 describe-instances --filters "Name=tag:aws:cloud9:environment,Values=${aws_cloud9_environment_ec2.cloud9_ide.id}" "Name=instance-state-name,Values=running" --query "Reservations[*].Instances[*].InstanceId" --output text --region ${var.region})
+      VOLUME_ID=$(aws ec2 describe-volumes --filters "Name=attachment.instance-id,Values=$INSTANCE_ID" "Name=attachment.device,Values=/dev/xvda" --query "Volumes[*].VolumeId" --output text --region ${var.region})
+      aws ec2 modify-volume --volume-id $VOLUME_ID --size 50 --region ${var.region}
+    EOF
+  }
 }
