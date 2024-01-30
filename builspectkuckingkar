@@ -1,36 +1,39 @@
-resource "aws_cloud9_environment_ec2" "cloud9_ide" {
-  instance_type = "t3.medium"
-  image_id      = "amazonlinux-2-x86_64"
-  subnet_id     = "${data.aws_subnet.private[0].id}"
-  name          = lower(format("%s%s%s%s%s",var.org_key,"-",var.project_key,"-", (element(split("@",var.user_email),0))))
-  connection_type = "CONNECT_SSM"
-  owner_arn = "arn:aws:sts::${data.aws_caller_identity.current.account_id}:assumed-role/${var.role_name}/${var.user_name}"
-  tags = merge(
-    {
-      "project" = "${var.project_key}"
-    }, 
-    {
-      "platform" = "${var.platform}"
-    },
-    {
-      "organization" = "${var.org_key}"
-    },
-   )
+data "aws_caller_identity" "current" {}
+data "aws_vpc" "project_vpc" {
+   filter {
+    name    = "tag:Name"
+    values  = ["${var.project_key}-vpc"]
+  }
 }
 
-resource "null_resource" "update_ec2_sg" {
-  provisioner "local-exec" {
-    command = "aws ec2 modify-instance-attribute --instance-id ${data.aws_instance.cloud9.id} --groups ${data.aws_security_group.sg.id} --region ${var.region}"
-  }   
+data "aws_subnets" "private" {
+  
+  filter {
+    name   = "vpc-id"
+    values = [data.aws_vpc.project_vpc.id]
+  }
+    tags = {
+      type = "private-subnet"
+  }
+} 
+
+data "aws_subnet" "private" {
+  count    = "${length(data.aws_subnets.private.ids)}"
+  id       = "${tolist(data.aws_subnets.private.ids)[count.index]}"
+} 
+
+data "aws_security_group" "sg" {
+  name = "${var.project_key}-common-project-sg"
 }
 
-data "external" "json" {
-program = ["sh", "-c", "aws ec2 describe-iam-instance-profile-associations --filters Name=instance-id,Values=${data.aws_instance.cloud9.id} --region ${var.region} --query 'IamInstanceProfileAssociations[0].{id:AssociationId}' --output json"]
-
+data "aws_instance" "cloud9" {
+  filter {
+    name = "tag:aws:cloud9:environment"
+    values = [
+    aws_cloud9_environment_ec2.cloud9_ide.id]
+  }
 }
 
-resource "null_resource" "profile_association" {
-  provisioner "local-exec" {
-    command = "aws ec2 replace-iam-instance-profile-association --iam-instance-profile Name=${data.aws_iam_instance_profile.profile.name} --region ${var.region} --association-id ${data.external.json.result["id"]}"
-  }   
-}
+data "aws_iam_instance_profile" "profile" {
+  name = "${var.org_key}-${var.project_key}-ssm-ec2-profile"
+}   
