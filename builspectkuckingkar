@@ -1,1 +1,35 @@
-aws ec2 modify-volume --volume-id $(aws ec2 describe-volumes --filters Name=attachment.instance-id,Values=$(aws ec2 describe-instances --filters Name=instance-id,Values=${data.aws_instance.cloud9.id} Name=instance-state-name,Values=running --query 'Reservations[*].Instances[*].InstanceId' --output text --region ${var.region}) Name=attachment.device,Values=/dev/xvda --query 'Volumes[*].VolumeId' --output text --region ${var.region}) --size 50 --region ${var.region}
+module.disk_space.null_resource.resize_root_volume: Provisioning with 'local-exec'...
+module.disk_space.null_resource.resize_root_volume (local-exec): Executing: ["cmd" "/C" "aws ec2 modify-volume --volume-id $(aws ec2 describe-volumes --filters Name=attachment.instance-id,Values=$(aws ec2 describe-instances --filters Name=instance-id,Values=i-046d1be9955010a6c Name=instance-state-name,Values=running --query 'Reservations[*].Instances[*].InstanceId' --output text --region eu-central-1) Name=attachment.device,Values=/dev/xvda --query 'Volumes[*].VolumeId' --output text --region eu-central-1) --size 20 --region eu-central-1"]
+module.disk_space.null_resource.resize_root_volume: Still creating... [10s elapsed]
+
+module.disk_space.null_resource.resize_root_volume (local-exec): usage: aws [options] <command> <subcommand> [<subcommand> ...] [parameters]
+module.disk_space.null_resource.resize_root_volume (local-exec): To see help text, you can run:
+
+module.disk_space.null_resource.resize_root_volume (local-exec):   aws help
+module.disk_space.null_resource.resize_root_volume (local-exec):   aws <command> help
+module.disk_space.null_resource.resize_root_volume (local-exec):   aws <command> <subcommand> help
+
+module.disk_space.null_resource.resize_root_volume (local-exec): Unknown options: describe-volumes, --filters, Name=attachment.instance-id,Values=$(aws, ec2, describe-instances, --filters, Name=instance-id,Values=i-046d1be9955010a6c, Name=instance-state-name,Values=running, Name=attachment.device,Values=/dev/xvda, ec2
+
+╷
+│ Error: local-exec provisioner error
+│
+│   with module.disk_space.null_resource.resize_root_volume,
+│   on ..\infra-scripts\user-infra-services\cloud9-ide\main.tf line 41, in resource "null_resource" "resize_root_volume":
+│   41:   provisioner "local-exec" {
+│
+│ Error running command 'aws ec2 modify-volume --volume-id $(aws ec2 describe-volumes --filters Name=attachment.instance-id,Values=$(aws ec2 describe-instances --filters
+│ Name=instance-id,Values=i-046d1be9955010a6c Name=instance-state-name,Values=running --query 'Reservations[*].Instances[*].InstanceId' --output text --region
+│ eu-central-1) Name=attachment.device,Values=/dev/xvda --query 'Volumes[*].VolumeId' --output text --region eu-central-1) --size 20 --region eu-central-1': exit status
+│ 252. Output:
+│ usage: aws [options] <command> <subcommand> [<subcommand> ...] [parameters]
+│ To see help text, you can run:
+│
+│   aws help
+│   aws <command> help
+│   aws <command> <subcommand> help
+│
+│ Unknown options: describe-volumes, --filters, Name=attachment.instance-id,Values=$(aws, ec2, describe-instances, --filters, Name=instance-id,Values=i-046d1be9955010a6c,
+│ Name=instance-state-name,Values=running, Name=attachment.device,Values=/dev/xvda, ec2
+│
+│
