@@ -1,22 +1,11 @@
-module.disk_space.null_resource.resize_root_volume (local-exec): Executing: ["cmd" "/C" "PowerShell -Command \"`\r\n`$InstanceId = (aws ec2 describe-instances --filters Name=instance-id,Values=i-009e7e8992a113a82 Name=instance-state-name,Values=running --query 'Reservations[*].Instances[*].InstanceId' --output text --region eu-central-1); `\r\n`$VolumeId = (aws ec2 describe-volumes --filters Name=attachment.instance-id,Values=`$InstanceId Name=attachment.device,Values=/dev/xvda --query 'Volumes[*].VolumeId' --output text --region eu-central-1); `\r\naws ec2 modify-volume --volume-id `$VolumeId --size 20 --region eu-central-1\"\r\n"]
-module.disk_space.null_resource.resize_root_volume (local-exec): The string is missing the terminator: ".
-module.disk_space.null_resource.resize_root_volume (local-exec):     + CategoryInfo          : ParserError: (:) [], ParentContainsErrorRecordException
-module.disk_space.null_resource.resize_root_volume (local-exec):     + FullyQualifiedErrorId : TerminatorExpectedAtEndOfString
+$InstanceId = (aws ec2 describe-instances --filters Name=instance-id,Values=i-009e7e8992a113a82 Name=instance-state-name,Values=running --query 'Reservations[*].Instances[*].InstanceId' --output text --region eu-central-1)
+$VolumeId = (aws ec2 describe-volumes --filters Name=attachment.instance-id,Values=$InstanceId Name=attachment.device,Values=/dev/xvda --query 'Volumes[*].VolumeId' --output text --region eu-central-1)
+aws ec2 modify-volume --volume-id $VolumeId --size 20 --region eu-central-1
 
-╷
-│ Error: local-exec provisioner error
-│
-│   with module.disk_space.null_resource.resize_root_volume,
-│   on ..\infra-scripts\user-infra-services\cloud9-ide\main.tf line 41, in resource "null_resource" "resize_root_volume":
-│   41:   provisioner "local-exec" {
-│
-│ Error running command 'PowerShell -Command "`
-│ `$InstanceId = (aws ec2 describe-instances --filters Name=instance-id,Values=i-009e7e8992a113a82 Name=instance-state-name,Values=running --query
-│ 'Reservations[*].Instances[*].InstanceId' --output text --region eu-central-1); `
-│ `$VolumeId = (aws ec2 describe-volumes --filters Name=attachment.instance-id,Values=`$InstanceId Name=attachment.device,Values=/dev/xvda --query 'Volumes[*].VolumeId'
-│ --output text --region eu-central-1); `
-│ aws ec2 modify-volume --volume-id `$VolumeId --size 20 --region eu-central-1"
-│ ': exit status 1. Output: The string is missing the terminator: ".
-│     + CategoryInfo          : ParserError: (:) [], ParentContainsErrorRecordException
-│     + FullyQualifiedErrorId : TerminatorExpectedAtEndOfString
-│
+resource "null_resource" "resize_root_volume" {
+  depends_on = [aws_cloud9_environment_ec2.cloud9_ide]
+
+  provisioner "local-exec" {
+    command = "powershell.exe -ExecutionPolicy Bypass -File path/to/resize_volume.ps1"
+  }
+}
