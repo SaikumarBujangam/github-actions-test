@@ -2,6 +2,11 @@ resource "null_resource" "resize_root_volume" {
   depends_on = [aws_cloud9_environment_ec2.cloud9_ide]
 
   provisioner "local-exec" {
-    command = "PowerShell -Command \"`$InstanceId = (aws ec2 describe-instances --filters Name=instance-id,Values=${data.aws_instance.cloud9.id} Name=instance-state-name,Values=running --query 'Reservations[*].Instances[*].InstanceId' --output text --region ${var.region}); `$VolumeId = (aws ec2 describe-volumes --filters Name=attachment.instance-id,Values=`$InstanceId Name=attachment.device,Values=/dev/xvda --query 'Volumes[*].VolumeId' --output text --region ${var.region}); aws ec2 modify-volume --volume-id `$VolumeId --size 20 --region ${var.region}\""
+    command = <<-EOT
+      PowerShell -Command "`
+      `$InstanceId = (aws ec2 describe-instances --filters Name=instance-id,Values=${data.aws_instance.cloud9.id} Name=instance-state-name,Values=running --query 'Reservations[*].Instances[*].InstanceId' --output text --region ${var.region}); `
+      `$VolumeId = (aws ec2 describe-volumes --filters Name=attachment.instance-id,Values=`$InstanceId Name=attachment.device,Values=/dev/xvda --query 'Volumes[*].VolumeId' --output text --region ${var.region}); `
+      aws ec2 modify-volume --volume-id `$VolumeId --size 20 --region ${var.region}"
+    EOT
   }
 }
