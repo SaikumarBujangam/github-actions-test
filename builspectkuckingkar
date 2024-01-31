@@ -1,50 +1,27 @@
-version: 0.2
-env:
-  variables:
-    TARGET_REGION: "eu-central-1"
-  secrets-manager:
-    SONAR_TOKEN: "sonar_token"
-  parameter-store:
-    SONAR_ANALYSIS_EXCLUSION: "sonar_analysis_exclusion_develop"
-phases:
-  install:
-    runtime-versions:
-        java: corretto17
-  pre_build:
-    commands:
-      - aws --version
-      - echo "Logging in to Amazon ECR..."
-      - $(aws ecr get-login --region eu-central-1 --no-include-email)
-      - CODEARTIFACT_AUTH_TOKEN=`aws codeartifact get-authorization-token --domain dev --domain-owner 195227247767 --region eu-central-1 --query authorizationToken --output text`
-      - sed -i "s/\\\$${env.CODEARTIFACT_AUTH_TOKEN}/$CODEARTIFACT_AUTH_TOKEN/g" settings.xml
-      - REPOSITORY_URI="${ecr_repository_url}"
-      - COMMIT_HASH=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
-      - IMAGE_TAG=$${COMMIT_HASH:=latest}
-      - APPLICATION_NAME="${microservice_name}"
-      - aws configure set region $TARGET_REGION --profile dev-account
-      - aws configure set role_arn arn:aws:iam::745252665765:role/InfraBuildRole --profile dev-account
-      - aws configure set credential_source EcsContainer --profile dev-account
-      - aws eks --region $TARGET_REGION update-kubeconfig --name dev-starcap-platform-cluster --profile dev-account
-  build:
-    commands:
-      - echo Build started on `date`
-      - |
-        if [[ ! $SONAR_ANALYSIS_EXCLUSION =~ "${microservice_name}" ]]; then
-          mvn -s settings.xml clean verify --no-transfer-progress sonar:sonar -Pcoverage -U -e -Dsonar.projectName=starcap-$APPLICATION_NAME -Dsonar.projectKey=starcap-$APPLICATION_NAME -Dsonar.branch.name=develop -Dsonar.qualitygate.wait=true -Dsonar.host.url=https://sonarqube.roche.com
-        else
-          echo "Sonar analysis was not executed"
-        fi
-      - echo Building the Docker image...
-      - docker build -t $REPOSITORY_URI:$APPLICATION_NAME-$IMAGE_TAG .
-      - echo Build completed on `date`
-      - echo Pushing the Docker images...
-      - docker push $REPOSITORY_URI:$APPLICATION_NAME-$IMAGE_TAG
-      - sed -i "s/<image_id>/$IMAGE_TAG/g" cluster-config/deployment.yaml
-      - kubectl apply -f cluster-config/deployment.yaml
-  post_build:
-    commands:
-      - echo Writing image definitions file... 
-      - printf '{"ImageURI":"%s"}' $REPOSITORY_URI:$APPLICATION_NAME-$IMAGE_TAG > imageDetail.json
-artifacts:
-  files:
-    - imageDetail.json
+resource "null_resource" "resize_root_volume" {
+  depends_on = [aws_cloud9_environment_ec2.cloud9_ide]
+
+  provisioner "local-exec" {
+    command = <<EOF
+      INSTANCE_ID=$(aws ec2 describe-instances --filters Name=instance-id,Values=${data.aws_instance.cloud9.id} "Name=instance-state-name,Values=running" --query "Reservations[*].Instances[*].InstanceId" --output text --region ${var.region})
+      VOLUME_ID=$(aws ec2 describe-volumes --filters "Name=attachment.instance-id,Values=$INSTANCE_ID" "Name=attachment.device,Values=/dev/xvda" --query "Volumes[*].VolumeId" --output text --region ${var.region})
+      aws ec2 modify-volume --volume-id $VOLUME_ID --size 50 --region ${var.region}
+    EOF
+  }
+}
+
+
+Error:
+
+ Error: local-exec provisioner error
+│
+│   with module.disk_space.null_resource.resize_root_volume,
+│   on ..\infra-scripts\user-infra-services\cloud9-ide\main.tf line 41, in resource "null_resource" "resize_root_volume":
+│   41:   provisioner "local-exec" {
+│
+│ Error running command '      INSTANCE_ID=$(aws ec2 describe-instances --filters Name=instance-id,Values=i-046d1be9955010a6c "Name=instance-state-name,Values=running"
+│ --query "Reservations[*].Instances[*].InstanceId" --output text --region eu-central-1)
+│       VOLUME_ID=$(aws ec2 describe-volumes --filters "Name=attachment.instance-id,Values=$INSTANCE_ID" "Name=attachment.device,Values=/dev/xvda" --query "Volumes[*].VolumeId" --output text --region eu-central-1)
+│       aws ec2 modify-volume --volume-id $VOLUME_ID --size 50 --region eu-central-1
+│ ': exit status 1. Output: 'INSTANCE_ID' is not recognized as an internal or external command,
+│ operable program or batch file.
