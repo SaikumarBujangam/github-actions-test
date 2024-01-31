@@ -6,6 +6,6 @@ resource "null_resource" "resize_root_volume" {
   depends_on = [aws_cloud9_environment_ec2.cloud9_ide]
 
   provisioner "local-exec" {
-    command = "powershell.exe -ExecutionPolicy Bypass -File path/to/resize_volume.ps1"
+    command = "powershell.exe -ExecutionPolicy Bypass -File ${path.module}/resize_volume.ps1"
   }
 }
