@@ -1,22 +1,27 @@
-module.disk_space.null_resource.resize_root_volume: Destroying... [id=2498779261338276912]
-module.disk_space.null_resource.resize_root_volume: Destruction complete after 0s
-module.disk_space.null_resource.resize_root_volume: Creating...
-module.disk_space.null_resource.resize_root_volume: Provisioning with 'local-exec'...
-module.disk_space.null_resource.resize_root_volume (local-exec): Executing: ["cmd" "/C" "python ../infra-scripts/user-infra-services/cloud9-ide/scripts/resize_volume.py i-046d1be9955010a6c eu-central-1"]
-module.disk_space.null_resource.resize_root_volume: Still creating... [10s elapsed]
-module.disk_space.null_resource.resize_root_volume: Still creating... [20s elapsed]
-module.disk_space.null_resource.resize_root_volume: Still creating... [30s elapsed]
-module.disk_space.null_resource.resize_root_volume: Still creating... [40s elapsed]
+import subprocess
+import sys
 
-module.disk_space.null_resource.resize_root_volume (local-exec): usage: aws [options] <command> <subcommand> [<subcommand> ...] [parameters]
-module.disk_space.null_resource.resize_root_volume (local-exec): To see help text, you can run:
+def run_command(command):
+    try:
+        return subprocess.getoutput(command)
+    except Exception as e:
+        print(f"Error executing command '{command}': {e}")
+        sys.exit(1)
 
-module.disk_space.null_resource.resize_root_volume (local-exec):   aws help
-module.disk_space.null_resource.resize_root_volume (local-exec):   aws <command> help
-module.disk_space.null_resource.resize_root_volume (local-exec):   aws <command> <subcommand> help
+instance_id = sys.argv[1]
+region = sys.argv[2]
 
-module.disk_space.null_resource.resize_root_volume (local-exec): aws: error: argument --volume-id: expected one argument
+print(f"Instance ID: {instance_id}")
+print(f"Region: {region}")
 
-module.disk_space.null_resource.resize_root_volume: Creation complete after 41s [id=325238418376953472]
+instance_id_cmd = f"aws ec2 describe-instances --filters Name=instance-id,Values={instance_id} --query 'Reservations[*].Instances[*].InstanceId' --output text --region {region}"
+instance_id = run_command(instance_id_cmd)
+print(f"Described Instance ID: {instance_id}")
 
-Apply complete! Resources: 1 added, 0 changed, 1 destroyed.
+volume_id_cmd = f"aws ec2 describe-volumes --filters Name=attachment.instance-id,Values={instance_id} --query 'Volumes[*].VolumeId' --output text --region {region}"
+volume_id = run_command(volume_id_cmd)
+print(f"Volume ID: {volume_id}")
+
+modify_volume_cmd = f"aws ec2 modify-volume --volume-id {volume_id} --size 50 --region {region}"
+print(f"Executing modify-volume command: {modify_volume_cmd}")
+run_command(modify_volume_cmd)
