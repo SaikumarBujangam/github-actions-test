@@ -1,12 +1,42 @@
-resource "null_resource" "resize_root_volume" {
-  depends_on = [aws_cloud9_environment_ec2.cloud9_ide]
+module.disk_space.null_resource.resize_root_volume (local-exec): Executing: ["cmd" "/C" "PowerShell -Command \"`\r\n`$InstanceId = (aws ec2 describe-instances --filters Name=instance-id,Values=i-009e7e8992a113a82 Name=instance-state-name,Values=running --query 'Reservations[*].Instances[*].InstanceId' --output text --region eu-central-1); `\r\n`$VolumeId = (aws ec2 describe-volumes --filters Name=attachment.instance-id,Values=`$InstanceId Name=attachment.device,Values=/dev/xvda --query 'Volumes[*].VolumeId' --output text --region eu-central-1); `\r\naws ec2 modify-volume --volume-id `$VolumeId --size 20 --region eu-central-1\"\r\n"]
+module.disk_space.null_resource.resize_root_volume (local-exec): The string is missing the terminator: ".
+module.disk_space.null_resource.resize_root_volume (local-exec):     + CategoryInfo          : ParserError: (:) [], ParentContainsErrorRecordException
+module.disk_space.null_resource.resize_root_volume (local-exec):     + FullyQualifiedErrorId : TerminatorExpectedAtEndOfString
 
-  provisioner "local-exec" {
-    command = <<-EOT
-      PowerShell -Command "`
-      `$InstanceId = (aws ec2 describe-instances --filters Name=instance-id,Values=${data.aws_instance.cloud9.id} Name=instance-state-name,Values=running --query 'Reservations[*].Instances[*].InstanceId' --output text --region ${var.region}); `
-      `$VolumeId = (aws ec2 describe-volumes --filters Name=attachment.instance-id,Values=`$InstanceId Name=attachment.device,Values=/dev/xvda --query 'Volumes[*].VolumeId' --output text --region ${var.region}); `
-      aws ec2 modify-volume --volume-id `$VolumeId --size 20 --region ${var.region}"
-    EOT
-  }
-}
+module.disk_space.null_resource.update_ec2_sg: Still creating... [10s elapsed]
+module.disk_space.data.external.json: Still reading... [10s elapsed]
+module.disk_space.data.external.json: Read complete after 17s [id=-]
+module.disk_space.null_resource.profile_association: Creating...
+module.disk_space.null_resource.profile_association: Provisioning with 'local-exec'...
+module.disk_space.null_resource.profile_association (local-exec): Executing: ["cmd" "/C" "aws ec2 replace-iam-instance-profile-association --iam-instance-profile Name=imCORE-nftst1701324404472-ssm-ec2-profile --region eu-central-1 --association-id iip-assoc-022bfad8b851964f9"]
+module.disk_space.null_resource.update_ec2_sg: Creation complete after 18s [id=4950824481940287661]
+module.disk_space.null_resource.profile_association: Still creating... [10s elapsed]
+module.disk_space.null_resource.profile_association (local-exec): {
+module.disk_space.null_resource.profile_association (local-exec):     "IamInstanceProfileAssociation": {
+module.disk_space.null_resource.profile_association (local-exec):         "AssociationId": "iip-assoc-097884665e84d3911",
+module.disk_space.null_resource.profile_association (local-exec):         "InstanceId": "i-009e7e8992a113a82",
+module.disk_space.null_resource.profile_association (local-exec):         "IamInstanceProfile": {
+module.disk_space.null_resource.profile_association (local-exec):             "Arn": "arn:aws:iam::745252665765:instance-profile/imCORE-nftst1701324404472-ssm-ec2-profile",
+module.disk_space.null_resource.profile_association (local-exec):             "Id": "AIPA23BEFHGSZXDXUJE3Y"
+module.disk_space.null_resource.profile_association (local-exec):         },
+module.disk_space.null_resource.profile_association (local-exec):         "State": "associating"
+module.disk_space.null_resource.profile_association (local-exec):     }
+module.disk_space.null_resource.profile_association (local-exec): }
+module.disk_space.null_resource.profile_association: Creation complete after 18s [id=3337906731360275071]
+╷
+│ Error: local-exec provisioner error
+│
+│   with module.disk_space.null_resource.resize_root_volume,
+│   on ..\infra-scripts\user-infra-services\cloud9-ide\main.tf line 41, in resource "null_resource" "resize_root_volume":
+│   41:   provisioner "local-exec" {
+│
+│ Error running command 'PowerShell -Command "`
+│ `$InstanceId = (aws ec2 describe-instances --filters Name=instance-id,Values=i-009e7e8992a113a82 Name=instance-state-name,Values=running --query
+│ 'Reservations[*].Instances[*].InstanceId' --output text --region eu-central-1); `
+│ `$VolumeId = (aws ec2 describe-volumes --filters Name=attachment.instance-id,Values=`$InstanceId Name=attachment.device,Values=/dev/xvda --query 'Volumes[*].VolumeId'
+│ --output text --region eu-central-1); `
+│ aws ec2 modify-volume --volume-id `$VolumeId --size 20 --region eu-central-1"
+│ ': exit status 1. Output: The string is missing the terminator: ".
+│     + CategoryInfo          : ParserError: (:) [], ParentContainsErrorRecordException
+│     + FullyQualifiedErrorId : TerminatorExpectedAtEndOfString
+│
