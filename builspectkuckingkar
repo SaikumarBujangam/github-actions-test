@@ -1,34 +1,50 @@
-Error:
-
-Run team_name="adl-testing-dataproductowners-approvers"
-  team_name="adl-testing-dataproductowners-approvers"
-  org_name="AlightEngineering"
-  TEAM_ID=$(curl -H "Authorization: token " -H "Accept: application/vnd.github.v3+json" \
-          https://api.github.com/orgs/$org_name/teams | jq '.[] | select(.name=="'$team_name'") | .id')
-  echo "::set-output name=team_id::$TEAM_ID"
-  shell: /usr/bin/bash -e {0}
-  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
-                                 Dload  Upload   Total   Spent    Left  Speed
-
-  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
-100    90  100    90    0     0    794      0 --:--:-- --:--:-- --:--:--   803
-jq: error (at <stdin>:4): Cannot index string with string "name"
-Error: Process completed with exit code 5.
-
-Code:
-
-- name: Get Team ID
-        id: get_team_id
-        run: |
-          team_name="${{ inputs.repo-dataproductowner-approvers-team }}"
-          org_name="${{ inputs.org-name }}"
-          TEAM_ID=$(curl -H "Authorization: token ${{ secrets.GH_TOKEN }}" -H "Accept: application/vnd.github.v3+json" \
-                  https://api.github.com/orgs/$org_name/teams | jq '.[] | select(.name=="'$team_name'") | .id')
-          echo "::set-output name=team_id::$TEAM_ID"
-          
-      - name: Create QC Environment
-        run: |
-         curl -X PUT \
-         -H "Authorization: Bearer ${{ secrets.GH_CLONE_REPO }}" -H "Accept: application/vnd.github+json" \
-         https://api.github.com/repos/${{ inputs.org-name }}/${{ inputs.repo-division-name }}-${{ inputs.repo-group-name }}-${{ inputs.repo-subject-area }}/environment/qc" \
-         -d "{\"wait_timer\": 0, \"reviewers\": [{\"type\": \"Team\", \"id\": \"${{ steps.get_team_id.outputs.team_id }}\"}]}"
+version: 0.2
+env:
+  variables:
+    TARGET_REGION: "eu-central-1"
+  secrets-manager:
+    SONAR_TOKEN: "sonar_token"
+  parameter-store:
+    SONAR_ANALYSIS_EXCLUSION: "sonar_analysis_exclusion_develop"
+phases:
+  install:
+    runtime-versions:
+        java: corretto17
+  pre_build:
+    commands:
+      - aws --version
+      - echo "Logging in to Amazon ECR..."
+      - $(aws ecr get-login --region eu-central-1 --no-include-email)
+      - CODEARTIFACT_AUTH_TOKEN=`aws codeartifact get-authorization-token --domain dev --domain-owner 195227247767 --region eu-central-1 --query authorizationToken --output text`
+      - sed -i "s/\\\$${env.CODEARTIFACT_AUTH_TOKEN}/$CODEARTIFACT_AUTH_TOKEN/g" settings.xml
+      - REPOSITORY_URI="${ecr_repository_url}"
+      - COMMIT_HASH=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
+      - IMAGE_TAG=$${COMMIT_HASH:=latest}
+      - APPLICATION_NAME="${microservice_name}"
+      - aws configure set region $TARGET_REGION --profile dev-account
+      - aws configure set role_arn arn:aws:iam::745252665765:role/InfraBuildRole --profile dev-account
+      - aws configure set credential_source EcsContainer --profile dev-account
+      - aws eks --region $TARGET_REGION update-kubeconfig --name dev-starcap-platform-cluster --profile dev-account
+  build:
+    commands:
+      - echo Build started on `date`
+      - |
+        if [[ ! $SONAR_ANALYSIS_EXCLUSION =~ "${microservice_name}" ]]; then
+          mvn -s settings.xml clean verify --no-transfer-progress sonar:sonar -Pcoverage -U -e -Dsonar.projectName=starcap-$APPLICATION_NAME -Dsonar.projectKey=starcap-$APPLICATION_NAME -Dsonar.branch.name=develop -Dsonar.qualitygate.wait=true -Dsonar.host.url=https://sonarqube.roche.com
+        else
+          echo "Sonar analysis was not executed"
+        fi
+      - echo Building the Docker image...
+      - docker build -t $REPOSITORY_URI:$APPLICATION_NAME-$IMAGE_TAG .
+      - echo Build completed on `date`
+      - echo Pushing the Docker images...
+      - docker push $REPOSITORY_URI:$APPLICATION_NAME-$IMAGE_TAG
+      - sed -i "s/<image_id>/$IMAGE_TAG/g" cluster-config/deployment.yaml
+      - kubectl apply -f cluster-config/deployment.yaml
+  post_build:
+    commands:
+      - echo Writing image definitions file... 
+      - printf '{"ImageURI":"%s"}' $REPOSITORY_URI:$APPLICATION_NAME-$IMAGE_TAG > imageDetail.json
+artifacts:
+  files:
+    - imageDetail.json
