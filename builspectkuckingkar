@@ -1,19 +1,28 @@
-resource "null_resource" "resize_root_volume" {
-  depends_on = [aws_cloud9_environment_ec2.cloud9_ide]
-
-  provisioner "local-exec" {
-    command = <<EOF
-      INSTANCE_ID=$(aws ec2 describe-instances --filters Name=instance-id,Values=${data.aws_instance.cloud9.id} "Name=instance-state-name,Values=running" --query "Reservations[*].Instances[*].InstanceId" --output text --region ${var.region})
-      VOLUME_ID=$(aws ec2 describe-volumes --filters "Name=attachment.instance-id,Values=$INSTANCE_ID" "Name=attachment.device,Values=/dev/xvda" --query "Volumes[*].VolumeId" --output text --region ${var.region})
-      aws ec2 modify-volume --volume-id $VOLUME_ID --size 50 --region ${var.region}
-    EOF
-  }
-}
-
-
-Error:
-
- Error: local-exec provisioner error
+module.disk_space.null_resource.resize_root_volume: Destroying... [id=8050722957815207810]
+module.disk_space.null_resource.resize_root_volume: Destruction complete after 0s
+module.disk_space.null_resource.profile_association: Creating...
+module.disk_space.null_resource.resize_root_volume: Creating...
+module.disk_space.null_resource.profile_association: Provisioning with 'local-exec'...
+module.disk_space.null_resource.resize_root_volume: Provisioning with 'local-exec'...
+module.disk_space.null_resource.profile_association (local-exec): Executing: ["cmd" "/C" "aws ec2 replace-iam-instance-profile-association --iam-instance-profile Name=imCORE-nftst1701324404472-ssm-ec2-profile --region eu-central-1 --association-id iip-assoc-082b1718b804255bc"]
+module.disk_space.null_resource.resize_root_volume (local-exec): Executing: ["cmd" "/C" "      INSTANCE_ID=$(aws ec2 describe-instances --filters Name=instance-id,Values=i-046d1be9955010a6c \"Name=instance-state-name,Values=running\" --query \"Reservations[*].Instances[*].InstanceId\" --output text --region eu-central-1)\r\n      VOLUME_ID=$(aws ec2 describe-volumes --filters \"Name=attachment.instance-id,Values=$INSTANCE_ID\" \"Name=attachment.device,Values=/dev/xvda\" --query \"Volumes[*].VolumeId\" --output text --region eu-central-1)\r\n      aws ec2 modify-volume --volume-id $VOLUME_ID --size 50 --region eu-central-1\r\n"]
+module.disk_space.null_resource.resize_root_volume (local-exec): 'INSTANCE_ID' is not recognized as an internal or external command,
+module.disk_space.null_resource.resize_root_volume (local-exec): operable program or batch file.
+module.disk_space.null_resource.profile_association: Still creating... [10s elapsed]
+module.disk_space.null_resource.profile_association (local-exec): {
+module.disk_space.null_resource.profile_association (local-exec):     "IamInstanceProfileAssociation": {
+module.disk_space.null_resource.profile_association (local-exec):         "AssociationId": "iip-assoc-0991eb3b27f24cd71",
+module.disk_space.null_resource.profile_association (local-exec):         "InstanceId": "i-046d1be9955010a6c",
+module.disk_space.null_resource.profile_association (local-exec):         "IamInstanceProfile": {
+module.disk_space.null_resource.profile_association (local-exec):             "Arn": "arn:aws:iam::745252665765:instance-profile/imCORE-nftst1701324404472-ssm-ec2-profile",
+module.disk_space.null_resource.profile_association (local-exec):             "Id": "AIPA23BEFHGSZXDXUJE3Y"
+module.disk_space.null_resource.profile_association (local-exec):         },
+module.disk_space.null_resource.profile_association (local-exec):         "State": "associating"
+module.disk_space.null_resource.profile_association (local-exec):     }
+module.disk_space.null_resource.profile_association (local-exec): }
+module.disk_space.null_resource.profile_association: Creation complete after 18s [id=4541819543349640349]
+╷
+│ Error: local-exec provisioner error
 │
 │   with module.disk_space.null_resource.resize_root_volume,
 │   on ..\infra-scripts\user-infra-services\cloud9-ide\main.tf line 41, in resource "null_resource" "resize_root_volume":
@@ -25,3 +34,4 @@ Error:
 │       aws ec2 modify-volume --volume-id $VOLUME_ID --size 50 --region eu-central-1
 │ ': exit status 1. Output: 'INSTANCE_ID' is not recognized as an internal or external command,
 │ operable program or batch file.
+│
