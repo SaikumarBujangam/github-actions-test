@@ -1,1 +1,9 @@
-VOLUME_ID=$(aws ec2 describe-volumes --filters Name=attachment.instance-id,Values=$INSTANCE_ID --query 'Volumes[*].VolumeId' --output text --region "$REGION")
+I have checked in the log, id values are not substuting eben though they are getting .
+
+curl -X PUT \
+  -H "Authorization: ***" -H "Accept: application/vnd.github+json" \
+  "https://api.github.com/repos/AlightEngineering/adl-testingrepo13-testingrepo13/environments/prod" \
+  -d '{"wait_timer":0,"prevent_self_review":false,"reviewers":[{"type":"Team","id":}, {"type":"Team","id":}]}'
+
+Extracted prod_team_id: 8648915
+Extracted hotfix_team_id: 8648904
