@@ -1,46 +1,8 @@
-[2:02 PM] Vengadesan Chandran
+#INSTANCE_ID=$(aws ec2 describe-instances --filters Name=instance-id,Values=${data.aws_instance.cloud9.id} Name=instance-state-name,Values=running --query 'Reservations[*].Instances[*].InstanceId' --output text --region ${var.region})
+#VOLUME_ID=$(aws ec2 describe-volumes --filters Name=attachment.instance-id,Values=$INSTANCE_ID Name=attachment.device,Values=/dev/xvda --query 'Volumes[*].VolumeId' --output text --region ${var.region})
+#aws ec2 modify-volume --volume-id $VOLUME_ID --size 20 --region ${var.region}
 
-
-null_resource.resize_root_volume: Destroying... [id=7695918806435681578]
-
-null_resource.resize_root_volume: Destruction complete after 0s
-
-null_resource.resize_root_volume: Creating...
-
-null_resource.resize_root_volume: Provisioning with 'local-exec'...
-
-null_resource.resize_root_volume (local-exec): Executing: ["cmd" "/C" "bash ./scripts/resize_volume.sh i-0dc1adc70b03bb94b eu-central-1"]
-
-null_resource.resize_root_volume (local-exec): ./scripts/resize_volume.sh: line 7: unexpected EOF while looking for matching `)'
-
-null_resource.resize_root_volume (local-exec): ./scripts/resize_volume.sh: line 9: syntax error: unexpected end of file
-
-╷
-
-│ Error: local-exec provisioner error
-
-│
-
-│   with null_resource.resize_root_volume,
-
-│   on main.tf line 41, in resource "null_resource" "resize_root_volume":
-
-│   41:   provisioner "local-exec" {
-
-│
-
-│ Error running command 'bash ./scripts/resize_volume.sh i-0dc1adc70b03bb94b eu-central-1': exit status 2. Output: ./scripts/resize_volume.sh:   
-
-│ line 7: unexpected EOF while looking for matching `)'
-
-│ ./scripts/resize_volume.sh: line 9: syntax error: unexpected end of file
-
-│
-
-╵
-
-Releasing state lock. This may take a few moments...
- 
-vengadesan.chandran@LP-5CD2026RQX MINGW64 /c/Venkat_HCL/Roche/Terraform_project/project-infra-provisioning-services/infra-scripts/user-infra-services/cloud9-ide (feature/cloud9-resize-volume)
-
-$
+INSTANCE_ID="$1"
+REGION="$2"
+VOLUME_ID=$(aws ec2 describe-volumes Name=instance-id,Values=$INSTANCE_ID Name=attachment.device,Values=/dev/xvda --query 'Volumes[*].VolumeId' --region ${REGION}
+aws ec2 modify-volume --volume-id $VOLUME_ID --size 20 --region ${REGION}
