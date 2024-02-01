@@ -1,3 +1,214 @@
+Workflow:
+
+name: ADL Create New Repository From Template
+on:
+  workflow_dispatch:
+    inputs:
+      repo-division-name:
+        description: 'Repo Division Area:'
+        required: true
+        type: string
+        default: 'adl'
+      repo-group-name:
+        description: 'Data Product for this repo'
+        required: true
+        type: string
+        default: 'no-group-provided'
+      repo-subject-area:
+        description: 'Repo Subject Area:'
+        required: true
+        type: string
+        default: ''
+      repo-template-name:
+        description: 'Based on template:'
+        required: true
+        type: string
+        default: 'adl-dataproduct-template'
+      org-name:
+        description: 'Organization to use for repo creation'
+        required: true
+        type: string
+        default: 'AlightEngineering'
+      admin-team-name:
+        description: 'Admin team for repo'
+        required: true
+        type: string
+        default: 'adl-core-admins'
+      repo-approvers-team:
+        description: 'Data Product Approvers Team for Prod Environments '
+        required: true
+        type: string
+        default: 'adl-<dataproductname>-approvers'
+      repo-dataproductowner-approvers-team:
+        description: 'Data Product Owner Approvers Team for Hotfix Environments'
+        required: true
+        type: string
+        default: 'adl-<dataproductname>-dataproductowners-approvers'
+
+jobs:
+  adl-create-repo:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Issue GH Create Repo Call
+        env:
+          GH_TOKEN: ${{ secrets.GH_CLONE_REPO }}
+        run: |
+          if [[ ${{ inputs.repo-group-name }} = "no-group-provided" ]]
+          then
+            echo "Please specify group"
+            exit 1
+          fi
+          if [[ ${{ inputs.repo-dataproductowner-approvers-team }} = "adl-<dataproductname>-dataproductowners-approvers" ]]
+          then
+            echo "Please provide a dataproduct owner approvers team"
+            exit 1
+          fi
+          echo ${{ inputs.repo-division-name }}
+          echo ${{ inputs.repo-group-name }}
+          echo ${{ inputs.repo-subject-area }}
+          echo ${{ inputs.repo-dataproductowner-approvers-team }}
+          gh repo create ${{ inputs.org-name }}/${{ inputs.repo-division-name }}-${{ inputs.repo-group-name }}-${{ inputs.repo-subject-area }} --internal --template ${{ inputs.org-name }}/${{ inputs.repo-template-name }}
+      #- name: Sleep After Create Repository
+      #  run: |
+      #  echo "Sleeping for 120 seconds..."
+       #  sleep 120
+         #echo "Waking up..."
+      - name: Add Secrets to the Client Repository
+        env:
+          GH_TOKEN:
+            ${{ secrets.GH_CLONE_REPO }}
+          SHARED_REPO_PAT:
+            ${{ secrets.REPO_PAT }}
+          GH_USER_NAME:
+            ${{ secrets.GH_USER_NAME }}
+          ADL_DEV_ACCESS_KEY:
+            ${{ secrets.ADL_DEV_ACCESS_KEY }}
+          ADL_DEV_SECRET_KEY:
+            ${{ secrets.ADL_DEV_SECRET_KEY }}
+          ADL_QA_ACCESS_KEY:
+            ${{ secrets.ADL_QA_ACCESS_KEY }}
+          ADL_QA_SECRET_KEY:
+            ${{ secrets.ADL_QA_SECRET_KEY }}
+          ADL_QC_ACCESS_KEY:
+            ${{ secrets.ADL_QC_ACCESS_KEY }}
+          ADL_QC_SECRET_KEY:
+            ${{ secrets.ADL_QC_SECRET_KEY }}
+          ADL_PROD_ACCESS_KEY:
+            ${{ secrets.ADL_PROD_ACCESS_KEY }}
+          ADL_PROD_SECRET_KEY:
+            ${{ secrets.ADL_PROD_SECRET_KEY }}
+        run: |
+          gh secret set REPO_PAT --repo ${{ inputs.org-name }}/${{ inputs.repo-division-name }}-${{ inputs.repo-group-name }}-${{ inputs.repo-subject-area }} --body "${SHARED_REPO_PAT}"
+          gh secret set GH_USER_NAME --repo ${{ inputs.org-name }}/${{ inputs.repo-division-name }}-${{ inputs.repo-group-name }}-${{ inputs.repo-subject-area }} --body "${GH_USER_NAME}"
+          gh secret set GH_CLONE_REPO --repo ${{ inputs.org-name }}/${{ inputs.repo-division-name }}-${{ inputs.repo-group-name }}-${{ inputs.repo-subject-area }} --body "${GH_TOKEN}"
+          gh secret set ADL_DEV_ACCESS_KEY --repo ${{ inputs.org-name }}/${{ inputs.repo-division-name }}-${{ inputs.repo-group-name }}-${{ inputs.repo-subject-area }} --body "${ADL_DEV_ACCESS_KEY}"
+          gh secret set ADL_DEV_SECRET_KEY --repo ${{ inputs.org-name }}/${{ inputs.repo-division-name }}-${{ inputs.repo-group-name }}-${{ inputs.repo-subject-area }} --body "${ADL_DEV_SECRET_KEY}"
+          gh secret set ADL_QA_ACCESS_KEY --repo ${{ inputs.org-name }}/${{ inputs.repo-division-name }}-${{ inputs.repo-group-name }}-${{ inputs.repo-subject-area }} --body "${ADL_QA_ACCESS_KEY}"
+          gh secret set ADL_QA_SECRET_KEY --repo ${{ inputs.org-name }}/${{ inputs.repo-division-name }}-${{ inputs.repo-group-name }}-${{ inputs.repo-subject-area }} --body "${ADL_QA_SECRET_KEY}"
+          gh secret set ADL_QC_ACCESS_KEY --repo ${{ inputs.org-name }}/${{ inputs.repo-division-name }}-${{ inputs.repo-group-name }}-${{ inputs.repo-subject-area }} --body "${ADL_QC_ACCESS_KEY}"
+          gh secret set ADL_QC_SECRET_KEY --repo ${{ inputs.org-name }}/${{ inputs.repo-division-name }}-${{ inputs.repo-group-name }}-${{ inputs.repo-subject-area }} --body "${ADL_QC_SECRET_KEY}"
+          gh secret set ADL_PROD_ACCESS_KEY --repo ${{ inputs.org-name }}/${{ inputs.repo-division-name }}-${{ inputs.repo-group-name }}-${{ inputs.repo-subject-area }} --body "${ADL_PROD_ACCESS_KEY}"
+          gh secret set ADL_PROD_SECRET_KEY --repo ${{ inputs.org-name }}/${{ inputs.repo-division-name }}-${{ inputs.repo-group-name }}-${{ inputs.repo-subject-area }} --body "${ADL_PROD_SECRET_KEY}"
+      - name: Add Group Designation File
+        run: |
+          group_file_content=$(echo ${{ inputs.repo-group-name }} |base64)
+          data="{\"message\":\"Adds group file\",\"committer\":{\"name\":\"Dushyant Remivasan\",\"email\":\"dushyant.remivasan@alight.com\"},\"content\": \"$(echo ${group_file_content})\"}"
+          echo $data > curl_data.json
+          curl -X PUT -H "Authorization: Bearer ${{ secrets.GH_CLONE_REPO }}" -H "Accept: application/vnd.github.everest-preview+json" https://api.github.com/repos/${{ inputs.org-name }}/${{ inputs.repo-division-name }}-${{ inputs.repo-group-name }}-${{ inputs.repo-subject-area }}/contents/.group -d @curl_data.json
+          rm curl_data.json
+      - name: Patch Delete Branch On Merge
+        env:
+          GH_TOKEN: ${{ secrets.GH_CLONE_REPO }}
+        run: |
+          gh api --method PATCH -H "Accept: application/vnd.github+json" /repos/${{ inputs.org-name }}/${{ inputs.repo-division-name }}-${{ inputs.repo-group-name }}-${{ inputs.repo-subject-area }} -F delete_branch_on_merge=true
+      - name: Add Admin Team To Repo
+        env:
+          GH_TOKEN: ${{ secrets.GH_CLONE_REPO }}
+        run: |
+          gh api --method PUT -H "Accept: application/vnd.github+json" /orgs/${{ inputs.org-name }}/teams/${{ inputs.admin-team-name }}/repos/${{ inputs.org-name }}/${{ inputs.repo-division-name }}-${{ inputs.repo-group-name }}-${{ inputs.repo-subject-area }} -f permission='admin'
+      - name: Add Dataproduct Owner Approvers Team To Repo
+        env:
+          GH_TOKEN: ${{ secrets.GH_CLONE_REPO }}
+        run: |
+          gh api --method PUT -H "Accept: application/vnd.github+json" /orgs/${{ inputs.org-name }}/teams/${{ inputs.repo-dataproductowner-approvers-team }}/repos/${{ inputs.org-name }}/${{ inputs.repo-division-name }}-${{ inputs.repo-group-name }}-${{ inputs.repo-subject-area }} -f permission='push'
+      - name: Add Code Owners To Master 
+        env:
+          github_user: ${{ secrets.GH_USER_NAME }}
+          GH_TOKEN: ${{ secrets.GH_CLONE_REPO }}
+        run: |
+          git clone -b master --single-branch https://${github_user}:${GH_TOKEN}@github.com/AlightEngineering/adl-awsdeploy-cicd.git
+          repo_base=$(pwd)/adl-awsdeploy-cicd
+          export PYTHONPATH=${repo_base}/src
+          pip install -r ${repo_base}/requirements.txt
+          ls -l ${repo_base}/.github/data/CODEOWNERS.template
+          python ${repo_base}/src/alight/foundation/app/generatetemplate.py --base-arg-parser-config-file-location ${repo_base}/config --base-arg-parser-config-file-name generate-template-build-args.json --template-root-location ${repo_base}/.github/data --template-file-name CODEOWNERS.template --generated-script-file-location ${repo_base} --generated-script-file-name CODEOWNERS_MASTER \
+          --cicdvar "CODE_OWNER_TEAM_NAME=${{ inputs.repo-dataproductowner-approvers-team }}" \
+          --cicdvar "ADMIN_TEAM_NAME=${{ inputs.admin-team-name }}"       
+          
+          sleep 5
+          export last_sha=$(gh api --method GET -H "Accept: application/vnd.github+json" /repos/${{ inputs.org-name }}/${{ inputs.repo-division-name }}-${{ inputs.repo-group-name }}-${{ inputs.repo-subject-area }}/contents/CODEOWNERS -f ref="master" | jq | grep sha | cut -f2 -d":" | tr ',' ' ' | tr -d '"')  
+           
+          sleep 5
+          code_owners_content=$(cat ${repo_base}/CODEOWNERS_MASTER |base64 -w 0)
+          code_owners_data="{\"message\":\"Updates CODEOWNERS file on master branch\",\"committer\":{\"name\":\"Dushyant Remivasan\",\"email\":\"dushyant.remivasan@alight.com\"},\"content\": \"$(echo ${code_owners_content})\",\"branch\": \"master\",\"sha\": \"$(echo ${last_sha})\"}"
+          echo $code_owners_data > code_owners_data.json
+          
+          sleep 5
+          curl -X PUT \
+          -H "Authorization: Bearer ${{ secrets.GH_CLONE_REPO }}" -H "Accept: application/vnd.github+json" \
+          https://api.github.com/repos/${{ inputs.org-name }}/${{ inputs.repo-division-name }}-${{ inputs.repo-group-name }}-${{ inputs.repo-subject-area }}/contents/CODEOWNERS \
+          -d @code_owners_data.json
+
+      - name: Get Team IDs
+        id: get_team_info
+        run: |
+          prod_team_name="${{ inputs.repo-approvers-team }}"
+          hotfix_team_name="${{ inputs.repo-dataproductowner-approvers-team }}"
+          org_name="AlightEngineering"
+          
+          curl -H "Authorization: token ${{ secrets.GH_CLONE_REPO }}" -H "Accept: application/vnd.github.v3+json" "https://api.github.com/orgs/$org_name/teams/$prod_team_name" >> prod_team_info.json
+          PROD_TEAM_ID=$(jq '.id' prod_team_info.json)
+          echo "prod_team_id=$PROD_TEAM_ID" >> $GITHUB_OUTPUT
+
+          curl -H "Authorization: token ${{ secrets.GH_CLONE_REPO }}" -H "Accept: application/vnd.github.v3+json" "https://api.github.com/orgs/$org_name/teams/$hotfix_team_name" >> hotfix_team_info.json
+          HOTFIX_TEAM_ID=$(jq '.id' hotfix_team_info.json) 
+          echo "hotfix_team_id=$HOTFIX_TEAM_ID" >> $GITHUB_OUTPUT
+          echo "Extracted prod_team_id: $PROD_TEAM_ID"
+          echo "Extracted hotfix_team_id: $HOTFIX_TEAM_ID"
+
+      - name: Create Prod and Hotfix Environments
+        run: |
+          curl -X PUT \
+          -H "Authorization: Bearer ${{ secrets.GH_CLONE_REPO }}" -H "Accept: application/vnd.github+json" \
+          "https://api.github.com/repos/${{ inputs.org-name }}/${{ inputs.repo-division-name }}-${{ inputs.repo-group-name }}-${{ inputs.repo-subject-area }}/environments/prod" \
+          -d '{"wait_timer":0,"prevent_self_review":false,"reviewers":[{"type":"Team","id":'${{ steps.get_team_info.prod_team_id }}'}, {"type":"Team","id":'${{ steps.get_team_info.hotfix_team_id }}'}]}'
+
+          curl -X PUT \
+          -H "Authorization: Bearer ${{ secrets.GH_CLONE_REPO }}" -H "Accept: application/vnd.github+json" \
+          "https://api.github.com/repos/${{ inputs.org-name }}/${{ inputs.repo-division-name }}-${{ inputs.repo-group-name }}-${{ inputs.repo-subject-area }}/environments/hotfix" \
+          -d '{"wait_timer":0,"prevent_self_review":false,"reviewers":[{"type":"Team","id":'${{ steps.get_team_info.hotfix_team_id }}'}]}'
+
+  update-master-branch-permissions:
+    name: Update Branch Protection For master Branch
+    uses:
+      AlightEngineering/adl-awsdeploy-cicd/.github/workflows/branch-permissions.yml@master
+    with:
+      repo-name: ${{ inputs.repo-division-name }}-${{ inputs.repo-group-name }}-${{ inputs.repo-subject-area }}
+      repo-template-name: ${{ inputs.repo-template-name }}
+      org-name: ${{ inputs.org-name }}
+      branch-name: "master"
+      branch-permissions-base-name: master-branch-permissions
+      branch-permissions-approver-team: ${{ inputs.repo-dataproductowner-approvers-team }}
+      branch-permissions-bypass-team: ${{ inputs.admin-team-name }}
+    secrets:
+      branch-user: ${{ secrets.GH_USER_NAME }}
+      branch-secret: ${{ secrets.GH_CLONE_REPO }}
+    needs:
+      adl-create-repo
+
+
+Errors:
+
 Run prod_team_name="adl-testing-approvers"
   prod_team_name="adl-testing-approvers"
   hotfix_team_name="adl-testing-dataproductowners-approvers"
@@ -7,142 +218,52 @@ Run prod_team_name="adl-testing-approvers"
   PROD_TEAM_ID=$(jq '.id' prod_team_info.json)
   echo "prod_team_id=$PROD_TEAM_ID" >> $GITHUB_OUTPUT
   
-  cat prod_team_info.json
-  
   curl -H "Authorization: token ***" -H "Accept: application/vnd.github.v3+json" "https://api.github.com/orgs/$org_name/teams/$hotfix_team_name" >> hotfix_team_info.json
-  HOTFIX_TEAM_ID=$(jq '.id' hotfix_team_info.json)   
+  HOTFIX_TEAM_ID=$(jq '.id' hotfix_team_info.json) 
   echo "hotfix_team_id=$HOTFIX_TEAM_ID" >> $GITHUB_OUTPUT
-  
-  cat hotfix_team_info.json
-  
   echo "Extracted prod_team_id: $PROD_TEAM_ID"
   echo "Extracted hotfix_team_id: $HOTFIX_TEAM_ID"
-  
-  curl -X PUT \
-  -H "Authorization: ***" -H "Accept: application/vnd.github+json" \
-  "https://api.github.com/repos/AlightEngineering/adl-testingrepo1-testingrepo1/environments/prod" \
-  -d '{"wait_timer":0,"prevent_self_review":false,"reviewers":[{"type":"Team","id":}]}'
   shell: /usr/bin/bash -e {0}
   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
                                  Dload  Upload   Total   Spent    Left  Speed
 
   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
-100  2018  100  2018    0     0  14801      0 --:--:-- --:--:-- --:--:-- 14948
-{
-  "name": "adl-testing-approvers",
-  "id": 8648915,
-  "node_id": "T_kwDOBeDYRM4Ag_jT",
-  "slug": "adl-testing-approvers",
-  "description": null,
-  "privacy": "closed",
-  "notification_setting": "notifications_enabled",
-  "url": "https://api.github.com/organizations/98621508/team/8648915",
-  "html_url": "https://github.com/orgs/AlightEngineering/teams/adl-testing-approvers",
-  "members_url": "https://api.github.com/organizations/98621508/team/8648915/members{/member}",
-  "repositories_url": "https://api.github.com/organizations/98621508/team/8648915/repos",
-  "permission": "push",
-  "created_at": "2023-09-27T07:58:19Z",
-  "updated_at": "2023-09-27T07:58:19Z",
-  "members_count": 6,
-  "repos_count": 6,
-  "organization": {
-    "login": "AlightEngineering",
-    "id": 98621508,
-    "node_id": "O_kgDOBeDYRA",
-    "url": "https://api.github.com/orgs/AlightEngineering",
-    "repos_url": "https://api.github.com/orgs/AlightEngineering/repos",
-    "events_url": "https://api.github.com/orgs/AlightEngineering/events",
-    "hooks_url": "https://api.github.com/orgs/AlightEngineering/hooks",
-    "issues_url": "https://api.github.com/orgs/AlightEngineering/issues",
-    "members_url": "https://api.github.com/orgs/AlightEngineering/members{/member}",
-    "public_members_url": "https://api.github.com/orgs/AlightEngineering/public_members{/member}",
-    "avatar_url": "https://avatars.githubusercontent.com/u/98621508?v=4",
-    "description": "Alight Engineering ",
-    "name": "Alight Engineering",
-    "company": null,
-    "blog": null,
-    "location": null,
-    "email": null,
-    "twitter_username": null,
-    "is_verified": false,
-    "has_organization_projects": true,
-    "has_repository_projects": true,
-    "public_repos": 0,
-    "public_gists": 0,
-    "followers": 388,
-    "following": 0,
-    "html_url": "https://github.com/AlightEngineering",
-    "created_at": "2022-01-28T22:09:24Z",
-    "updated_at": "2023-08-08T06:54:57Z",
-    "archived_at": null,
-    "type": "Organization"
-  },
-  "parent": null
-}
+100  2018  100  2018    0     0   7140      0 --:--:-- --:--:-- --:--:--  7156
   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
                                  Dload  Upload   Total   Spent    Left  Speed
 
   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
-100  2073  100  2073    0     0  17331      0 --:--:-- --:--:-- --:--:-- 17420
-  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
-                                 Dload  Upload   Total   Spent    Left  Speed
-
-{
-  "name": "adl-testing-dataproductowners-approvers",
-  "id": 8648904,
-  "node_id": "T_kwDOBeDYRM4Ag_jI",
-  "slug": "adl-testing-dataproductowners-approvers",
-  "description": null,
-  "privacy": "closed",
-  "notification_setting": "notifications_enabled",
-  "url": "https://api.github.com/organizations/98621508/team/8648904",
-  "html_url": "https://github.com/orgs/AlightEngineering/teams/adl-testing-dataproductowners-approvers",
-  "members_url": "https://api.github.com/organizations/98621508/team/8648904/members{/member}",
-  "repositories_url": "https://api.github.com/organizations/98621508/team/8648904/repos",
-  "permission": "push",
-  "created_at": "2023-09-27T07:55:00Z",
-  "updated_at": "2023-09-27T07:55:00Z",
-  "members_count": 6,
-  "repos_count": 12,
-  "organization": {
-    "login": "AlightEngineering",
-    "id": 98621508,
-    "node_id": "O_kgDOBeDYRA",
-    "url": "https://api.github.com/orgs/AlightEngineering",
-    "repos_url": "https://api.github.com/orgs/AlightEngineering/repos",
-    "events_url": "https://api.github.com/orgs/AlightEngineering/events",
-    "hooks_url": "https://api.github.com/orgs/AlightEngineering/hooks",
-    "issues_url": "https://api.github.com/orgs/AlightEngineering/issues",
-    "members_url": "https://api.github.com/orgs/AlightEngineering/members{/member}",
-    "public_members_url": "https://api.github.com/orgs/AlightEngineering/public_members{/member}",
-    "avatar_url": "https://avatars.githubusercontent.com/u/98621508?v=4",
-    "description": "Alight Engineering ",
-    "name": "Alight Engineering",
-    "company": null,
-    "blog": null,
-    "location": null,
-    "email": null,
-    "twitter_username": null,
-    "is_verified": false,
-    "has_organization_projects": true,
-    "has_repository_projects": true,
-    "public_repos": 0,
-    "public_gists": 0,
-    "followers": 388,
-    "following": 0,
-    "html_url": "https://github.com/AlightEngineering",
-    "created_at": "2022-01-28T22:09:24Z",
-    "updated_at": "2023-08-08T06:54:57Z",
-    "archived_at": null,
-    "type": "Organization"
-  },
-  "parent": null
-}
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+100  2073  100  2073    0     0   4240      0 --:--:-- --:--:-- --:--:--  4239
 Extracted prod_team_id: 8648915
 Extracted hotfix_team_id: 8648904
+0s
+Run curl -X PUT \
+  curl -X PUT \
+  -H "Authorization: ***" -H "Accept: application/vnd.github+json" \
+  "https://api.github.com/repos/AlightEngineering/adl-testingrepo1-testingrepo1/environments/prod" \
+  -d '{"wait_timer":0,"prevent_self_review":false,"reviewers":[{"type":"Team","id":''}, {"type":"Team","id":''}]}'
+  
+  curl -X PUT \
+  -H "Authorization: ***" -H "Accept: application/vnd.github+json" \
+  "https://api.github.com/repos/AlightEngineering/adl-testingrepo1-testingrepo1/environments/hotfix" \
+  -d '{"wait_timer":0,"prevent_self_review":false,"reviewers":[{"type":"Team","id":''}]}'
+  shell: /usr/bin/bash -e {0}
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+
   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
-100   221  100   141  100    80   1448    821 --:--:-- --:--:-- --:--:--  2302
+100   256  100   153  100   103    581    391 --:--:-- --:--:-- --:--:--   977
 {
-  "message": "Not Found",
+  "message": "Problems parsing JSON",
+  "documentation_url": "https://docs.github.com/rest/deployments/environments#create-or-update-an-environment"
+}
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+{
+100   233  100   153  100    80    575    301 --:--:-- --:--:-- --:--:--   879
+  "message": "Problems parsing JSON",
   "documentation_url": "https://docs.github.com/rest/deployments/environments#create-or-update-an-environment"
 }
