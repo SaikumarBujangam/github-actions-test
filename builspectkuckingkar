@@ -1,3 +1,52 @@
-{
-  "message": "Invalid request.\n\nInvalid property /reviewers/0/id: `\"null >> /home/runner/work/_temp/_runner_file_commands/set_output_08c6a793-fa65-477b-ac43-cfac2ec69605\"` is not of type `integer`.",
-  "documentation_url": "https://docs.github.com/rest/deployments/environments#create-or-update-an-environment"
+resource "null_resource" "resize_root_volume" {
+  depends_on = [aws_cloud9_environment_ec2.cloud9_ide]
+
+  provisioner "local-exec" {
+    command = "bash ${path.module}/scripts/resize_volume.sh"
+  }
+}
+
+INSTANCE_ID=$(aws ec2 describe-instances --filters Name=instance-id,Values=${data.aws_instance.cloud9.id} Name=instance-state-name,Values=running --query 'Reservations[*].Instances[*].InstanceId' --output text --region ${var.region})
+VOLUME_ID=$(aws ec2 describe-volumes --filters Name=attachment.instance-id,Values=$INSTANCE_ID Name=attachment.device,Values=/dev/xvda --query 'Volumes[*].VolumeId' --output text --region ${var.region})
+aws ec2 modify-volume --volume-id $VOLUME_ID --size 20 --region ${var.region}
+
+
+data "aws_caller_identity" "current" {}
+data "aws_vpc" "project_vpc" {
+   filter {
+    name    = "tag:Name"
+    values  = ["${var.project_key}-vpc"]
+  }
+}
+
+data "aws_subnets" "private" {
+  
+  filter {
+    name   = "vpc-id"
+    values = [data.aws_vpc.project_vpc.id]
+  }
+    tags = {
+      type = "private-subnet"
+  }
+} 
+
+data "aws_subnet" "private" {
+  count    = "${length(data.aws_subnets.private.ids)}"
+  id       = "${tolist(data.aws_subnets.private.ids)[count.index]}"
+} 
+
+data "aws_security_group" "sg" {
+  name = "${var.project_key}-common-project-sg"
+}
+
+data "aws_instance" "cloud9" {
+  filter {
+    name = "tag:aws:cloud9:environment"
+    values = [
+    aws_cloud9_environment_ec2.cloud9_ide.id]
+  }
+}
+
+data "aws_iam_instance_profile" "profile" {
+  name = "${var.org_key}-${var.project_key}-ssm-ec2-profile"
+}   
