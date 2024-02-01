@@ -1,4 +1,1 @@
-Extracted TEAM_INFO: {
-  "message": "Bad credentials",
-  "documentation_url": "https://docs.github.com/rest"
-}
+curl -H "Authorization: token YOUR_NEW_TOKEN" -H "Accept: application/vnd.github.v3+json" "https://api.github.com/orgs/AlightEngineering/teams/adl-testing-dataproductowners-approvers"
