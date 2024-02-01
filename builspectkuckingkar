@@ -1,1 +1,30 @@
 
+ - name: Create Prod and Hotfix Environments
+        id: get_team_info
+        run: |
+          prod_team_name="${{ inputs.repo-approvers-team }}"
+          hotfix_team_name="${{ inputs.repo-dataproductowner-approvers-team }}"
+          org_name="AlightEngineering"
+          
+          curl -H "Authorization: token ${{ secrets.GH_CLONE_REPO }}" -H "Accept: application/vnd.github.v3+json" "https://api.github.com/orgs/$org_name/teams/$prod_team_name" >> prod_team_info.json
+          PROD_TEAM_ID=$(jq '.id' prod_team_info.json)
+          echo "prod_team_id=$PROD_TEAM_ID" >> $GITHUB_OUTPUT
+          echo "Extracted prod_team_id: $PROD_TEAM_ID"
+
+          sleep 5
+          curl -H "Authorization: token ${{ secrets.GH_CLONE_REPO }}" -H "Accept: application/vnd.github.v3+json" "https://api.github.com/orgs/$org_name/teams/$hotfix_team_name" >> hotfix_team_info.json
+          HOTFIX_TEAM_ID=$(jq '.id' hotfix_team_info.json)   
+          echo "hotfix_team_id=$HOTFIX_TEAM_ID" >> $GITHUB_OUTPUT  
+          echo "Extracted hotfix_team_id: $HOTFIX_TEAM_ID"
+
+          sleep 5
+          curl -X PUT \
+          -H "Authorization: Bearer ${{ secrets.GH_CLONE_REPO }}" -H "Accept: application/vnd.github+json" \
+          "https://api.github.com/repos/${{ inputs.org-name }}/${{ inputs.repo-division-name }}-${{ inputs.repo-group-name }}-${{ inputs.repo-subject-area }}/environments/prod" \
+          -d '{"wait_timer":0,"prevent_self_review":false,"reviewers":[{"type":"Team","id":${{ steps.get_team_info.outputs.prod_team_id }}}], [{"type":"Team","id":${{ steps.get_team_info.outputs.hotfix_team_id }}}]}'
+
+          sleep 5
+          curl -X PUT \
+          -H "Authorization: Bearer ${{ secrets.GH_CLONE_REPO }}" -H "Accept: application/vnd.github+json" \
+          "https://api.github.com/repos/${{ inputs.org-name }}/${{ inputs.repo-division-name }}-${{ inputs.repo-group-name }}-${{ inputs.repo-subject-area }}/environments/prod" \
+          -d '{"wait_timer":0,"prevent_self_review":false,"reviewers":[{"type":"Team","id":${{ steps.get_team_info.outputs.hotfix_team_id }}}]}'
