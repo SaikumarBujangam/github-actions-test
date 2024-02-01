@@ -1,42 +1,21 @@
-My GitHUb jobs are shown in the code below. Basically I will extract the Team ID and add that team as reviewers to the environments and create environment,
-
- - name: Get Team ID and Name
-        id: get_team_info
-        run: |
-          team_name=${{ inputs.repo-dataproductowner-approvers-team }} # Correctly set the team_name for use in the curl command
-          org_name=AlightEngineering
-          TEAM_INFO=$(curl -H "Authorization: token ${{ secrets.GH_TOKEN }}" -H "Accept: application/vnd.github.v3+json" \
-            "https://api.github.com/orgs/$org_name/teams/$team_name")
-          TEAM_ID=$(echo "$TEAM_INFO" | jq '.id')
-          TEAM_NAME=$(echo "$TEAM_INFO" | jq -r '.name')
-          echo "team_id"=$TEAM_ID" >> $GITHUB_OUTPUT
-          echo "team_name"=$TEAM_NAME" >> $GITHUB_OUTPUT
+- name: Get Team ID and Name
+  id: get_team_info
+  run: |
+    team_name="${{ inputs.repo-dataproductowner-approvers-team }}" # Ensure this input variable is correctly referenced
+    org_name="AlightEngineering"
+    TEAM_INFO=$(curl -H "Authorization: token ${{ secrets.GH_TOKEN }}" -H "Accept: application/vnd.github.v3+json" \
+      "https://api.github.com/orgs/$org_name/teams/$team_name")
+    TEAM_ID=$(echo "$TEAM_INFO" | jq '.id')
+    TEAM_NAME=$(echo "$TEAM_INFO" | jq -r '.name')
     
-      - name: Create QC Environment
-        run: |
-          curl -X PUT \
-          -H "Authorization: Bearer ${{ secrets.GH_CLONE_REPO }}" -H "Accept: application/vnd.github+json" \
-          "https://api.github.com/repos/${{ inputs.org-name }}/${{ inputs.repo-division-name }}-${{ inputs.repo-group-name }}-${{ inputs.repo-subject-area }}/environments/qc" \
-          -d "{\"wait_timer\": 0, \"reviewers\": [{\"type\": \"Team\", \"id\": \"${{ steps.get_team_info.outputs.team_id }}\"}]}"
+    # Debugging output
+    echo "Extracted TEAM_ID: $TEAM_ID"
+    echo "Extracted TEAM_NAME: $TEAM_NAME"
+    
+    echo "team_id=$TEAM_ID" >> $GITHUB_OUTPUT
+    echo "team_name=$TEAM_NAME" >> $GITHUB_OUTPUT
 
-Getting the below error:
-
-Run team_name=adl-testing-dataproductowners-approvers # Correctly set the team_name for use in the curl command
-  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
-                                 Dload  Upload   Total   Spent    Left  Speed
-
-  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
-100    90  100    90    0     0    582      0 --:--:-- --:--:-- --:--:--   588
-0s
-Run curl -X PUT \
-  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
-                                 Dload  Upload   Total   Spent    Left  Speed
-
-  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
-100   480  100   319  100   161   1629    822 --:--:-- --:--:-- --:--:--  2461
-{
-  "message": "Invalid request.\n\nInvalid property /reviewers/0/id: `\"null >> /home/runner/work/_temp/_runner_file_commands/set_output_08c6a793-fa65-477b-ac43-cfac2ec69605\"` is not of type `integer`.",
-  "documentation_url": "https://docs.github.com/rest/deployments/environments#create-or-update-an-environment"
-}
-
-Refer this error and fix my script.
+if [ -z "$TEAM_ID" ] || [ "$TEAM_ID" == "null" ]; then
+  echo "Failed to fetch team ID"
+  exit 1
+fi
