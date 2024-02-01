@@ -1,21 +1,7 @@
-- name: Get Team ID and Name
-  id: get_team_info
-  run: |
-    team_name="${{ inputs.repo-dataproductowner-approvers-team }}" # Ensure this input variable is correctly referenced
-    org_name="AlightEngineering"
-    TEAM_INFO=$(curl -H "Authorization: token ${{ secrets.GH_TOKEN }}" -H "Accept: application/vnd.github.v3+json" \
-      "https://api.github.com/orgs/$org_name/teams/$team_name")
-    TEAM_ID=$(echo "$TEAM_INFO" | jq '.id')
-    TEAM_NAME=$(echo "$TEAM_INFO" | jq -r '.name')
-    
-    # Debugging output
-    echo "Extracted TEAM_ID: $TEAM_ID"
-    echo "Extracted TEAM_NAME: $TEAM_NAME"
-    
-    echo "team_id=$TEAM_ID" >> $GITHUB_OUTPUT
-    echo "team_name=$TEAM_NAME" >> $GITHUB_OUTPUT
-
-if [ -z "$TEAM_ID" ] || [ "$TEAM_ID" == "null" ]; then
-  echo "Failed to fetch team ID"
-  exit 1
-fi
+Run team_name="adl-testing-dataproductowners-approvers"
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+100    90  100    90    0     0    420      0 --:--:-- --:--:-- --:--:--   422
+Extracted TEAM_ID: null
+Extracted TEAM_NAME: null
