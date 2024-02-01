@@ -4,9 +4,8 @@
         {
             "shell": "C:\\cygwin64\\bin\\bash.exe",
             "args": ["--login"],
-            "label": "Cygwin Bash",
-            "launchName": "Cygwin Bash"
-        },        
+            "label": "Cygwin Bash"
+        },
         {
             "shell": "C:\\Windows\\System32\\cmd.exe",
             "label": "cmd"
@@ -16,24 +15,21 @@
             "label": "PowerShell"
         },
         {
-            "shell": "C:\\Users\\umababy.kannan\\AppData\\Local\\Programs\\Git\\git-bash.exe --cd-to-home",
-            "label": "bash"
-        }, 
+            "shell": "C:\\Users\\umababy.kannan\\AppData\\Local\\Programs\\Git\\git-bash.exe",
+            "label": "bash",
+            "args": ["--cd-to-home"]
+        },
         {
             "shell": "C:\\Windows\\System32\\bash.exe",
             "label": "WSL Bash"
         }
-        {
-            "terminal.integrated.Profiles.windows": {
-                "GitBash": {
-                    "path": [
-                        "C:\\Users\\umababy.kannan\\AppData\\Local\\Programs\\Git\\git-bash.exe"
-                    ]
-                }
-
-        }
-    }
     ],
+    "terminal.integrated.profiles.windows": {
+        "Git Bash": {
+            "path": "C:\\Users\\umababy.kannan\\AppData\\Local\\Programs\\Git\\git-bash.exe"
+        }
+    },
+    "terminal.integrated.defaultProfile.windows": "Git Bash",
     "git.confirmSync": false,
-    "window.zoomLevel": 1,
+    "window.zoomLevel": 1
 }
