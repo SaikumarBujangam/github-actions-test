@@ -1,31 +1,12 @@
-module.disk_space.null_resource.resize_root_volume (local-exec): Executing: ["cmd" "/C" "bash ../infra-scripts/user-infra-services/cloud9-ide/scripts/resize_volume.sh i-0fd49ca82ae0f9dc6 eu-central-1"]
-module.disk_space.null_resource.resize_root_volume: Still creating... [10s elapsed]
+#!/bin/bash
 
-module.disk_space.null_resource.resize_root_volume (local-exec): usage: aws [options] <command> <subcommand> [<subcommand> ...] [parameters]
-module.disk_space.null_resource.resize_root_volume (local-exec): To see help text, you can run:
+# Parameters
+INSTANCE_ID="$1"
+REGION="$2"
+NEW_SIZE="$3" # Size in GB
 
-module.disk_space.null_resource.resize_root_volume (local-exec):   aws help
-module.disk_space.null_resource.resize_root_volume (local-exec):   aws <command> help
-module.disk_space.null_resource.resize_root_volume (local-exec):   aws <command> <subcommand> help
+# Fetch the root volume ID of the instance
+VOLUME_ID=$(aws ec2 describe-volumes --filters Name=attachment.instance-id,Values=$INSTANCE_ID Name=attachment.device,Values=/dev/sda1 --query 'Volumes[*].VolumeId' --output text --region "$REGION")
 
-module.disk_space.null_resource.resize_root_volume (local-exec): aws.exe: error: argument --volume-id: expected one argument
-
-╷
-│ Error: local-exec provisioner error
-│
-│   with module.disk_space.null_resource.resize_root_volume,
-│   on ..\infra-scripts\user-infra-services\cloud9-ide\main.tf line 48, in resource "null_resource" "resize_root_volume":
-│   48:   provisioner "local-exec" {
-│
-│ Error running command 'bash
-│ ../infra-scripts/user-infra-services/cloud9-ide/scripts/resize_volume.sh
-│ i-0fd49ca82ae0f9dc6 eu-central-1': exit status 252. Output:
-│ usage: aws [options] <command> <subcommand> [<subcommand> ...] [parameters]
-│ To see help text, you can run:
-│
-│   aws help
-│   aws <command> help
-│   aws <command> <subcommand> help
-│
-│ aws.exe: error: argument --volume-id: expected one argument
-│
+# Modify the volume to the new size
+aws ec2 modify-volume --volume-id $VOLUME_ID --size $NEW_SIZE --region $REGION
