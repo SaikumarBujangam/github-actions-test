@@ -1,18 +1,16 @@
-- name: Get Team ID and Name
-  id: get_team_info
-  run: |
-    team_name="${{ inputs.repo-dataproductowner-approvers-team }}"
-    org_name="${{ inputs.org-name }}"
-    TEAM_INFO=$(curl -H "Authorization: token ${{ secrets.GH_TOKEN }}" -H "Accept: application/vnd.github.v3+json" \
-            https://api.github.com/orgs/$org_name/teams | jq '.[] | select(.name=="'$team_name'") | {id: .id, name: .name}')
-    TEAM_ID=$(echo $TEAM_INFO | jq '.id')
-    TEAM_NAME=$(echo $TEAM_INFO | jq -r '.name')
-    echo "::set-output name=team_id::$TEAM_ID"
-    echo "::set-output name=team_name::$TEAM_NAME"
-    
-- name: Create QC Environment
-  run: |
-   curl -X PUT \
-   -H "Authorization: Bearer ${{ secrets.GH_CLONE_REPO }}" -H "Accept: application/vnd.github+json" \
-   https://api.github.com/repos/${{ inputs.org-name }}/${{ inputs.repo-division-name }}-${{ inputs.repo-group-name }}-${{ inputs.repo-subject-area }}/environment/qc" \
-   -d "{\"wait_timer\": 0, \"reviewers\": [{\"type\": \"Team\", \"id\": \"${{ steps.get_team_info.outputs.team_id }}\"}]}"
+Run team_name="adl-testing-dataproductowners-approvers"
+  team_name="adl-testing-dataproductowners-approvers"
+  org_name="AlightEngineering"
+  TEAM_INFO=$(curl -H "Authorization: token " -H "Accept: application/vnd.github.v3+json" \
+    https://api.github.com/orgs/$org_name/teams | jq '.[] | select(.name=="'$team_name'") | {id: .id, name: .name}')
+  TEAM_ID=$(echo $TEAM_INFO | jq '.id')
+  TEAM_NAME=$(echo $TEAM_INFO | jq -r '.name')
+  echo "::set-output name=team_id::$TEAM_ID"
+  echo "::set-output name=team_name::$TEAM_NAME"
+  shell: /usr/bin/bash -e {0}
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+100    90  100    90    0     0    860      0 --:--:-- --:--:-- --:--:--   865
+jq: error (at <stdin>:4): Cannot index string with string "name"
+Error: Process completed with exit code 5.
