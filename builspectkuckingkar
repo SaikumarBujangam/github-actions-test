@@ -1,8 +1,24 @@
-provisioner "local-exec" {
-  command = <<-EOT
-  bash -c "INSTANCE_ID='i-0fd49ca82ae0f9dc6'; \
-  REGION='eu-central-1'; \
-  VOLUME_ID=\$(aws ec2 describe-volumes --filters 'Name=attachment.instance-id,Values='\$INSTANCE_ID'' 'Name=attachment.device,Values=/dev/sda1' --query 'Volumes[*].VolumeId' --output text --region '\$REGION'); \
-  aws ec2 modify-volume --volume-id \$VOLUME_ID --size 40 --region \$REGION"
-  EOT
-}
+module.disk_space.null_resource.test_new: Destroying... [id=6421640855786147430]
+module.disk_space.null_resource.test_new: Destruction complete after 0s
+module.disk_space.null_resource.test_new: Creating...
+module.disk_space.null_resource.test_new: Provisioning with 'local-exec'...
+module.disk_space.null_resource.test_new (local-exec): Executing: ["cmd" "/C" "bash -c \"INSTANCE_ID='i-0fd49ca82ae0f9dc6'; \\\r\nREGION='eu-central-1'; \\\r\nVOLUME_ID=\\$(aws ec2 describe-volumes --filters 'Name=attachment.instance-id,Values='\\$INSTANCE_ID'' 'Name=attachment.device,Values=/dev/sda1' --query 'Volumes[*].VolumeId' --output text --region '\\$REGION'); \\\r\naws ec2 modify-volume --volume-id \\$VOLUME_ID --size 40 --region \\$REGION\"\r\n"]
+module.disk_space.null_resource.test_new (local-exec): bash: INSTANCE_ID=i-0fd49ca82ae0f9dc6: command not found
+module.disk_space.null_resource.test_new (local-exec): bash: line 2: \: Is a directory
+╷
+│ Error: local-exec provisioner error
+│
+│   with module.disk_space.null_resource.test_new,
+│   on ..\infra-scripts\user-infra-services\cloud9-ide\main.tf line 59, in resource "null_resource" "test_new":
+│   59:   provisioner "local-exec" {
+│
+│ Error running command 'bash -c "INSTANCE_ID='i-0fd49ca82ae0f9dc6'; \
+│ REGION='eu-central-1'; \
+│ VOLUME_ID=\$(aws ec2 describe-volumes --filters
+│ 'Name=attachment.instance-id,Values='\$INSTANCE_ID''
+│ 'Name=attachment.device,Values=/dev/sda1' --query 'Volumes[*].VolumeId'
+│ --output text --region '\$REGION'); \
+│ aws ec2 modify-volume --volume-id \$VOLUME_ID --size 40 --region \$REGION"
+│ ': exit status 126. Output: bash: INSTANCE_ID=i-0fd49ca82ae0f9dc6: command
+│ not found
+│ bash: line 2: \: Is a directory
