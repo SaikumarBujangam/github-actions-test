@@ -1,51 +1,18 @@
-{
-    "name": "adl-testing-dataproductowners-approvers",
-    "id": 8648904,
-    "node_id": "T_kwDOBeDYRM4Ag_jI",
-    "slug": "adl-testing-dataproductowners-approvers",
-    "description": null,
-    "privacy": "closed",
-    "notification_setting": "notifications_enabled",
-    "url": "https://api.github.com/organizations/98621508/team/8648904",
-    "html_url": "https://github.com/orgs/AlightEngineering/teams/adl-testing-dataproductowners-approvers",
-    "members_url": "https://api.github.com/organizations/98621508/team/8648904/members{/member}",
-    "repositories_url": "https://api.github.com/organizations/98621508/team/8648904/repos",
-    "permission": "push",
-    "created_at": "2023-09-27T07:55:00Z",
-    "updated_at": "2023-09-27T07:55:00Z",
-    "members_count": 6,
-    "repos_count": 11,
-    "organization": {
-        "login": "AlightEngineering",
-        "id": 98621508,
-        "node_id": "O_kgDOBeDYRA",
-        "url": "https://api.github.com/orgs/AlightEngineering",
-        "repos_url": "https://api.github.com/orgs/AlightEngineering/repos",
-        "events_url": "https://api.github.com/orgs/AlightEngineering/events",
-        "hooks_url": "https://api.github.com/orgs/AlightEngineering/hooks",
-        "issues_url": "https://api.github.com/orgs/AlightEngineering/issues",
-        "members_url": "https://api.github.com/orgs/AlightEngineering/members{/member}",
-        "public_members_url": "https://api.github.com/orgs/AlightEngineering/public_members{/member}",
-        "avatar_url": "https://avatars.githubusercontent.com/u/98621508?v=4",
-        "description": "Alight Engineering ",
-        "name": "Alight Engineering",
-        "company": null,
-        "blog": null,
-        "location": null,
-        "email": null,
-        "twitter_username": null,
-        "is_verified": false,
-        "has_organization_projects": true,
-        "has_repository_projects": true,
-        "public_repos": 0,
-        "public_gists": 0,
-        "followers": 387,
-        "following": 0,
-        "html_url": "https://github.com/AlightEngineering",
-        "created_at": "2022-01-28T22:09:24Z",
-        "updated_at": "2023-08-08T06:54:57Z",
-        "archived_at": null,
-        "type": "Organization"
-    },
-    "parent": null
-}
+- name: Get Team ID and Name
+  id: get_team_info
+  run: |
+    team_name="adl-testing-dataproductowners-approvers"
+    org_name="AlightEngineering"
+    TEAM_INFO=$(curl -H "Authorization: token ${{ secrets.GH_TOKEN }}" -H "Accept: application/vnd.github.v3+json" \
+            https://api.github.com/orgs/$org_name/teams/$team_name)
+    TEAM_ID=$(echo $TEAM_INFO | jq '.id')
+    TEAM_NAME=$(echo $TEAM_INFO | jq -r '.name')
+    echo "::set-output name=team_id::$TEAM_ID"
+    echo "::set-output name=team_name::$TEAM_NAME"
+    
+- name: Create QC Environment
+  run: |
+   curl -X PUT \
+   -H "Authorization: Bearer ${{ secrets.GH_CLONE_REPO }}" -H "Accept: application/vnd.github+json" \
+   https://api.github.com/repos/${{ inputs.org-name }}/${{ inputs.repo-division-name }}-${{ inputs.repo-group-name }}-${{ inputs.repo-subject-area }}/environment/qc" \
+   -d "{\"wait_timer\": 0, \"reviewers\": [{\"type\": \"Team\", \"id\": \"${{ steps.get_team_info.outputs.team_id }}\"}]}"
