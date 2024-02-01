@@ -1,26 +1,8 @@
-
-module.disk_space.null_resource.resize_root_volume: Destroying... [id=6479062876892586043]
-module.disk_space.null_resource.resize_root_volume: Destruction complete after 0s
-module.disk_space.null_resource.test_new: Creating...
-module.disk_space.null_resource.test_new: Provisioning with 'local-exec'...
-module.disk_space.null_resource.test_new (local-exec): Executing: ["cmd" "/C" "INSTANCE_ID=\"i-0fd49ca82ae0f9dc6\"\r\nREGION=\"eu-central-1\"\r\nVOLUME_ID=$(aws ec2 describe-volumes --filters \"Name=attachment.instance-id,Values=$INSTANCE_ID\" \"Name=attachment.device,Values=/dev/sda1\" --query \"Volumes[*].VolumeId\" --output text --region \"$REGION\")\r\naws ec2 modify-volume --volume-id $VOLUME_ID --size 40 --region $REGION\r\n"]
-module.disk_space.null_resource.test_new (local-exec): 'INSTANCE_ID' is not recognized as an internal or external command,
-module.disk_space.null_resource.test_new (local-exec): operable program or batch file.
-╷
-│ Error: local-exec provisioner error
-│
-│   with module.disk_space.null_resource.test_new,
-│   on ..\infra-scripts\user-infra-services\cloud9-ide\main.tf line 59, in resource "null_resource" "test_new":
-│   59:   provisioner "local-exec" {
-│
-│ Error running command 'INSTANCE_ID="i-0fd49ca82ae0f9dc6"
-│ REGION="eu-central-1"
-│ VOLUME_ID=$(aws ec2 describe-volumes --filters
-│ "Name=attachment.instance-id,Values=$INSTANCE_ID"
-│ "Name=attachment.device,Values=/dev/sda1" --query "Volumes[*].VolumeId"
-│ --output text --region "$REGION")
-│ aws ec2 modify-volume --volume-id $VOLUME_ID --size 40 --region $REGION
-│ ': exit status 1. Output: 'INSTANCE_ID' is not recognized as an internal or
-│ external command,
-│ operable program or batch file.
-│
+provisioner "local-exec" {
+  command = <<-EOT
+  bash -c "INSTANCE_ID='i-0fd49ca82ae0f9dc6'; \
+  REGION='eu-central-1'; \
+  VOLUME_ID=\$(aws ec2 describe-volumes --filters 'Name=attachment.instance-id,Values='\$INSTANCE_ID'' 'Name=attachment.device,Values=/dev/sda1' --query 'Volumes[*].VolumeId' --output text --region '\$REGION'); \
+  aws ec2 modify-volume --volume-id \$VOLUME_ID --size 40 --region \$REGION"
+  EOT
+}
