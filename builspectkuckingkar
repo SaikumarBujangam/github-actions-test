@@ -1,6 +1,25 @@
-- name: Create QC Environment
-  run: |
-    curl -X PUT \
-    -H "Authorization: Bearer ${{ secrets.GH_CLONE_REPO }}" -H "Accept: application/vnd.github+json" \
-    "https://api.github.com/repos/${{ inputs.org-name }}/${{ inputs.repo-division-name }}-${{ inputs.repo-group-name }}-${{ inputs.repo-subject-area }}/environments/qc" \
-    -d "{\"wait_timer\": 0, \"reviewers\": [{\"type\": \"Team\", \"id\": \"${{ steps.get_team_info.outputs.team_id }}\"}]}"
+Run team_name=adl-testing-dataproductowners-approvers # Correctly set the team_name for use in the curl command
+  team_name=adl-testing-dataproductowners-approvers # Correctly set the team_name for use in the curl command
+  org_name=AlightEngineering
+  TEAM_INFO=$(curl -H "Authorization: token " -H "Accept: application/vnd.github.v3+json" \
+    https://api.github.com/orgs/$org_name/teams/$team_name)
+  TEAM_ID=$(echo $TEAM_INFO | jq '.id')
+  TEAM_NAME=$(echo $TEAM_INFO | jq -r '.name')
+  echo "team_id"=$TEAM_ID" >> $GITHUB_OUTPUT
+  echo "team_name"=$TEAM_NAME" >> $GITHUB_OUTPUT
+  shell: /usr/bin/bash -e {0}
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+100    90  100    90    0     0    852      0 --:--:-- --:--:-- --:--:--   857
+0s
+Run curl -X PUT \
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+{
+  "message": "Invalid request.\n\nInvalid property /reviewers/0/id: `\"null >> /home/runner/work/_temp/_runner_file_commands/set_output_1edac11c-2fd3-4fdb-834c-591de2cb611d\"` is not of type `integer`.",
+100   480  100   319  100   161   1944    981 --:--:-- --:--:-- --:--:--  2944
+  "documentation_url": "https://docs.github.com/rest/deployments/environments#create-or-update-an-environment"
+}
