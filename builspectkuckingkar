@@ -1,1 +1,6 @@
-https://github.blog/changelog/2022-10-11-github-actions-deprecating-save-state-and-set-output-commands/
+- name: Create QC Environment
+  run: |
+    curl -X PUT \
+    -H "Authorization: Bearer ${{ secrets.GH_CLONE_REPO }}" -H "Accept: application/vnd.github+json" \
+    "https://api.github.com/repos/${{ inputs.org-name }}/${{ inputs.repo-division-name }}-${{ inputs.repo-group-name }}-${{ inputs.repo-subject-area }}/environments/qc" \
+    -d "{\"wait_timer\": 0, \"reviewers\": [{\"type\": \"Team\", \"id\": \"${{ steps.get_team_info.outputs.team_id }}\"}]}"
