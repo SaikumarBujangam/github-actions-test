@@ -1,18 +1,26 @@
-root@ip-192-168-98-189 bin]# ./resize_volume.sh
-./resize_volume.sh: line 1: INSTANCE_ID: command not found
-./resize_volume.sh: line 2: VOLUME_ID: command not found
-Note: AWS CLI version 2, the latest major version of the AWS CLI, is now stable and recommended for general use. For more information, see the AWS CLI version 2 installation instructions at: https://docs.aws.amazon.com/cli/latest/userguide/install-cliv2.html
+Run team_name="adl-testing-dataproductowners-approvers"
+  team_name="adl-testing-dataproductowners-approvers"
+  org_name="AlightEngineering"
+  TEAM_INFO=$(curl -H "Authorization: token " -H "Accept: application/vnd.github.v3+json" \
+    https://api.github.com/orgs/$org_name/teams/$team_name)
+  TEAM_ID=$(echo $TEAM_INFO | jq '.id')
+  TEAM_NAME=$(echo $TEAM_INFO | jq -r '.name')
+  echo "::set-output name=team_id::$TEAM_ID"
+  echo "::set-output name=team_name::$TEAM_NAME"
+  shell: /usr/bin/bash -e {0}
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
 
-usage: aws [options] <command> <subcommand> [<subcommand> ...] [parameters]
-To see help text, you can run:
-
-  aws help
-  aws <command> help
-  aws <command> <subcommand> help
-aws: error: argument --volume-id: expected one argument
-[root@ip-192-168-98-189 bin]#
-
-
-INSTANCE_ID = $(aws ec2 describe-instances --filters Name=instance-id,Values=${data.aws_instance.cloud9.id} Name=instance-state-name,Values=running --query 'Reservations[*].Instances[*].InstanceId' --output text --region ${var.region})
-VOLUME_ID = $(aws ec2 describe-volumes --filters Name=attachment.instance-id,Values=$INSTANCE_ID Name=attachment.device,Values=/dev/xvda --query 'Volumes[*].VolumeId' --output text --region ${var.region})
-aws ec2 modify-volume --volume-id $VOLUME_ID --size 50 --region ${var.region}
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+100    90  100    90    0     0    821      0 --:--:-- --:--:-- --:--:--   825
+Warning: The `set-output` command is deprecated and will be disabled soon. Please upgrade to using Environment Files. For more information see: https://github.blog/changelog/2022-10-11-github-actions-deprecating-save-state-and-set-output-commands/
+Warning: The `set-output` command is deprecated and will be disabled soon. Please upgrade to using Environment Files. For more information see: https://github.blog/changelog/2022-10-11-github-actions-deprecating-save-state-and-set-output-commands/
+0s
+Run curl -X PUT \
+  curl -X PUT \
+  -H "Authorization: ***" -H "Accept: application/vnd.github+json" \
+  https://api.github.com/repos/AlightEngineering/adl-testingrepo1-testingrepo1/environment/qc" \
+  -d "{\"wait_timer\": 0, \"reviewers\": [{\"type\": \"Team\", \"id\": \"null\"}]}"
+  shell: /usr/bin/bash -e {0}
+/home/runner/work/_temp/fa058ed0-b0f6-44f4-b8e7-c0a4b729345c.sh: line 4: unexpected EOF while looking for matching `"'
+Error: Process completed with exit code 2.
