@@ -1,7 +1,4 @@
-Run team_name="adl-testing-dataproductowners-approvers"
-  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
-                                 Dload  Upload   Total   Spent    Left  Speed
-  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
-100    90  100    90    0     0    420      0 --:--:-- --:--:-- --:--:--   422
-Extracted TEAM_ID: null
-Extracted TEAM_NAME: null
+Extracted TEAM_INFO: {
+  "message": "Bad credentials",
+  "documentation_url": "https://docs.github.com/rest"
+}
