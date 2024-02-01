@@ -1,4 +1,185 @@
+Run prod_team_name="adl-testing-approvers"
+  prod_team_name="adl-testing-approvers"
+  hotfix_team_name="adl-testing-dataproductowners-approvers"
+  org_name="AlightEngineering"
+  
+  curl -H "Authorization: token ***" -H "Accept: application/vnd.github.v3+json" "https://api.github.com/orgs/$org_name/teams/$prod_team_name" >> prod_team_info.json
+  PROD_TEAM_ID=$(jq '.id' prod_team_info.json)
+  echo "PROD_TEAM_ID: $PROD_TEAM_ID"
+  echo "prod_team_id=$PROD_TEAM_ID" >> $GITHUB_OUTPUT
+  
+  cat prod_team_info.json
+  
+  curl -H "Authorization: token ***" -H "Accept: application/vnd.github.v3+json" "https://api.github.com/orgs/$org_name/teams/$hotfix_team_name" >> hotfix_team_info.json
+  HOTFIX_TEAM_ID=$(jq '.id' hotfix_team_info.json)   
+  echo "hotfix_team_id=$HOTFIX_TEAM_ID" >> $GITHUB_OUTPUT
+  
+  cat hotfix_team_info.json
+  
+  echo "Extracted prod_team_id: $PROD_TEAM_ID"
+  echo "Extracted hotfix_team_id: $HOTFIX_TEAM_ID"
+  
+  curl -L \
+  -X PUT \
+  -H "Accept: application/vnd.github+json" \
+  -H "Authorization: token ***" \
+  -H "X-GitHub-Api-Version: 2022-11-28" \
+  "https://api.github.com/repos/AlightEngineering/adl-testingrepo1-testingrepo1/environments/prod" \
+  -d '{"wait_timer":30,"prevent_self_review":false,"reviewers":[{"type":"Team","id":'"$PROD_TEAM_ID"'}],"deployment_branch_policy":{"protected_branches":false,"custom_branch_policies":true}}'
+  shell: /usr/bin/bash -e {0}
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+100  2018  100  2018    0     0  12395      0 --:--:-- --:--:-- --:--:-- 12456
+PROD_TEAM_ID: 8648915
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+
 {
-  "message": "Invalid request.\n\nInvalid property /reviewers/0/id: `\"$PROD_TEAM_ID\"` is not of type `integer`.",
-  "documentation_url": "https://docs.github.com/rest/deployments/environments#create-or-update-an-environment"
+  "name": "adl-testing-approvers",
+  "id": 8648915,
+  "node_id": "T_kwDOBeDYRM4Ag_jT",
+  "slug": "adl-testing-approvers",
+  "description": null,
+  "privacy": "closed",
+  "notification_setting": "notifications_enabled",
+  "url": "https://api.github.com/organizations/98621508/team/8648915",
+  "html_url": "https://github.com/orgs/AlightEngineering/teams/adl-testing-approvers",
+  "members_url": "https://api.github.com/organizations/98621508/team/8648915/members{/member}",
+  "repositories_url": "https://api.github.com/organizations/98621508/team/8648915/repos",
+  "permission": "push",
+  "created_at": "2023-09-27T07:58:19Z",
+  "updated_at": "2023-09-27T07:58:19Z",
+  "members_count": 6,
+  "repos_count": 6,
+  "organization": {
+    "login": "AlightEngineering",
+    "id": 98621508,
+    "node_id": "O_kgDOBeDYRA",
+    "url": "https://api.github.com/orgs/AlightEngineering",
+    "repos_url": "https://api.github.com/orgs/AlightEngineering/repos",
+    "events_url": "https://api.github.com/orgs/AlightEngineering/events",
+    "hooks_url": "https://api.github.com/orgs/AlightEngineering/hooks",
+    "issues_url": "https://api.github.com/orgs/AlightEngineering/issues",
+    "members_url": "https://api.github.com/orgs/AlightEngineering/members{/member}",
+    "public_members_url": "https://api.github.com/orgs/AlightEngineering/public_members{/member}",
+    "avatar_url": "https://avatars.githubusercontent.com/u/98621508?v=4",
+    "description": "Alight Engineering ",
+    "name": "Alight Engineering",
+    "company": null,
+    "blog": null,
+    "location": null,
+    "email": null,
+    "twitter_username": null,
+    "is_verified": false,
+    "has_organization_projects": true,
+    "has_repository_projects": true,
+    "public_repos": 0,
+    "public_gists": 0,
+    "followers": 388,
+    "following": 0,
+    "html_url": "https://github.com/AlightEngineering",
+    "created_at": "2022-01-28T22:09:24Z",
+    "updated_at": "2023-08-08T06:54:57Z",
+    "archived_at": null,
+    "type": "Organization"
+  },
+  "parent": null
+}
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+{
+100  2073  100  2073    0     0  13621      0 --:--:-- --:--:-- --:--:-- 13728
+  "name": "adl-testing-dataproductowners-approvers",
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+  "id": 8648904,
+                                 Dload  Upload   Total   Spent    Left  Speed
+  "node_id": "T_kwDOBeDYRM4Ag_jI",
+
+  "slug": "adl-testing-dataproductowners-approvers",
+  "description": null,
+  "privacy": "closed",
+  "notification_setting": "notifications_enabled",
+  "url": "https://api.github.com/organizations/98621508/team/8648904",
+  "html_url": "https://github.com/orgs/AlightEngineering/teams/adl-testing-dataproductowners-approvers",
+  "members_url": "https://api.github.com/organizations/98621508/team/8648904/members{/member}",
+  "repositories_url": "https://api.github.com/organizations/98621508/team/8648904/repos",
+  "permission": "push",
+  "created_at": "2023-09-27T07:55:00Z",
+  "updated_at": "2023-09-27T07:55:00Z",
+  "members_count": 6,
+  "repos_count": 12,
+  "organization": {
+    "login": "AlightEngineering",
+    "id": 98621508,
+    "node_id": "O_kgDOBeDYRA",
+    "url": "https://api.github.com/orgs/AlightEngineering",
+    "repos_url": "https://api.github.com/orgs/AlightEngineering/repos",
+    "events_url": "https://api.github.com/orgs/AlightEngineering/events",
+    "hooks_url": "https://api.github.com/orgs/AlightEngineering/hooks",
+    "issues_url": "https://api.github.com/orgs/AlightEngineering/issues",
+    "members_url": "https://api.github.com/orgs/AlightEngineering/members{/member}",
+    "public_members_url": "https://api.github.com/orgs/AlightEngineering/public_members{/member}",
+    "avatar_url": "https://avatars.githubusercontent.com/u/98621508?v=4",
+    "description": "Alight Engineering ",
+    "name": "Alight Engineering",
+    "company": null,
+    "blog": null,
+    "location": null,
+    "email": null,
+    "twitter_username": null,
+    "is_verified": false,
+    "has_organization_projects": true,
+    "has_repository_projects": true,
+    "public_repos": 0,
+    "public_gists": 0,
+    "followers": 388,
+    "following": 0,
+    "html_url": "https://github.com/AlightEngineering",
+    "created_at": "2022-01-28T22:09:24Z",
+    "updated_at": "2023-08-08T06:54:57Z",
+    "archived_at": null,
+    "type": "Organization"
+  },
+  "parent": null
+}
+Extracted prod_team_id: 8648915
+Extracted hotfix_team_id: 8648904
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+{
+100  1142  100   968  100   174   4394    789 --:--:-- --:--:-- --:--:--  5214
+  "id": 2180757661,
+  "node_id": "EN_kwDOLMpMYs6B-7id",
+  "name": "prod",
+  "url": "https://api.github.com/repos/AlightEngineering/adl-testingrepo1-testingrepo1/environments/prod",
+  "html_url": "https://github.com/AlightEngineering/adl-testingrepo1-testingrepo1/deployments/activity_log?environments_filter=prod",
+  "created_at": "2024-02-01T17:34:16Z",
+  "updated_at": "2024-02-01T17:34:16Z",
+  "can_admins_bypass": true,
+  "protection_rules": [
+    {
+      "id": 15552315,
+      "node_id": "GA_kwDOLMpMYs4A7U87",
+      "type": "required_reviewers",
+      "prevent_self_review": false,
+      "reviewers": [
+
+      ]
+    },
+    {
+      "id": 15552316,
+      "node_id": "GA_kwDOLMpMYs4A7U88",
+      "type": "wait_timer",
+      "wait_timer": 30
+    },
+    {
+      "id": 15552317,
+      "node_id": "GA_kwDOLMpMYs4A7U89",
+      "type": "branch_policy"
+    }
+  ],
+  "deployment_branch_policy": {
+    "protected_branches": false,
+    "custom_branch_policies": true
+  }
 }
