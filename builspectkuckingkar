@@ -1,11 +1,26 @@
-#!/bin/bash
 
-# Assuming the first argument is the instance ID and the second is the AWS region
-INSTANCE_ID="$1"
-REGION="$2"
+module.disk_space.null_resource.resize_root_volume: Destroying... [id=163823025354883050]
+module.disk_space.null_resource.resize_root_volume: Destruction complete after 0s
+module.disk_space.null_resource.resize_root_volume: Creating...
+module.disk_space.null_resource.resize_root_volume: Provisioning with 'local-exec'...
+module.disk_space.null_resource.resize_root_volume (local-exec): Executing: ["cmd" "/C" "bash ../infra-scripts/user-infra-services/cloud9-ide/scripts/resize_volume.sh"]
 
-# Use passed arguments in your AWS CLI commands
-VOLUME_ID=$(aws ec2 describe-volumes --filters "Name=attachment.instance-id,Values=$INSTANCE_ID" "Name=attachment.device,Values=/dev/xvda" --query 'Volumes[*].VolumeId' --output text --region "$REGION")
+module.disk_space.null_resource.resize_root_volume (local-exec): Invalid endpoint: https://ec2..amazonaws.com
+module.disk_space.null_resource.resize_root_volume: Still creating... [10s elapsed]
 
-# Proceed with volume modification
-aws ec2 modify-volume --volume-id "$VOLUME_ID" --size 50 --region "$REGION"
+module.disk_space.null_resource.resize_root_volume (local-exec): Invalid endpoint: https://ec2..amazonaws.com
+╷
+│ Error: local-exec provisioner error
+│
+│   with module.disk_space.null_resource.resize_root_volume,
+│   on ..\infra-scripts\user-infra-services\cloud9-ide\main.tf line 41, in resource "null_resource" "resize_root_volume":
+│   41:   provisioner "local-exec" {
+│
+│ Error running command 'bash
+│ ../infra-scripts/user-infra-services/cloud9-ide/scripts/resize_volume.sh':
+│ exit status 255. Output:
+│ Invalid endpoint: https://ec2..amazonaws.com
+│
+│ Invalid endpoint: https://ec2..amazonaws.com
+│
+╵
