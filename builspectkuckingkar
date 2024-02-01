@@ -1,9 +1,3 @@
-I have checked in the log, id values are not substuting eben though they are getting .
+The below command manually i ran and tested. It is working fine. The IDs should be substituted like below 
 
-curl -X PUT \
-  -H "Authorization: ***" -H "Accept: application/vnd.github+json" \
-  "https://api.github.com/repos/AlightEngineering/adl-testingrepo13-testingrepo13/environments/prod" \
-  -d '{"wait_timer":0,"prevent_self_review":false,"reviewers":[{"type":"Team","id":}, {"type":"Team","id":}]}'
-
-Extracted prod_team_id: 8648915
-Extracted hotfix_team_id: 8648904
+curl -k -X PUT -H "Authorization:***" -H "Accept: application/vnd.github+json" "https://api.github.com/repos/AlightEngineering/adl-testingrepo13-testingrepo13/environments/prod" -d '{"wait_timer":0,"prevent_self_review":false,"reviewers":[{"type":"Team","id":8648915}, {"type":"Team","id":8648904}]}'
