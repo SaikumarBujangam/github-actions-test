@@ -1,12 +1,11 @@
-#!/bin/bash
+ provisioner "local-exec" {
+    command = <<-EOT
+      INSTANCE_ID="${var.instance_id}"
+      REGION="${var.aws_region}"
+      NEW_SIZE="${var.new_size}"
 
-# Parameters
-INSTANCE_ID="$1"
-REGION="$2"
-NEW_SIZE="$3" # Size in GB
-
-# Fetch the root volume ID of the instance
-VOLUME_ID=$(aws ec2 describe-volumes --filters Name=attachment.instance-id,Values=$INSTANCE_ID Name=attachment.device,Values=/dev/sda1 --query 'Volumes[*].VolumeId' --output text --region "$REGION")
-
-# Modify the volume to the new size
-aws ec2 modify-volume --volume-id $VOLUME_ID --size $NEW_SIZE --region $REGION
+      VOLUME_ID=$(aws ec2 describe-volumes --filters "Name=attachment.instance-id,Values=$INSTANCE_ID" "Name=attachment.device,Values=/dev/sda1" --query "Volumes[*].VolumeId" --output text --region "$REGION")
+      aws ec2 modify-volume --volume-id $VOLUME_ID --size $NEW_SIZE --region $REGION
+    EOT
+  }
+}
