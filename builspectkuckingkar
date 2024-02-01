@@ -1,24 +1,21 @@
-module.disk_space.null_resource.test_new: Destroying... [id=6421640855786147430]
-module.disk_space.null_resource.test_new: Destruction complete after 0s
-module.disk_space.null_resource.test_new: Creating...
-module.disk_space.null_resource.test_new: Provisioning with 'local-exec'...
-module.disk_space.null_resource.test_new (local-exec): Executing: ["cmd" "/C" "bash -c \"INSTANCE_ID='i-0fd49ca82ae0f9dc6'; \\\r\nREGION='eu-central-1'; \\\r\nVOLUME_ID=\\$(aws ec2 describe-volumes --filters 'Name=attachment.instance-id,Values='\\$INSTANCE_ID'' 'Name=attachment.device,Values=/dev/sda1' --query 'Volumes[*].VolumeId' --output text --region '\\$REGION'); \\\r\naws ec2 modify-volume --volume-id \\$VOLUME_ID --size 40 --region \\$REGION\"\r\n"]
-module.disk_space.null_resource.test_new (local-exec): bash: INSTANCE_ID=i-0fd49ca82ae0f9dc6: command not found
-module.disk_space.null_resource.test_new (local-exec): bash: line 2: \: Is a directory
+  Enter a value: yes
+
+module.disk_space.null_resource.resize_root_volume: Destroying... [id=8548707573366818934]
+module.disk_space.null_resource.resize_root_volume: Destruction complete after 0s
+module.disk_space.null_resource.resize_root_volume: Creating...
+module.disk_space.null_resource.resize_root_volume: Provisioning with 'local-exec'...
+module.disk_space.null_resource.resize_root_volume (local-exec): Executing: ["cmd" "/C" "../infra-scripts/user-infra-services/cloud9-ide/scripts/resize_volume.sh i-0fd49ca82ae0f9dc6 eu-central-1"]
+module.disk_space.null_resource.resize_root_volume (local-exec): '..' is not recognized as an internal or external command,
+module.disk_space.null_resource.resize_root_volume (local-exec): operable program or batch file.
 ╷
 │ Error: local-exec provisioner error
 │
-│   with module.disk_space.null_resource.test_new,
-│   on ..\infra-scripts\user-infra-services\cloud9-ide\main.tf line 59, in resource "null_resource" "test_new":
-│   59:   provisioner "local-exec" {
+│   with module.disk_space.null_resource.resize_root_volume,
+│   on ..\infra-scripts\user-infra-services\cloud9-ide\main.tf line 53, in resource "null_resource" "resize_root_volume":
+│   53:   provisioner "local-exec" {
 │
-│ Error running command 'bash -c "INSTANCE_ID='i-0fd49ca82ae0f9dc6'; \
-│ REGION='eu-central-1'; \
-│ VOLUME_ID=\$(aws ec2 describe-volumes --filters
-│ 'Name=attachment.instance-id,Values='\$INSTANCE_ID''
-│ 'Name=attachment.device,Values=/dev/sda1' --query 'Volumes[*].VolumeId'
-│ --output text --region '\$REGION'); \
-│ aws ec2 modify-volume --volume-id \$VOLUME_ID --size 40 --region \$REGION"
-│ ': exit status 126. Output: bash: INSTANCE_ID=i-0fd49ca82ae0f9dc6: command
-│ not found
-│ bash: line 2: \: Is a directory
+│ Error running command
+│ '../infra-scripts/user-infra-services/cloud9-ide/scripts/resize_volume.sh
+│ i-0fd49ca82ae0f9dc6 eu-central-1': exit status 1. Output: '..' is not
+│ recognized as an internal or external command,
+│ operable program or batch file.
