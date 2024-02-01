@@ -1,8 +1,39 @@
-#INSTANCE_ID=$(aws ec2 describe-instances --filters Name=instance-id,Values=${data.aws_instance.cloud9.id} Name=instance-state-name,Values=running --query 'Reservations[*].Instances[*].InstanceId' --output text --region ${var.region})
-#VOLUME_ID=$(aws ec2 describe-volumes --filters Name=attachment.instance-id,Values=$INSTANCE_ID Name=attachment.device,Values=/dev/xvda --query 'Volumes[*].VolumeId' --output text --region ${var.region})
-#aws ec2 modify-volume --volume-id $VOLUME_ID --size 20 --region ${var.region}
+{
+    "diffEditor.ignoreTrimWhitespace": false,
+    "shellLauncher.shells.windows": [
+        {
+            "shell": "C:\\cygwin64\\bin\\bash.exe",
+            "args": ["--login"],
+            "label": "Cygwin Bash",
+            "launchName": "Cygwin Bash"
+        },        
+        {
+            "shell": "C:\\Windows\\System32\\cmd.exe",
+            "label": "cmd"
+        },
+        {
+            "shell": "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+            "label": "PowerShell"
+        },
+        {
+            "shell": "C:\\Users\\umababy.kannan\\AppData\\Local\\Programs\\Git\\git-bash.exe --cd-to-home",
+            "label": "bash"
+        }, 
+        {
+            "shell": "C:\\Windows\\System32\\bash.exe",
+            "label": "WSL Bash"
+        }
+        {
+            "terminal.integrated.Profiles.windows": {
+                "GitBash": {
+                    "path": [
+                        "C:\\Users\\umababy.kannan\\AppData\\Local\\Programs\\Git\\git-bash.exe"
+                    ]
+                }
 
-INSTANCE_ID="$1"
-REGION="$2"
-VOLUME_ID=$(aws ec2 describe-volumes Name=instance-id,Values=$INSTANCE_ID Name=attachment.device,Values=/dev/xvda --query 'Volumes[*].VolumeId' --region ${REGION}
-aws ec2 modify-volume --volume-id $VOLUME_ID --size 20 --region ${REGION}
+        }
+    }
+    ],
+    "git.confirmSync": false,
+    "window.zoomLevel": 1,
+}
