@@ -4,44 +4,11 @@
 EC2_ID="$1"
 REGION="$2"
 
-INSTANCE_ID=$(aws ec2 describe-instances --filters Name=instance-id,Values=$EC2_ID Name=instance-state-name,Values=running --query 'Reservations[*].Instances[*].InstanceId' --output text --region "$REGION")
-VOLUME_ID = $(aws ec2 describe-volumes --filters Name=attachment.instance-id,Values=$INSTANCE_ID Name=attachment.device,Values=/dev/xvda --query 'Volumes[*].VolumeId' --output text --region "$REGION")
+# No need to fetch INSTANCE_ID if EC2_ID is already the instance ID
+# INSTANCE_ID=$(aws ec2 describe-instances --filters Name=instance-id,Values=$EC2_ID Name=instance-state-name,Values=running --query 'Reservations[*].Instances[*].InstanceId' --output text --region "$REGION")
+
+# Corrected assignment for VOLUME_ID (removed spaces around =)
+VOLUME_ID=$(aws ec2 describe-volumes --filters Name=attachment.instance-id,Values=$EC2_ID Name=attachment.device,Values=/dev/xvda --query 'Volumes[*].VolumeId' --output text --region "$REGION")
+
+# Proceed with volume modification
 aws ec2 modify-volume --volume-id $VOLUME_ID --size 50 --region $REGION
-
-module.disk_space.null_resource.resize_root_volume: Creating...
-module.disk_space.null_resource.resize_root_volume: Provisioning with 'local-exec'...
-module.disk_space.null_resource.resize_root_volume (local-exec): Executing: ["cmd" "/C" "bash ../infra-scripts/user-infra-services/cloud9-ide/scripts/resize_volume.sh i-0fd49ca82ae0f9dc6 eu-central-1"]
-module.disk_space.null_resource.resize_root_volume: Still creating... [10s elapsed]
-module.disk_space.null_resource.resize_root_volume (local-exec): ../infra-scripts/user-infra-services/cloud9-ide/scripts/resize_volume.sh: line 8: VOLUME_ID: command not found
-module.disk_space.null_resource.resize_root_volume: Still creating... [20s elapsed]
-
-module.disk_space.null_resource.resize_root_volume (local-exec): usage: aws [options] <command> <subcommand> [<subcommand> ...] [parameters]
-module.disk_space.null_resource.resize_root_volume (local-exec): To see help text, you can run:
-
-module.disk_space.null_resource.resize_root_volume (local-exec):   aws help
-module.disk_space.null_resource.resize_root_volume (local-exec):   aws <command> help
-module.disk_space.null_resource.resize_root_volume (local-exec):   aws <command> <subcommand> help
-
-module.disk_space.null_resource.resize_root_volume (local-exec): aws.exe: error: argument --volume-id: expected one argument
-
-╷
-│ Error: local-exec provisioner error
-│
-│   with module.disk_space.null_resource.resize_root_volume,
-│   on ..\infra-scripts\user-infra-services\cloud9-ide\main.tf line 48, in resource "null_resource" "resize_root_volume":
-│   48:   provisioner "local-exec" {
-│
-│ Error running command 'bash
-│ ../infra-scripts/user-infra-services/cloud9-ide/scripts/resize_volume.sh
-│ i-0fd49ca82ae0f9dc6 eu-central-1': exit status 252. Output:
-│ ../infra-scripts/user-infra-services/cloud9-ide/scripts/resize_volume.sh:
-│ line 8: VOLUME_ID: command not found
-│
-│ usage: aws [options] <command> <subcommand> [<subcommand> ...] [parameters]
-│ To see help text, you can run:
-│
-│   aws help
-│   aws <command> help
-│   aws <command> <subcommand> help
-│
-│ aws.exe: error: argument --volume-id: expected one argument
