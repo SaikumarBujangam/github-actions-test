@@ -1,1 +1,34 @@
-message": "Failed to create or update the environment protection rule. Required reviewers must have at least one reviewer to set prevent_self_review.
+name: Delete Specific Branches
+
+on:
+  workflow_dispatch:
+    inputs:
+      token:
+        description: 'GitHub Token for authentication'
+        required: true
+        default: ${{ github.token }}
+
+jobs:
+  delete-branches:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Delete release/qa Branch
+        run: |
+          curl -X DELETE \
+          -H "Authorization: token ${{ github.event.inputs.token }}" \
+          -H "Accept: application/vnd.github.v3+json" \
+          https://api.github.com/repos/${{ github.repository }}/git/refs/heads/release/qa
+
+      - name: Delete release/qc Branch
+        run: |
+          curl -X DELETE \
+          -H "Authorization: token ${{ github.event.inputs.token }}" \
+          -H "Accept: application/vnd.github.v3+json" \
+          https://api.github.com/repos/${{ github.repository }}/git/refs/heads/release/qc
+
+      - name: Delete release/prod Branch
+        run: |
+          curl -X DELETE \
+          -H "Authorization: token ${{ github.event.inputs.token }}" \
+          -H "Accept: application/vnd.github.v3+json" \
+          https://api.github.com/repos/${{ github.repository }}/git/refs/heads/release/prod
