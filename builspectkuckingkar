@@ -1,26 +1,56 @@
-      - name: Get Team IDs
-        id: get_team_info
-        run: |
-          prod_team_name="${{ inputs.repo-approvers-team }}"
-          hotfix_team_name="${{ inputs.repo-dataproductowner-approvers-team }}"
-          org_name="AlightEngineering"
-          
-          curl -H "Authorization: token ${{ secrets.GH_CLONE_REPO }}" -H "Accept: application/vnd.github.v3+json" "https://api.github.com/orgs/$org_name/teams/$prod_team_name" >> prod_team_info.json
-          PROD_TEAM_ID=$(jq '.id' prod_team_info.json)
-          echo "prod_team_id=$PROD_TEAM_ID" >> $GITHUB_OUTPUT
+Even though I pass two, only one is getting added
 
-          curl -H "Authorization: token ${{ secrets.GH_CLONE_REPO }}" -H "Accept: application/vnd.github.v3+json" "https://api.github.com/orgs/$org_name/teams/$hotfix_team_name" >> hotfix_team_info.json
-          HOTFIX_TEAM_ID=$(jq '.id' hotfix_team_info.json) 
-          echo "hotfix_team_id=$HOTFIX_TEAM_ID" >> $GITHUB_OUTPUT
+$ curl -k -X PUT \
+  -H "Authorization: ***" -H "Accept: application/vnd.github+json" \
+  "https://api.github.com/repos/AlightEngineering/adl-testingrepo7-testingrepo7/environments/prod" \
+  -d '{"wait_timer":0,"prevent_self_review":true,"reviewers":[{"type":"Team","id":8648915},{"type":"Team","id":8648904}],"deployment_branch_policy":{"protected_branches":false,"custom_branch_policies":true}}'
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100  1911  100  1710  100   201   2537    298 --:--:-- --:--:-- --:--:--  2847{
+  "id": 2184650092,
+  "node_id": "EN_kwDOLM4DIc6CNx1s",
+  "name": "prod",
+  "url": "https://api.github.com/repos/AlightEngineering/adl-testingrepo7-testingrepo7/environments/prod",
+  "html_url": "https://github.com/AlightEngineering/adl-testingrepo7-testingrepo7/deployments/activity_log?environments_filter=prod",
+  "created_at": "2024-02-02T06:05:57Z",
+  "updated_at": "2024-02-02T06:05:57Z",
+  "can_admins_bypass": true,
+  "protection_rules": [
+    {
+      "id": 15566021,
+      "node_id": "GA_kwDOLM4DIc4A7YTF",
+      "type": "required_reviewers",
+      "prevent_self_review": true,
+      "reviewers": [
+        {
+          "type": "Team",
+          "reviewer": {
+            "name": "adl-testing-dataproductowners-approvers",
+            "id": 8648904,
+            "node_id": "T_kwDOBeDYRM4Ag_jI",
+            "slug": "adl-testing-dataproductowners-approvers",
+            "description": null,
+            "privacy": "closed",
+            "notification_setting": "notifications_enabled",
+            "url": "https://api.github.com/organizations/98621508/team/8648904",
+            "html_url": "https://github.com/orgs/AlightEngineering/teams/adl-testing-dataproductowners-approvers",
+            "members_url": "https://api.github.com/organizations/98621508/team/8648904/members{/member}",
+            "repositories_url": "https://api.github.com/organizations/98621508/team/8648904/repos",
+            "permission": "push",
+            "parent": null
+          }
+        }
+      ]
+    },
+    {
+      "id": 15566022,
+      "node_id": "GA_kwDOLM4DIc4A7YTG",
+      "type": "branch_policy"
+    }
+  ],
+  "deployment_branch_policy": {
+    "protected_branches": false,
+    "custom_branch_policies": true
+  }
+}
 
-      - name: Create Prod and Hotfix Environments
-        run: |
-          curl -X PUT \
-          -H "Authorization: Bearer ${{ secrets.GH_CLONE_REPO }}" -H "Accept: application/vnd.github+json" \
-          "https://api.github.com/repos/${{ inputs.org-name }}/${{ inputs.repo-division-name }}-${{ inputs.repo-group-name }}-${{ inputs.repo-subject-area }}/environments/prod" \
-          -d '{"wait_timer":0,"prevent_self_review":false,"reviewers":[{"type":"Team","id":${{ steps.get_team_info.outputs.prod_team_id }}}, {"type":"Team","id":${{ steps.get_team_info.outputs.hotfix_team_id }}}],"deployment_branch_policy":{"protected_branches":false,"custom_branch_policies":true}}'
-
-          curl -X PUT \
-          -H "Authorization: Bearer ${{ secrets.GH_CLONE_REPO }}" -H "Accept: application/vnd.github+json" \
-          "https://api.github.com/repos/${{ inputs.org-name }}/${{ inputs.repo-division-name }}-${{ inputs.repo-group-name }}-${{ inputs.repo-subject-area }}/environments/hotfix" \
-          -d '{"wait_timer":0,"prevent_self_review":true,"reviewers":[{"type":"Team","id":${{ steps.get_team_info.outputs.hotfix_team_id }}}],"deployment_branch_policy":{"protected_branches":false,"custom_branch_policies":true}}'
