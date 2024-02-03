@@ -1,81 +1,54 @@
-import boto3
-import json
-import datetime
-import logging
-import uuid
-from boto3.dynamodb.types import TypeDeserializer
+version: 0.2
+env:
+  shell: bash
+  variables:
+    TARGET_REGION: "eu-central-1"
+    S3_BUCKET: "${S3_BUCKET}"
+  secrets-manager:
+    Endor_Graphql_Api_Key: "${ENV}/variable/endorGraphqlApiKey"
+    Service_Access_Key: "${ENV}/variable/serviceAccessKey"
+    Nft_Bearer_Token: "${ENV}/variable/nftBearerToken"
 
-# Initialize logger
-logger = logging.getLogger()
-logger.setLevel(logging.INFO)
-
-STATUS_SUCCESS = "SUCCESS"
-STATUS_FAILED = "FAILED"
-
-
-def ddb_deserialize(r, type_deserializer=TypeDeserializer()):
-    return type_deserializer.deserialize({"M": r})
-
-
-def lambda_handler(event, context):
-    try:
-        logger.info('EVENT :' + json.dumps(event))
-        # Initialize DynamoDB clients for source and destination tables
-        destination_table_name = "DataIngressLog"
-        dynamodb = boto3.resource('dynamodb')
-
-        destination_table_name = dynamodb.Table(destination_table_name)
-
-        logger.info('## Outside for loop... = %s', event['Records'])
-
-        for record in event['Records']:
-            logger.info('## Inside for loop...')
-            if record['eventName'] == 'INSERT' or record['eventName'] == 'MODIFY' or record['eventName'] == 'REMOVE':
-                # Get the changed item from the source table
-                logger.info('## Inside actionif...')
-                item = record['dynamodb']['NewImage'] if record['eventName'] != 'REMOVE' else record['dynamodb'][
-                    'OldImage']
-
-                if item:
-                    new_images = ddb_deserialize(item)
-                    logger.info('## New Images = %s', new_images)
-                    logger.info('## Item present...')
-                    # Write the item to the destination (log) table
-
-                    metadata = json.loads(
-                        new_images['approval_metadata']) if 'approval_metadata' in new_images else None
-                    action_performed_by = new_images['approved_by'] if 'approved_by' in new_images else None
-                    if not metadata:
-                        metadata = json.loads(new_images['associate_metadata'])
-                        action_performed_by = new_images['created_by']
-                        logger.info('## before additional_values...')
-                    additional_values = {
-                        "dataset_status": new_images['dataset_status'] if 'dataset_status' in new_images else "",
-                        "no_of_files_approved": str(new_images[
-                            'no_of_files_approved']) if 'no_of_files_approved' in new_images else "",
-                        "remarks": new_images['reject_reason'] if 'reject_reason' in new_images else "",
-                    }
-
-                logger.info('## before update...')
-                metadata.update(additional_values)
-                logger.info('## metadata...%s', metadata)
-
-                now = datetime.datetime.now()
-                logger.info('## Date... = %s', now)
-                date_now = now.strftime("%Y-%m-%dT%H:%M:%S.%f")
-
-                logger.info('## Before Data...')
-                data = {
-                    "log_id": str(uuid.uuid4()),
-                    "action": record['eventName'],
-                    "date_time_changed": date_now,
-                    "action_performed_by": action_performed_by,
-                    "metadata": str(metadata).replace("'", "\""),
-                }
-
-                destination_table_name.put_item(Item=data)
-        return {'status': STATUS_SUCCESS, 'body': 'Data logged successfully'}
-    except Exception as err:
-        logger.error('Data Ingress Log Failure %s', event['Records'])
-        logger.error("Error :" + str(err))
-        return {'status': STATUS_FAILED, 'error': str(err)}
+phases:
+  install:
+    runtime-versions:
+      python: 3.9
+  pre_build:
+    commands:
+      - aws --version
+      - sudo wget -q https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -O /usr/bin/yq && sudo chmod +x /usr/bin/yq
+      - aws configure set region $TARGET_REGION --profile ${ENV}-account
+      - aws configure set role_arn arn:aws:iam::${ACCOUNT_ID}:role/InfraBuildRole --profile ${ENV}-account
+      - aws configure set credential_source EcsContainer --profile ${ENV}-account
+      - aws eks --region $TARGET_REGION update-kubeconfig --name ${ENV}-starcap-platform-cluster --profile ${ENV}-account
+  build:
+    commands:
+      - sed -i "s/<endorGraphqlApiKey>/$Endor_Graphql_Api_Key/g" cluster-configmap/${ENV}-backend-configmap.yaml
+      - sed -i "s/<serviceAccessKey>/$Service_Access_Key/g" cluster-configmap/${ENV}-backend-configmap.yaml
+      - sed -i "s/<nftBearerToken>/$Nft_Bearer_Token/g" cluster-configmap/${ENV}-backend-configmap.yaml
+      - kubectl apply -f cluster-configmap/${ENV}-backend-configmap.yaml
+      - |
+        for version in $(yq eval -o=j application-deployment-config/${ENV}-deployment-versions.yaml | jq -cr '.versions[]'); do
+          service_name=$(echo $version | jq -r '. | to_entries | .[].key' -)
+          appversion=$(echo $version | jq -r '. | to_entries | .[].value' -)
+          echo $service_name $appversion
+          if [ $service_name = "webapp" ]; then 
+            webapp_version=$appversion
+          elif [ $service_name = "lambda-services" ]; then
+            lambda_version=$appversion
+          else
+            sed -i "s/<image_id>/$appversion/g" cluster-config/$service_name-deployment.yaml
+          fi
+        done
+      - aws lambda update-function-code --function-name ingress-streams-processing-lambda --s3-bucket starcap-lambda-build-artifact --s3-key audit/lambda_function_$lambda_version.zip --profile ${ENV}-account
+      - kubectl apply -f cluster-config
+  post_build:
+    commands:
+      - echo Downloading frontend code
+      - aws s3 cp --recursive s3://starcap-webapp-build-artifact/${ENV}-$webapp_version webapp
+      - aws s3 rm --recursive s3://$${S3_BUCKET} --profile ${ENV}-account
+artifacts:
+  files:
+    - "**/*"
+  discard-paths: no
+  base-directory: webapp
