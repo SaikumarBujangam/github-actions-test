@@ -1,50 +1,81 @@
-version: 0.2
-env:
-  variables:
-    TARGET_REGION: "eu-central-1"
-  secrets-manager:
-    SONAR_TOKEN: "sonar_token"
-  parameter-store:
-    SONAR_ANALYSIS_EXCLUSION: "sonar_analysis_exclusion_develop"
-phases:
-  install:
-    runtime-versions:
-        java: corretto17
-  pre_build:
-    commands:
-      - aws --version
-      - echo "Logging in to Amazon ECR..."
-      - $(aws ecr get-login --region eu-central-1 --no-include-email)
-      - CODEARTIFACT_AUTH_TOKEN=`aws codeartifact get-authorization-token --domain dev --domain-owner 195227247767 --region eu-central-1 --query authorizationToken --output text`
-      - sed -i "s/\\\$${env.CODEARTIFACT_AUTH_TOKEN}/$CODEARTIFACT_AUTH_TOKEN/g" settings.xml
-      - REPOSITORY_URI="${ecr_repository_url}"
-      - COMMIT_HASH=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
-      - IMAGE_TAG=$${COMMIT_HASH:=latest}
-      - APPLICATION_NAME="${microservice_name}"
-      - aws configure set region $TARGET_REGION --profile dev-account
-      - aws configure set role_arn arn:aws:iam::745252665765:role/InfraBuildRole --profile dev-account
-      - aws configure set credential_source EcsContainer --profile dev-account
-      - aws eks --region $TARGET_REGION update-kubeconfig --name dev-starcap-platform-cluster --profile dev-account
-  build:
-    commands:
-      - echo Build started on `date`
-      - |
-        if [[ ! $SONAR_ANALYSIS_EXCLUSION =~ "${microservice_name}" ]]; then
-          mvn -s settings.xml clean verify --no-transfer-progress sonar:sonar -Pcoverage -U -e -Dsonar.projectName=starcap-$APPLICATION_NAME -Dsonar.projectKey=starcap-$APPLICATION_NAME -Dsonar.branch.name=develop -Dsonar.qualitygate.wait=true -Dsonar.host.url=https://sonarqube.roche.com
-        else
-          echo "Sonar analysis was not executed"
-        fi
-      - echo Building the Docker image...
-      - docker build -t $REPOSITORY_URI:$APPLICATION_NAME-$IMAGE_TAG .
-      - echo Build completed on `date`
-      - echo Pushing the Docker images...
-      - docker push $REPOSITORY_URI:$APPLICATION_NAME-$IMAGE_TAG
-      - sed -i "s/<image_id>/$IMAGE_TAG/g" cluster-config/deployment.yaml
-      - kubectl apply -f cluster-config/deployment.yaml
-  post_build:
-    commands:
-      - echo Writing image definitions file... 
-      - printf '{"ImageURI":"%s"}' $REPOSITORY_URI:$APPLICATION_NAME-$IMAGE_TAG > imageDetail.json
-artifacts:
-  files:
-    - imageDetail.json
+import boto3
+import json
+import datetime
+import logging
+import uuid
+from boto3.dynamodb.types import TypeDeserializer
+
+# Initialize logger
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
+
+STATUS_SUCCESS = "SUCCESS"
+STATUS_FAILED = "FAILED"
+
+
+def ddb_deserialize(r, type_deserializer=TypeDeserializer()):
+    return type_deserializer.deserialize({"M": r})
+
+
+def lambda_handler(event, context):
+    try:
+        logger.info('EVENT :' + json.dumps(event))
+        # Initialize DynamoDB clients for source and destination tables
+        destination_table_name = "DataIngressLog"
+        dynamodb = boto3.resource('dynamodb')
+
+        destination_table_name = dynamodb.Table(destination_table_name)
+
+        logger.info('## Outside for loop... = %s', event['Records'])
+
+        for record in event['Records']:
+            logger.info('## Inside for loop...')
+            if record['eventName'] == 'INSERT' or record['eventName'] == 'MODIFY' or record['eventName'] == 'REMOVE':
+                # Get the changed item from the source table
+                logger.info('## Inside actionif...')
+                item = record['dynamodb']['NewImage'] if record['eventName'] != 'REMOVE' else record['dynamodb'][
+                    'OldImage']
+
+                if item:
+                    new_images = ddb_deserialize(item)
+                    logger.info('## New Images = %s', new_images)
+                    logger.info('## Item present...')
+                    # Write the item to the destination (log) table
+
+                    metadata = json.loads(
+                        new_images['approval_metadata']) if 'approval_metadata' in new_images else None
+                    action_performed_by = new_images['approved_by'] if 'approved_by' in new_images else None
+                    if not metadata:
+                        metadata = json.loads(new_images['associate_metadata'])
+                        action_performed_by = new_images['created_by']
+                        logger.info('## before additional_values...')
+                    additional_values = {
+                        "dataset_status": new_images['dataset_status'] if 'dataset_status' in new_images else "",
+                        "no_of_files_approved": str(new_images[
+                            'no_of_files_approved']) if 'no_of_files_approved' in new_images else "",
+                        "remarks": new_images['reject_reason'] if 'reject_reason' in new_images else "",
+                    }
+
+                logger.info('## before update...')
+                metadata.update(additional_values)
+                logger.info('## metadata...%s', metadata)
+
+                now = datetime.datetime.now()
+                logger.info('## Date... = %s', now)
+                date_now = now.strftime("%Y-%m-%dT%H:%M:%S.%f")
+
+                logger.info('## Before Data...')
+                data = {
+                    "log_id": str(uuid.uuid4()),
+                    "action": record['eventName'],
+                    "date_time_changed": date_now,
+                    "action_performed_by": action_performed_by,
+                    "metadata": str(metadata).replace("'", "\""),
+                }
+
+                destination_table_name.put_item(Item=data)
+        return {'status': STATUS_SUCCESS, 'body': 'Data logged successfully'}
+    except Exception as err:
+        logger.error('Data Ingress Log Failure %s', event['Records'])
+        logger.error("Error :" + str(err))
+        return {'status': STATUS_FAILED, 'error': str(err)}
