@@ -15,3 +15,49 @@ def degrees_to_radians(deg):
 def trigonometry(deg):
   rad = degrees_to_radians(deg)
   return math.sin(rad), math.cos(rad), math.tan(deg)
+
+
+# test_calc.py
+# This script is used to test the functions defined in calc.py
+
+from calc import factorial, log10, degrees_to_radians, trigonometry
+
+# Test the factorial function
+print("Factorial of 5:", factorial(5))  # Expected output: 120
+
+# Test the log10 function
+print("Log10 of 100:", log10(100))  # Expected output: 2
+
+# Test the degrees_to_radians function
+print("180 degrees to radians:", degrees_to_radians(180))  # Expected output: pi
+
+# Test the trigonometry function
+sin_val, cos_val, tan_val = trigonometry(45)  # Expected output: ~0.7071, ~0.7071, 1 for 45 degrees
+print(f"Sine of 45 degrees: {sin_val}")
+print(f"Cosine of 45 degrees: {cos_val}")
+print(f"Tangent of 45 degrees: {tan_val}")
+
+# Run this script after creating calc.py to see if the outputs are as expected.
+
+# maths.py
+# This module utilizes functions imported from calc.py
+
+from calc import factorial, trigonometry
+
+# Example usage of the factorial function
+def example_factorial():
+    num = 5
+    print(f"The factorial of {num} is {factorial(num)}")
+
+# Example usage of the trigonometry function
+def example_trigonometry():
+    angle = 45
+    sin_val, cos_val, tan_val = trigonometry(angle)
+    print(f"Sine of {angle} degrees: {sin_val}")
+    print(f"Cosine of {angle} degrees: {cos_val}")
+    print(f"Tangent of {angle} degrees: {tan_val}")
+
+# Call the example functions to demonstrate functionality
+if __name__ == "__main__":
+    example_factorial()
+    example_trigonometry()
