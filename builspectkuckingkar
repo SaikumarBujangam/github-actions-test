@@ -1,37 +1,54 @@
-# Terraform-init
-This directory contains the code to create the terraform backend resources S3 and dynamodb. We need to run this terraform module one time to create the resources.
+version: 0.2
+env:
+  shell: bash
+  variables:
+    TARGET_REGION: "eu-central-1"
+    S3_BUCKET: "${S3_BUCKET}"
+  secrets-manager:
+    Endor_Graphql_Api_Key: "${ENV}/variable/endorGraphqlApiKey"
+    Service_Access_Key: "${ENV}/variable/serviceAccessKey"
+    Nft_Bearer_Token: "${ENV}/variable/nftBearerToken"
 
-This module requires the following varaibles to run.
-
-state_bucket
-
-lock_table
-
-region
-
-## Commands to run and execute
-
-### Init Terraform resources
-
-```
-terraform init && \
-(terraform import aws_s3_bucket.terraform_state "starcap-devops-tf-state" 2>/dev/null || true) && \
-(terraform import aws_dynamodb_table.terraform_locks "starcap-devops-tf-state-lock" 2>/dev/null || true)
-```
-### Validate Terraform resources
-
-```
-terraform validate
-```
-
-### Plan Terraform resources
-
-```
-terraform plan -out plan.out
-```
-
-### Apply Terraform resources
-
-```
-terraform apply -auto-approve plan.out
-```
+phases:
+  install:
+    runtime-versions:
+      python: 3.9
+  pre_build:
+    commands:
+      - aws --version
+      - sudo wget -q https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -O /usr/bin/yq && sudo chmod +x /usr/bin/yq
+      - aws configure set region $TARGET_REGION --profile ${ENV}-account
+      - aws configure set role_arn arn:aws:iam::${ACCOUNT_ID}:role/InfraBuildRole --profile ${ENV}-account
+      - aws configure set credential_source EcsContainer --profile ${ENV}-account
+      - aws eks --region $TARGET_REGION update-kubeconfig --name ${ENV}-starcap-platform-cluster --profile ${ENV}-account
+  build:
+    commands:
+      - sed -i "s/<endorGraphqlApiKey>/$Endor_Graphql_Api_Key/g" cluster-configmap/${ENV}-backend-configmap.yaml
+      - sed -i "s/<serviceAccessKey>/$Service_Access_Key/g" cluster-configmap/${ENV}-backend-configmap.yaml
+      - sed -i "s/<nftBearerToken>/$Nft_Bearer_Token/g" cluster-configmap/${ENV}-backend-configmap.yaml
+      - kubectl apply -f cluster-configmap/${ENV}-backend-configmap.yaml
+      - |
+        for version in $(yq eval -o=j application-deployment-config/${ENV}-deployment-versions.yaml | jq -cr '.versions[]'); do
+          service_name=$(echo $version | jq -r '. | to_entries | .[].key' -)
+          appversion=$(echo $version | jq -r '. | to_entries | .[].value' -)
+          echo $service_name $appversion
+          if [ $service_name = "webapp" ]; then 
+            webapp_version=$appversion
+          elif [ $service_name = "lambda-services" ]; then
+            lambda_version=$appversion
+          else
+            sed -i "s/<image_id>/$appversion/g" cluster-config/$service_name-deployment.yaml
+          fi
+        done
+      - aws lambda update-function-code --function-name ingress-streams-processing-lambda --s3-bucket starcap-lambda-build-artifact --s3-key audit/lambda_function_$lambda_version.zip --profile ${ENV}-account
+      - kubectl apply -f cluster-config
+  post_build:
+    commands:
+      - echo Downloading frontend code
+      - aws s3 cp --recursive s3://starcap-webapp-build-artifact/${ENV}-$webapp_version webapp
+      - aws s3 rm --recursive s3://$${S3_BUCKET} --profile ${ENV}-account
+artifacts:
+  files:
+    - "**/*"
+  discard-paths: no
+  base-directory: webapp
