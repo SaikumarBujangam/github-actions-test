@@ -37,7 +37,15 @@ print(f"Sine of 45 degrees: {sin_val}")
 print(f"Cosine of 45 degrees: {cos_val}")
 print(f"Tangent of 45 degrees: {tan_val}")
 
-# Run this script after creating calc.py to see if the outputs are as expected.
+C:\Users\saiku\Downloads>python calc.py
+
+C:\Users\saiku\Downloads>python test_calc.py
+Factorial of 5: 120
+Log10 of 100: 2.0
+180 degrees to radians: 3.141592653589793
+Sine of 45 degrees: 0.7071067811865476
+Cosine of 45 degrees: 0.7071067811865476
+Tangent of 45 degrees: 1.6197751905438615
 
 # maths.py
 # This module utilizes functions imported from calc.py
@@ -61,3 +69,19 @@ def example_trigonometry():
 if __name__ == "__main__":
     example_factorial()
     example_trigonometry()
+
+C:\Users\saiku\Downloads>python calc.py
+
+C:\Users\saiku\Downloads>python test_calc.py
+Factorial of 5: 120
+Log10 of 100: 2.0
+180 degrees to radians: 3.141592653589793
+Sine of 45 degrees: 0.7071067811865476
+Cosine of 45 degrees: 0.7071067811865476
+Tangent of 45 degrees: 1.6197751905438615
+
+C:\Users\saiku\Downloads>python maths.py
+The factorial of 5 is 120
+Sine of 45 degrees: 0.7071067811865476
+Cosine of 45 degrees: 0.7071067811865476
+Tangent of 45 degrees: 1.6197751905438615
