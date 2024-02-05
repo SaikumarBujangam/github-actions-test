@@ -1,80 +1,21 @@
-name: ADL CICD Repository Modification
-
-on:
-  workflow_dispatch:
-    inputs:
-      repo-division-name:
-        description: 'Repo Division Area:'
-        required: true
-        type: string
-        default: 'adl'
-      repo-group-name:
-        description: 'Data Product for this repo'
-        required: true
-        type: string
-        default: 'no-group-provided'
-      repo-subject-area:
-        description: 'Repo Subject Area:'
-        required: true
-        type: string
-        default: ''
-      org-name:
-        description: 'Organization to use for repo creation'
-        required: true
-        type: string
-        default: 'AlightEngineering'
-      admin-team-name:
-        description: 'Admin team for repo'
-        required: true
-        type: string
-        default: 'adl-core-admins'
-      repo-approvers-team:
-        description: 'Data Product Approvers Team for master'
-        required: true
-        type: string
-        default: 'adl-<dataproductname>-approvers'
-      repo-dataproductowner-approvers-team:
-        description: 'Data Product Approvers Team for master'
-        required: true
-        type: string
-        default: 'adl-<dataproductname>-dataproductowners-approvers'
-      workflow-template-repo:
-        description: 'GitHub Actions Workflow Template Repository'
-        required: true
-        type: string
-        default: 'your-organization/template-repo' # Replace with the actual template repository
-
-jobs:
-  adl-update-repo:
-    # ... (Your existing steps for updating the repository)
-
-  copy-workflow-templates:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check Inputs
-        run: |
-          # Check if required inputs are provided
-          if [[ -z "${{ inputs.workflow-template-repo }}" ]]; then
-            echo "Please provide a workflow template repository."
-            exit 1
-          fi
-
-      - name: Clone Workflow Template Repository
-        uses: actions/checkout@v2
-        with:
-          repository: ${{ inputs.workflow-template-repo }}
-          path: workflow-templates # Specify the target directory where the template repository should be cloned
-
-      - name: Copy Workflows to Target Repository
-        run: |
-          # Copy .github/workflows from the template repository to the target repository
-          cp -r workflow-templates/.github/workflows .github
-
-      - name: Commit and Push Changes
-        run: |
-          # Commit and push the changes to the target repository
-          git config --local user.email "actions@github.com"
-          git config --local user.name "GitHub Actions"
-          git add .
-          git commit -m "Copy workflow templates from template repository"
-          git push
+Run actions/checkout@v2
+Syncing repository: AlightEngineering/adl-dataproduct-templatev2
+Getting Git version info
+  Working directory is '/home/runner/work/adl-deploy-cicd/adl-deploy-cicd/workflow-templates'
+  /usr/bin/git version
+  git version 2.43.0
+Temporarily overriding HOME='/home/runner/work/_temp/ddf3858e-6a1f-4806-b4cf-29e83dcbca79' before making global git config changes
+Adding repository directory to the temporary git global config as a safe directory
+/usr/bin/git config --global --add safe.directory /home/runner/work/adl-deploy-cicd/adl-deploy-cicd/workflow-templates
+Initializing the repository
+Disabling automatic garbage collection
+Setting up auth
+Determining the default branch
+  Retrieving the default branch name
+  Not Found
+  Waiting 19 seconds before trying again
+  Retrieving the default branch name
+  Not Found
+  Waiting 11 seconds before trying again
+  Retrieving the default branch name
+  Error: Not Found
