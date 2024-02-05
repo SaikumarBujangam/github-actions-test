@@ -1,110 +1,17 @@
-# DO NOT MODIFY OR DELETE THIS WORKFLOW!!
-
-name: ADL CICD Deployment Pipeline
-
-on:
-  pull_request:
-    branches: [ master ]
-    types: [opened, reopened, edited]
-  push:
-    branches: [master, feature/*, hotfix/* ]
-    paths-ignore:
-      - '.version'
-      - '.github/**'
-      - 'Explore/**'
-      - 'README.md'
-      - 'CODEOWNERS'
-      - '.group'
-  workflow_dispatch:
-    inputs:
-      deploy_env:
-        description: 'qa deployment'
-        required: true
-        type: choice
-        options:
-          - 'qa'
-      feature_branch_name:
-        description: 'Enter the branch (e.g., feature/your-branch-name)'
-        required: true
-        default: 'feature/your-branch-name'  
 jobs:
-  adl-cicd-check-pull-request:
-    if: github.event_name == 'pull_request'
-    uses: AlightEngineering/adl-deploy-cicd/.github/workflows/adl-cicd-check-pull-request.yml@master
-    secrets: inherit
-
-  adl-cicd-prod-approval:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
-    runs-on: ubuntu-latest
-    environment: prod
-    steps:
-      - name: Await Prod Deployment Approval
-        run: echo "Awaiting approval for Prod deployment . . ." 
-
-  adl-cicd-hotfix-approval:
-    if: github.event_name == 'push' && startsWith(github.ref, 'refs/heads/hotfix/')
-    runs-on: ubuntu-latest
-    environment: hotfix
-    steps:
-      - name: Await Hotfix Deployment Approval
-        run: echo "Awaiting approval for hotfix deployment . . ." 
-
-  adl-cicd-dev-deploy-phase:
-    if: github.event_name == 'push' && startsWith(github.ref, 'refs/heads/feature/')
-    uses: AlightEngineering/adl-deploy-cicd/.github/workflows/adl-cicd-deploy-repo-phase.yml@master
-    secrets: inherit
-    with:
-      event_repo_name: ${{ github.repository }}
-      event_repo_branch: ${{ github.ref_name }}
-      deploy_env: dev
-
-  adl-cicd-qa-deploy-phase:
-    if: github.event_name == 'workflow_dispatch' && startsWith(github.event.inputs.feature_branch_name, 'feature/') && github.event.inputs.deploy_env == 'qa'
-    uses: AlightEngineering/adl-deploy-cicd/.github/workflows/adl-cicd-deploy-repo-phase.yml@master
-    secrets: inherit
-    with:
-      event_repo_name: ${{ github.repository }}
-      event_repo_branch: ${{ github.ref_name }}
-      deploy_env: qa
-      
-  adl-cicd-qc-deploy-phase:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
-    uses: AlightEngineering/adl-deploy-cicd/.github/workflows/adl-cicd-deploy-repo-phase.yml@master
-    secrets: inherit
-    with:
-      event_repo_name: ${{ github.repository }}
-      event_repo_branch: ${{ github.ref_name }}
-      deploy_env: qc
-      
-  adl-cicd-prod-deploy-phase:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
-    uses: AlightEngineering/adl-awsdeploy-cicd/.github/workflows/adl-cicd-deploy-repo-phase.yml@feature/workflowrefactor
-    secrets: inherit
-    needs: [adl-cicd-prod-approval, adl-cicd-qc-deploy-phase ]
-    with:
-      event_repo_name: ${{ github.repository }}
-      event_repo_branch: ${{ github.ref_name }}
-      deploy_env: prod
-
-  adl-cicd-hotfix-phase:
-    if: github.event_name == 'push' && startsWith(github.ref, 'refs/heads/hotfix/')
-    needs: adl-cicd-hotfix-approval
-    uses: AlightEngineering/adl-deploy-cicd/.github/workflows/adl-cicd-deploy-repo-phase.yml@master
-    secrets: inherit
-    with:
-      event_repo_name: ${{ github.repository }}
-      event_repo_branch: ${{ github.ref_name }}
-      deploy_env: prod
-
-  adl-log-event:
+  get-pr-details:
     runs-on: ubuntu-latest
     steps:
-      - name: GitHub Event Name
-        run: echo ${{ github.event_name }}
-      - name: Check Feature Branch 
-        if: github.event_name == 'workflow_dispatch'
+      - name: Get PR details from commit SHA
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          if [[ "${{ github.event.inputs.feature_branch_name }}" != feature/* ]]; then
-            echo "Error: The feature_branch_name is an invalid branch and must start with 'feature/'."
-            exit 1
-          fi
+          commit_sha=$(git rev-parse HEAD)
+          pr_number=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/commits/$commit_sha/pulls" \
+            | jq -r '.[0].number')
+          echo "PR Number: $pr_number"
+          source_branch=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/pulls/$pr_number" \
+            | jq -r '.head.ref')
+          echo "Source branch: $source_branch"
