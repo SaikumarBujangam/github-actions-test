@@ -1,20 +1,23 @@
-Run branch_name="refs/heads/hotfix/testing"
-  branch_name="refs/heads/hotfix/testing"
-  if [[ "$***deploy_env***" = "prod" && "$***branch_name***" == refs/heads/hotfix/* && "push" == "push" && "branch" == "branch" && " == "refs/heads/master" ]]
-  then
-    echo "Branch name starts with hotfix and was pushed to the master. Exiting the workflow."
-    exit 0
-  fi
+name: Your Workflow Name
+
+on:
+  pull_request:
+    types:
+      - closed
+
+jobs:
+  your_job_name:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check if PR was from hotfix branch and merged
+        if: >
+          github.event_name == 'pull_request' &&
+          github.event.action == 'closed' &&
+          github.event.pull_request.base.ref == 'master' &&
+          startsWith(github.event.pull_request.head.ref, 'hotfix/')
+        run: |
+          echo "PR was from hotfix branch and merged into master. Exiting the workflow."
+          exit 0  # Exit the workflow successfully
           
-  shell: /usr/bin/bash -e ***0***
-  env:
-    event_repo_name: AlightEngineering/adl-testingsteps-testingsteps
-    event_repo_branch: hotfix/testing
-    calling_repo_name: AlightEngineering/adl-deploy-cicd
-    dispatch_repo_name: adl-deploy-cicd
-    deploy_env: prod
-    feature_branch_name: 
-    gh_user: ***
-    gh_token: ***
-/home/runner/work/_temp/f96980de-432c-4896-bc8b-02dfa0e567b4.sh: line 4: conditional binary operator expected
-Error: Process completed with exit code 2.
+      # Add your other workflow steps here
