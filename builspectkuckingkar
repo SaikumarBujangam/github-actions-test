@@ -1,16 +1,20 @@
-- name: Increment Calling Repo Version
-      run: |
-        event_repo_base_name=${event_repo_name##*/}
-        source ${dispatch_repo_name}/scripts/.mdshrc
-        mdsh_init ${deploy_env} local adl ${event_repo_base_name} localhost
-        git config --global user.email "dushyant.remivasan@alight.com"
-        git config --global user.name "Dushyant Remivasan"
-        if [[ "${deploy_env}" = "prod"  && "${event_repo_branch}" = "master"  ]]
-        then
-          bump_version patch ${event_repo_base_name}
-          git -C ${event_repo_base_name} add .version
-          git -C ${event_repo_base_name} commit -m "Increments Version"
-          git -C ${event_repo_base_name} push
-          new_git_tag=$(version ${event_repo_base_name})
-          gtag_version ${event_repo_base_name} ${mdsh_env} ${new_git_tag} "CICD Pipeline Merge To ${deploy_env}"
-        fi
+Run branch_name="refs/heads/hotfix/testing"
+  branch_name="refs/heads/hotfix/testing"
+  if [[ "$***deploy_env***" = "prod" && "$***branch_name***" == refs/heads/hotfix/* && "push" == "push" && "branch" == "branch" && " == "refs/heads/master" ]]
+  then
+    echo "Branch name starts with hotfix and was pushed to the master. Exiting the workflow."
+    exit 0
+  fi
+          
+  shell: /usr/bin/bash -e ***0***
+  env:
+    event_repo_name: AlightEngineering/adl-testingsteps-testingsteps
+    event_repo_branch: hotfix/testing
+    calling_repo_name: AlightEngineering/adl-deploy-cicd
+    dispatch_repo_name: adl-deploy-cicd
+    deploy_env: prod
+    feature_branch_name: 
+    gh_user: ***
+    gh_token: ***
+/home/runner/work/_temp/f96980de-432c-4896-bc8b-02dfa0e567b4.sh: line 4: conditional binary operator expected
+Error: Process completed with exit code 2.
