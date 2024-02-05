@@ -1,28 +1,4 @@
-Run curl -X PUT \
-  curl -X PUT \
-  -H "Authorization: ***" -H "Accept: application/vnd.github+json" \
-  "https://api.github.com/repos/AlightEngineering/adl-williamwalsh-test101/environments/prod" \
-  -d '{"wait_timer":0,"prevent_self_review":true,"reviewers":[{"type":"Team","id":8648904}],"deployment_branch_policy":{"protected_branches":false,"custom_branch_policies":true}}'
-  
-  curl -X PUT \
-  -H "Authorization: ***" -H "Accept: application/vnd.github+json" \
-  "https://api.github.com/repos/AlightEngineering/adl-williamwalsh-test101/environments/hotfix" \
-  -d '{"wait_timer":0,"prevent_self_review":true,"reviewers":[{"type":"Team","id":8648904}],"deployment_branch_policy":{"protected_branches":false,"custom_branch_policies":true}}'
-  shell: /usr/bin/bash -e {0}
-  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
-                                 Dload  Upload   Total   Spent    Left  Speed
-  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
-{
-100   442  100   270  100   172    770    490 --:--:-- --:--:-- --:--:--  1262
-  "message": "Failed to create or update the environment protection rule. Required reviewers must have at least one reviewer to set prevent_self_review.",
-  "documentation_url": "https://docs.github.com/rest/deployments/environments#create-or-update-an-environment"
-}
-  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
-                                 Dload  Upload   Total   Spent    Left  Speed
-  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
-100   172    0     0  100   172      0    844 --:--:-- --:--:-- --:--:--   843
-100   442  100   270  100   172    752    479 --:--:-- --:--:-- --:--:--  1231
-{
-  "message": "Failed to create or update the environment protection rule. Required reviewers must have at least one reviewer to set prevent_self_review.",
-  "documentation_url": "https://docs.github.com/rest/deployments/environments#create-or-update-an-environment"
-}
+On branch master
+Your branch is up to date with 'origin/master'.
+nothing to commit, working tree clean
+Error: Process completed with exit code 1.
