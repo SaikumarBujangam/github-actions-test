@@ -1,21 +1,8 @@
-Run actions/checkout@v2
-Syncing repository: AlightEngineering/adl-dataproduct-templatev2
-Getting Git version info
-  Working directory is '/home/runner/work/adl-deploy-cicd/adl-deploy-cicd/workflow-templates'
-  /usr/bin/git version
-  git version 2.43.0
-Temporarily overriding HOME='/home/runner/work/_temp/ddf3858e-6a1f-4806-b4cf-29e83dcbca79' before making global git config changes
-Adding repository directory to the temporary git global config as a safe directory
-/usr/bin/git config --global --add safe.directory /home/runner/work/adl-deploy-cicd/adl-deploy-cicd/workflow-templates
-Initializing the repository
-Disabling automatic garbage collection
-Setting up auth
-Determining the default branch
-  Retrieving the default branch name
-  Not Found
-  Waiting 19 seconds before trying again
-  Retrieving the default branch name
-  Not Found
-  Waiting 11 seconds before trying again
-  Retrieving the default branch name
-  Error: Not Found
+remote: error: GH013: Repository rule violations found for refs/heads/master.        
+remote: Review all repository rules at http://github.com/AlightEngineering/adl-testrepo4-testrepo4/rules?ref=refs%2Fheads%2Fmaster        
+remote: 
+remote: - refusing to allow a Personal Access Token to create or update workflow `.github/workflows/adl-cicd-deployment-pipeline.yml` without `workflow` scope        
+remote: 
+To https://github.com/AlightEngineering/adl-testrepo4-testrepo4.git
+ ! [remote rejected] master -> master (push declined due to repository rule violations)
+error: failed to push some refs to 'https://github.com/AlightEngineering/adl-testrepo4-testrepo4.git'
