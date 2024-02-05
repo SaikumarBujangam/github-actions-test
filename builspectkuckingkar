@@ -1,4 +1,16 @@
-On branch master
-Your branch is up to date with 'origin/master'.
-nothing to commit, working tree clean
-Error: Process completed with exit code 1.
+- name: Increment Calling Repo Version
+      run: |
+        event_repo_base_name=${event_repo_name##*/}
+        source ${dispatch_repo_name}/scripts/.mdshrc
+        mdsh_init ${deploy_env} local adl ${event_repo_base_name} localhost
+        git config --global user.email "dushyant.remivasan@alight.com"
+        git config --global user.name "Dushyant Remivasan"
+        if [[ "${deploy_env}" = "prod"  && "${event_repo_branch}" = "master"  ]]
+        then
+          bump_version patch ${event_repo_base_name}
+          git -C ${event_repo_base_name} add .version
+          git -C ${event_repo_base_name} commit -m "Increments Version"
+          git -C ${event_repo_base_name} push
+          new_git_tag=$(version ${event_repo_base_name})
+          gtag_version ${event_repo_base_name} ${mdsh_env} ${new_git_tag} "CICD Pipeline Merge To ${deploy_env}"
+        fi
