@@ -38,140 +38,43 @@ on:
         required: true
         type: string
         default: 'adl-<dataproductname>-dataproductowners-approvers'
+      workflow-template-repo:
+        description: 'GitHub Actions Workflow Template Repository'
+        required: true
+        type: string
+        default: 'your-organization/template-repo' # Replace with the actual template repository
+
 jobs:
   adl-update-repo:
+    # ... (Your existing steps for updating the repository)
+
+  copy-workflow-templates:
     runs-on: ubuntu-latest
     steps:
       - name: Check Inputs
-        env:
-          GH_TOKEN: ${{ secrets.GH_CLONE_REPO }}
         run: |
-          if [[ ${{ inputs.repo-group-name }} = "no-group-provided" ]]
-          then
-            echo "Please specify group"
+          # Check if required inputs are provided
+          if [[ -z "${{ inputs.workflow-template-repo }}" ]]; then
+            echo "Please provide a workflow template repository."
             exit 1
           fi
-          if [[ ${{ inputs.repo-approvers-team }} = "adl-<dataproductname>-approvers" ]]
-          then
-            echo "Please provide a dataproduct approvers team"
-            exit 1
-          fi
-          if [[ ${{ inputs.repo-dataproductowner-approvers-team }} = "adl-<dataproductname>-dataproductowners-approvers" ]]
-          then
-            echo "Please provide a dataproduct owner approvers team"
-            exit 1
-          fi
-          echo ${{ inputs.repo-division-name }}
-          echo ${{ inputs.repo-group-name }}
-          echo ${{ inputs.repo-subject-area }}
-          echo ${{ inputs.repo-dataproductowner-approvers-team }}
-          
-      - name: Delete Release Branches
-        env:
-          GH_TOKEN: ${{ secrets.GH_CLONE_REPO }}
+
+      - name: Clone Workflow Template Repository
+        uses: actions/checkout@v2
+        with:
+          repository: ${{ inputs.workflow-template-repo }}
+          path: workflow-templates # Specify the target directory where the template repository should be cloned
+
+      - name: Copy Workflows to Target Repository
         run: |
-          curl -X DELETE \
-          -H "Authorization: Bearer ${{ secrets.GH_CLONE_REPO }}" \
-          -H "Accept: application/vnd.github.v3+json" \
-          "https://api.github.com/repos/${{ inputs.org-name }}/${{ inputs.repo-division-name }}-${{ inputs.repo-group-name }}-${{ inputs.repo-subject-area }}/branches/release/qa/protection"
-          
-          curl -X DELETE \
-          -H "Authorization: Bearer ${{ secrets.GH_CLONE_REPO }}" \
-          -H "Accept: application/vnd.github.v3+json" \
-          "https://api.github.com/repos/${{ inputs.org-name }}/${{ inputs.repo-division-name }}-${{ inputs.repo-group-name }}-${{ inputs.repo-subject-area }}/git/refs/heads/release/qa"
+          # Copy .github/workflows from the template repository to the target repository
+          cp -r workflow-templates/.github/workflows .github
 
-          sleep 5
-          curl -X DELETE \
-          -H "Authorization: Bearer ${{ secrets.GH_CLONE_REPO }}" \
-          -H "Accept: application/vnd.github.v3+json" \
-          "https://api.github.com/repos/${{ inputs.org-name }}/${{ inputs.repo-division-name }}-${{ inputs.repo-group-name }}-${{ inputs.repo-subject-area }}/branches/release/qc/protection"
-          
-          curl -X DELETE \
-          -H "Authorization: Bearer ${{ secrets.GH_CLONE_REPO }}" \
-          -H "Accept: application/vnd.github.v3+json" \
-          "https://api.github.com/repos/${{ inputs.org-name }}/${{ inputs.repo-division-name }}-${{ inputs.repo-group-name }}-${{ inputs.repo-subject-area }}/git/refs/heads/release/qc"
-
-          sleep 5
-          curl -X DELETE \
-          -H "Authorization: Bearer ${{ secrets.GH_CLONE_REPO }}" \
-          -H "Accept: application/vnd.github.v3+json" \
-          "https://api.github.com/repos/${{ inputs.org-name }}/${{ inputs.repo-division-name }}-${{ inputs.repo-group-name }}-${{ inputs.repo-subject-area }}/branches/release/prod/protection"
-
-          curl -X DELETE \
-          -H "Authorization: Bearer ${{ secrets.GH_CLONE_REPO }}" \
-          -H "Accept: application/vnd.github.v3+json" \
-          "https://api.github.com/repos/${{ inputs.org-name }}/${{ inputs.repo-division-name }}-${{ inputs.repo-group-name }}-${{ inputs.repo-subject-area }}/git/refs/heads/release/prod"
-
-      - name: Update CODEOWNERS on master
-        env:
-          github_user: ${{ secrets.GH_USER_NAME }}
-          GH_TOKEN: ${{ secrets.GH_CLONE_REPO }}
+      - name: Commit and Push Changes
         run: |
-          git clone -b master --single-branch https://${github_user}:${GH_TOKEN}@github.com/AlightEngineering/adl-awsdeploy-cicd.git
-          repo_base=$(pwd)/adl-awsdeploy-cicd
-          export PYTHONPATH=${repo_base}/src
-          pip install -r ${repo_base}/requirements.txt
-          ls -l ${repo_base}/.github/data/CODEOWNERS.template
-          python ${repo_base}/src/alight/foundation/app/generatetemplate.py --base-arg-parser-config-file-location ${repo_base}/config --base-arg-parser-config-file-name generate-template-build-args.json --template-root-location ${repo_base}/.github/data --template-file-name CODEOWNERS.template --generated-script-file-location ${repo_base} --generated-script-file-name CODEOWNERS_MASTER \
-          --cicdvar "CODE_OWNER_TEAM_NAME=${{ inputs.repo-approvers-team }}" \
-          --cicdvar "ADMIN_TEAM_NAME=${{ inputs.admin-team-name }}"       
-          
-          sleep 5
-          export last_sha=$(gh api --method GET -H "Accept: application/vnd.github+json" /repos/${{ inputs.org-name }}/${{ inputs.repo-division-name }}-${{ inputs.repo-group-name }}-${{ inputs.repo-subject-area }}/contents/CODEOWNERS -f ref="master" | jq | grep sha | cut -f2 -d":" | tr ',' ' ' | tr -d '"')  
-           
-          sleep 5
-          code_owners_content=$(cat ${repo_base}/CODEOWNERS_MASTER |base64 -w 0)
-          code_owners_data="{\"message\":\"Updates CODEOWNERS file on master branch\",\"committer\":{\"name\":\"Dushyant Remivasan\",\"email\":\"dushyant.remivasan@alight.com\"},\"content\": \"$(echo ${code_owners_content})\",\"branch\": \"master\",\"sha\": \"$(echo ${last_sha})\"}"
-          echo $code_owners_data > code_owners_data.json
-          
-          sleep 5
-          curl -X PUT \
-          -H "Authorization: Bearer ${{ secrets.GH_CLONE_REPO }}" -H "Accept: application/vnd.github+json" \
-          https://api.github.com/repos/${{ inputs.org-name }}/${{ inputs.repo-division-name }}-${{ inputs.repo-group-name }}-${{ inputs.repo-subject-area }}/contents/CODEOWNERS \
-          -d @code_owners_data.json  
-      - name: Get Team IDs
-        id: get_team_id
-        run: |
-          prod_team_name="${{ inputs.repo-dataproductowner-approvers-team }}"
-          hotfix_team_name="${{ inputs.repo-dataproductowner-approvers-team }}"
-          org_name="AlightEngineering"
-          
-          curl -H "Authorization: token ${{ secrets.GH_CLONE_REPO }}" -H "Accept: application/vnd.github.v3+json" "https://api.github.com/orgs/$org_name/teams/$prod_team_name" >> prod_team_info.json
-          PROD_TEAM_ID=$(jq '.id' prod_team_info.json)
-          echo "prod_team_id=$PROD_TEAM_ID" >> $GITHUB_OUTPUT
-
-          curl -H "Authorization: token ${{ secrets.GH_CLONE_REPO }}" -H "Accept: application/vnd.github.v3+json" "https://api.github.com/orgs/$org_name/teams/$hotfix_team_name" >> hotfix_team_info.json
-          HOTFIX_TEAM_ID=$(jq '.id' hotfix_team_info.json) 
-          echo "hotfix_team_id=$HOTFIX_TEAM_ID" >> $GITHUB_OUTPUT
-          
-      - name: Create Environments
-        run: |
-          curl -X PUT \
-          -H "Authorization: Bearer ${{ secrets.GH_CLONE_REPO }}" -H "Accept: application/vnd.github+json" \
-          "https://api.github.com/repos/${{ inputs.org-name }}/${{ inputs.repo-division-name }}-${{ inputs.repo-group-name }}-${{ inputs.repo-subject-area }}/environments/prod" \
-          -d '{"wait_timer":0,"prevent_self_review":true,"reviewers":[{"type":"Team","id":${{ steps.get_team_id.outputs.prod_team_id }}}],"deployment_branch_policy":{"protected_branches":false,"custom_branch_policies":true}}'
-
-          curl -X PUT \
-          -H "Authorization: Bearer ${{ secrets.GH_CLONE_REPO }}" -H "Accept: application/vnd.github+json" \
-          "https://api.github.com/repos/${{ inputs.org-name }}/${{ inputs.repo-division-name }}-${{ inputs.repo-group-name }}-${{ inputs.repo-subject-area }}/environments/hotfix" \
-          -d '{"wait_timer":0,"prevent_self_review":true,"reviewers":[{"type":"Team","id":${{ steps.get_team_id.outputs.hotfix_team_id }}}],"deployment_branch_policy":{"protected_branches":false,"custom_branch_policies":true}}'
-          
-  update-master-branch-permissions:
-    name: Update Branch Protection For master Branch
-    uses:
-      AlightEngineering/adl-awsdeploy-cicd/.github/workflows/branch-permissions.yml@master
-    with:
-      repo-name: ${{ inputs.repo-division-name }}-${{ inputs.repo-group-name }}-${{ inputs.repo-subject-area }}
-      repo-template-name: ${{ inputs.repo-template-name }}
-      org-name: ${{ inputs.org-name }}
-      branch-name: "master"
-      branch-permissions-base-name: master-branch-permissions
-      branch-permissions-approver-team: ${{ inputs.repo-approvers-team }}
-      branch-permissions-bypass-team: ${{ inputs.admin-team-name }}
-    secrets:
-      branch-user: ${{ secrets.GH_USER_NAME }}
-      branch-secret: ${{ secrets.GH_CLONE_REPO }}
-    needs:
-      adl-update-repo
-
-        
+          # Commit and push the changes to the target repository
+          git config --local user.email "actions@github.com"
+          git config --local user.name "GitHub Actions"
+          git add .
+          git commit -m "Copy workflow templates from template repository"
+          git push
