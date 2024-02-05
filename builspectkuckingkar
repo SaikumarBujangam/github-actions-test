@@ -1,8 +1,6 @@
-remote: error: GH013: Repository rule violations found for refs/heads/master.        
-remote: Review all repository rules at http://github.com/AlightEngineering/adl-testrepo4-testrepo4/rules?ref=refs%2Fheads%2Fmaster        
-remote: 
-remote: - refusing to allow a Personal Access Token to create or update workflow `.github/workflows/adl-cicd-deployment-pipeline.yml` without `workflow` scope        
-remote: 
-To https://github.com/AlightEngineering/adl-testrepo4-testrepo4.git
- ! [remote rejected] master -> master (push declined due to repository rule violations)
-error: failed to push some refs to 'https://github.com/AlightEngineering/adl-testrepo4-testrepo4.git'
+Changes not staged for commit:
+  (use "git add/rm <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+	deleted:    .github/workflows/adl-cicd-initiate-deployment.yml
+
+no changes added to commit (use "git add" and/or "git commit -a")
