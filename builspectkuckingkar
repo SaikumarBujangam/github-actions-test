@@ -1,4 +1,12 @@
-curl -s \
-  -H "Accept: application/vnd.github.v3+json" \
-  -H "Authorization: token TOKEN" \
-  "https://api.github.com/repos/OWNER/REPO/pulls?state=closed&sort=updated&direction=desc" | jq -r '.[] | select(.merged_at != null) | .head.ref | first'
+Run curl -s \
+  curl -s \
+    -H "Accept: application/vnd.github.v3+json" \
+    -H "Authorization: ***" \
+    "https://api.github.com/repos/AlightEngineering/adl-testingsteps-testingsteps/pulls?state=closed&sort=updated&direction=desc" | jq -r '.[] | select(.merged_at != null) | .head.ref | first'
+    | jq -r '.head.ref')
+  echo "Source branch: $source_branch"
+  shell: /usr/bin/bash -e {0}
+  env:
+    gh_token: ***
+jq: error (at <stdin>:2138): Cannot index string with number
+Error: Process completed with exit code 5.
