@@ -1,12 +1,6 @@
- git clone https://${github_wf_user}:${GH_WF_TOKEN}@github.com/${{ inputs.org-name }}/${{ inputs.repo-division-name }}-${{ inputs.repo-group-name }}-${{ inputs.repo-subject-area }}.git
-          ls -lart ${{ inputs.repo-division-name }}-${{ inputs.repo-group-name }}-${{ inputs.repo-subject-area }}
-          git clone https://${github_wf_user}:${GH_WF_TOKEN}@github.com/${{ inputs.org-name }}/${{ inputs.workflow-template-repo }}.git
-          ls -lart ${{ inputs.workflow-template-repo }}
-          rm -rf ${{ inputs.repo-division-name }}-${{ inputs.repo-group-name }}-${{ inputs.repo-subject-area }}/.github/workflows/*
-          cp -r ${{ inputs.workflow-template-repo }}/.github/workflows/* ${{ inputs.repo-division-name }}-${{ inputs.repo-group-name }}-${{ inputs.repo-subject-area }}/.github/workflows
-          cd ${{ inputs.repo-division-name }}-${{ inputs.repo-group-name }}-${{ inputs.repo-subject-area }}
-          git config --global user.email "dushyant.remivasan@alight.com"
-          git config --global user.name "Dushyant Remivasan"
-          git add .github/workflows/*
-          git commit -m "Adds Workflows from CICD Template repository"
-          git push --force
+{
+  "message": "Failed to create or update the environment protection rule. Required reviewers must have at least one reviewer to set prevent_self_review.",
+  "documentation_url": "https://docs.github.com/rest/deployments/environments#create-or-update-an-environment"
+}
+
+Why this error?
