@@ -1,17 +1,4 @@
-jobs:
-  get-pr-details:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Get PR details from commit SHA
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          commit_sha=$(git rev-parse HEAD)
-          pr_number=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
-            "https://api.github.com/repos/${GITHUB_REPOSITORY}/commits/$commit_sha/pulls" \
-            | jq -r '.[0].number')
-          echo "PR Number: $pr_number"
-          source_branch=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
-            "https://api.github.com/repos/${GITHUB_REPOSITORY}/pulls/$pr_number" \
-            | jq -r '.head.ref')
-          echo "Source branch: $source_branch"
+curl -s \
+  -H "Accept: application/vnd.github.v3+json" \
+  -H "Authorization: token TOKEN" \
+  "https://api.github.com/repos/OWNER/REPO/pulls?state=closed&sort=updated&direction=desc" | jq -r '.[] | select(.merged_at != null) | .head.ref | first'
