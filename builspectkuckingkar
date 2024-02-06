@@ -1,31 +1,158 @@
-variable "table_name" {
-  description = "Name of the dynamodb table"
-  type        = string
+locals { 
+  tables = [
+      {
+          name      = "Organisation",
+          hash_key  = "org_key"
+      },
+      {
+          name      = "PlatformConfig",
+          hash_key  = "item_name"
+          range_key = "item_type",
+      },
+      {
+          name      = "Project",
+          hash_key  = "project_key"
+          range_key = "org_key", 
+      },
+      {
+          name      = "User",
+          hash_key  = "id" 
+      },
+      {
+          name      = "UserRoleDetails",
+          hash_key  = "user_id"
+          range_key = "role_hashkey",
+      },
+      {
+          name      = "UserTrainingDetails",
+          hash_key  = "id"  
+      },
+      {
+          name      = "DataIngress",
+          hash_key  = "project_key"
+          range_key = "composed_key",
+          stream_enabled = true 
+      },
+      {
+          name                  = "UserLoginDetails",
+          hash_key              = "user_email"
+          ttl_attribute_name    = "expiry_time"
+      },
+      {
+          name      = "ProjectInfraDetails",
+          hash_key  = "project_key"
+          range_key = "resource_key", 
+      },
+      {
+          name      = "RoleDetails",
+          hash_key  = "role_id" 
+      },
+      {
+          name      = "Audit",
+          hash_key  = "audit_id",
+          range_key = "project_key"  
+      },
+      {
+          name      = "DataIngressLog",
+          hash_key  = "log_id",
+          range_key = "date_time_changed"
+      },
+      {
+          name      = "Sites",
+          hash_key  = "id"
+      },
+      {
+          name      = "ProjectNetworkDetails",
+          hash_key  = "id"
+      },
+      {
+          name      = "OrganisationNetworkDetails",
+          hash_key  = "id"
+      },
+      {
+          name      = "Instance",
+          hash_key  = "instance_id",
+          range_key = "project_key"
+      },
+      {
+          name      = "FileUpload",
+          hash_key  = "FileId",
+          range_key = "CreatedBy"
+      },
+      {
+          name      = "Dataset",
+          hash_key  = "dataset_id"
+          global_secondary_index = [
+            {
+          name               = "OrgKey-DatasetName-Index"
+          hash_key           = "org_key"
+          range_key          = "dataset_name"
+          projection_type    = "ALL"
+            }
+          ],
+          global_secondary_index = [
+            {
+          name               = "OrgKey-ProjectKey-CreatedBy-Index"
+          hash_key           = "org_key#project_key"
+          range_key          = "created_by"
+          projection_type    = "ALL"
+            }
+          ]
+      },
+      {
+          name      = "DataAsset",
+          hash_key  = "data_asset_id"
+          global_secondary_index = [
+            {
+          name               = "DatasetId-Status-Index"
+          hash_key           = "data_set_id"
+          range_key          = "status"
+          projection_type    = "ALL"
+            }
+          ],
+          global_secondary_index = [
+            {
+          name               = "DatasetIdIndex"
+          hash_key           = "data_set_id"
+          projection_type    = "ALL"
+            }
+          ]
+      },
+      {
+          name      = "DataAssetFile",
+          hash_key  = "data_asset_file_id"
+          global_secondary_index = [
+            {
+          name               = "DataAssetIdIndex"
+          hash_key           = "data_asset_id"
+          projection_type    = "ALL"
+            }
+          ]
+      },
+      {
+          name      = "DataAssetMetadata",
+          hash_key  = "data_asset_metadata_id"
+          global_secondary_index = [
+            {
+          name               = "DataAssetIdIndex"
+          hash_key           = "data_asset_id"
+          projection_type    = "ALL"
+            }
+          ]
+      }
+    
+      
+  ]
 }
 
-variable "hash_key" {
-  description = "Hash key of the dynamodb table"
-  type        = string
-}
+# Creation of platform dynamodb tables
+module "platform_dynamodb_table" {
+  source      = "../aws-common/dynamodb"
 
-variable "range_key" {
-  description = "Range key of the dynamodb table"
-  type        = string
-  default     = null
-}
-
-variable "ttl_attribute_name" {
-  description = "Name of the attribute to set the TTL"
-  type        = string
-  default     = null
-}
-
-variable "tags" {
-  type        = map
-  default     = {}
-}
-
-variable "stream_enabled" {
-  description = "Enable or disable dynamodb stream"
-  type      = bool
+  for_each              = { for table in local.tables : table.name => merge(var.default_table_attributes, table)  }
+  table_name            = each.key
+  hash_key              = each.value.hash_key
+  range_key             = each.value.range_key
+  ttl_attribute_name    = each.value.ttl_attribute_name
+  stream_enabled        = each.value.stream_enabled
 }
