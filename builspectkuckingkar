@@ -1,47 +1,8 @@
-Error:
-
-time=2024-02-06T19:45:43+05:30 level=info msg=╷
-│ Error: Invalid value for module argument
+Error: Unsupported attribute
 │
-│   on main.tf line 158, in module "platform_dynamodb_table":
-│  158:   global_secondary_indexes = each.value.global_secondary_indexes
+│   on main.tf line 161, in module "platform_dynamodb_table":
+│  161:   global_secondary_indexes = each.value.global_secondary_indexes
+│     ├────────────────
+│     │ each.value is object with 5 attributes
 │
-│ The given value is not suitable for child module variable
-│ "global_secondary_indexes" defined at
-│ ..\aws-common\dynamodb\variables.tf:33,1-36: element 0: attribute
-│ "range_key" is required.
-╵
-╷
-│ Error: Invalid value for module argument
-│
-│   on main.tf line 158, in module "platform_dynamodb_table":
-│  158:   global_secondary_indexes = each.value.global_secondary_indexes
-│
-│ The given value is not suitable for child module variable
-│ "global_secondary_indexes" defined at
-│ ..\aws-common\dynamodb\variables.tf:33,1-36: element 0: attribute
-│ "range_key" is required.
-╵
-╷
-│ Error: Invalid value for module argument
-│
-│   on main.tf line 158, in module "platform_dynamodb_table":
-│  158:   global_secondary_indexes = each.value.global_secondary_indexes
-│
-│ The given value is not suitable for child module variable
-│ "global_secondary_indexes" defined at
-│ ..\aws-common\dynamodb\variables.tf:33,1-36: element 0: attribute
-│ "range_key" is required.
-╵
-
-
-variable "global_secondary_indexes" {
-  description = "List of Global Secondary Indexes"
-  type        = list(object({
-    range_key = string
-    name      = string
-    hash_key  = string
-    projection_type = string
-  }))
-  default = []
-}
+│ This object does not have an attribute named "global_secondary_indexes".
