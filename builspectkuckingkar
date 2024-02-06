@@ -1,13 +1,12 @@
-dynamic "global_secondary_index" {
-    for_each = var.global_secondary_indexes != null ? var.global_secondary_indexes : []
-    content {
-      name               = global_secondary_index.value.name
-      hash_key           = global_secondary_index.value.hash_key
-      range_key          = lookup(global_secondary_index.value, "range_key", null)
-      projection_type    = global_secondary_index.value.projection_type
-
-      // Include these lines if using provisioned capacity
-      // read_capacity_units  = global_secondary_index.value.read_capacity_units
-      // write_capacity_units = global_secondary_index.value.write_capacity_units
-    }
-  }
+variable "global_secondary_indexes" {
+  type = list(object({
+    name            = string
+    hash_key        = string
+    range_key       = string
+    projection_type = string
+    // Include these if using provisioned capacity
+    // read_capacity_units  = number
+    // write_capacity_units = number
+  }))
+  default = []
+}
