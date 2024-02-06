@@ -1,12 +1,3 @@
-variable "tags" {
-  type    = map
-  default = {}
-}
-
-variable "default_table_attributes" {
-  default = {
-    range_key          = null,
-    ttl_attribute_name = null,
-    stream_enabled     = false
-  }
+output "data_ingress_table_stream_arn" {
+  value = module.platform_dynamodb_table["DataIngress"].dynamodb_table_stream_arn
 }
