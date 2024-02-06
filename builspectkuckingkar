@@ -93,7 +93,7 @@ locals {
               range_key          = "created_by"
               projection_type    = "ALL"
             }
-        }
+          }
       },
       {
           name      = "DataAsset",
@@ -109,7 +109,7 @@ locals {
               range_key          = null
               projection_type    = "ALL"
             }
-        }
+          }
       },
       {
           name      = "DataAssetFile",
@@ -125,7 +125,7 @@ locals {
               range_key          = null
               projection_type    = "ALL"
             }
-        }
+          }
       },
       {
           name      = "DataAssetMetadata",
@@ -135,225 +135,8 @@ locals {
               hash_key           = "data_asset_id"
               range_key          = null
               projection_type    = "ALL"
-
             }
-
           }
       }
   ]
 }
-
-# Creation of platform dynamodb tables
-module "platform_dynamodb_table" {
-  source      = "../aws-common/dynamodb"
-
-  for_each                  = { for table in local.tables : table.name => merge(var.default_table_attributes, table)  }
-  table_name                = each.key
-  hash_key                  = each.value.hash_key
-  range_key                 = each.value.range_key
-  ttl_attribute_name        = each.value.ttl_attribute_name
-  stream_enabled            = each.value.stream_enabled
-  global_secondary_indexes  = each.value.global_secondary_indexes
-}
-
-
-Error:
-
-umababy.kannan@LP-5CG2311RDH MINGW64 ~/OneDrive - HCL Technologies Ltd/Documents/Star CAP/platform-infra/live/dev/eu-central-1/platform-datastore (org-catalog)
-$ terragrunt run-all plan --terragrunt-non-interactive
-time=2024-02-06T16:22:14+05:30 level=error msg=failed to get console mode: The handle is invalid.
-
-time=2024-02-06T16:22:14+05:30 level=error msg=failed to get console mode: The handle is invalid.
-
-time=2024-02-06T16:22:14+05:30 level=error msg=failed to get console mode: The handle is invalid.
-
-time=2024-02-06T16:22:14+05:30 level=info msg=The stack at C:/Users/umababy.kannan/OneDrive - HCL Technologies Ltd/Documents/Star CAP/platform-infra/live/dev/eu-central-1/platform-datastore will be processed in the following order for command plan:
-Group 1
-- Module C:/Users/umababy.kannan/OneDrive - HCL Technologies Ltd/Documents/Star CAP/platform-infra/live/dev/eu-central-1/platform-datastore
-
-
-Acquiring state lock. This may take a few moments...
-Releasing state lock. This may take a few moments...
-time=2024-02-06T16:22:43+05:30 level=error msg=Module C:/Users/umababy.kannan/OneDrive - HCL Technologies Ltd/Documents/Star CAP/platform-infra/live/dev/eu-central-1/platform-datastore has finished with an error: 1 error occurred:
-        * exit status 1
-
- prefix=[C:\Users\umababy.kannan\OneDrive - HCL Technologies Ltd\Documents\Star CAP\platform-infra\live\dev\eu-central-1\platform-datastore]
-time=2024-02-06T16:22:43+05:30 level=info msg=╷
-│ Error: Invalid value for module argument
-│
-│   on main.tf line 156, in module "platform_dynamodb_table":
-│  156:   global_secondary_indexes  = each.value.global_secondary_indexes
-│
-│ The given value is not suitable for child module variable
-│ "global_secondary_indexes" defined at
-│ ..\aws-common\dynamodb\variables.tf:33,1-36: map of object required.
-╵
-╷
-│ Error: Invalid value for module argument
-│
-│   on main.tf line 156, in module "platform_dynamodb_table":
-│  156:   global_secondary_indexes  = each.value.global_secondary_indexes
-│
-│ The given value is not suitable for child module variable
-│ "global_secondary_indexes" defined at
-│ ..\aws-common\dynamodb\variables.tf:33,1-36: map of object required.
-╵
-╷
-│ Error: Invalid value for module argument
-│
-│   on main.tf line 156, in module "platform_dynamodb_table":
-│  156:   global_secondary_indexes  = each.value.global_secondary_indexes
-│
-│ The given value is not suitable for child module variable
-│ "global_secondary_indexes" defined at
-│ ..\aws-common\dynamodb\variables.tf:33,1-36: map of object required.
-╵
-╷
-│ Error: Invalid value for module argument
-│
-│   on main.tf line 156, in module "platform_dynamodb_table":
-│  156:   global_secondary_indexes  = each.value.global_secondary_indexes
-│
-│ The given value is not suitable for child module variable
-│ "global_secondary_indexes" defined at
-│ ..\aws-common\dynamodb\variables.tf:33,1-36: map of object required.
-╵
-╷
-│ Error: Invalid value for module argument
-│
-│   on main.tf line 156, in module "platform_dynamodb_table":
-│  156:   global_secondary_indexes  = each.value.global_secondary_indexes
-│
-│ The given value is not suitable for child module variable
-│ "global_secondary_indexes" defined at
-│ ..\aws-common\dynamodb\variables.tf:33,1-36: map of object required.
-╵
-╷
-│ Error: Invalid value for module argument
-│
-│   on main.tf line 156, in module "platform_dynamodb_table":
-│  156:   global_secondary_indexes  = each.value.global_secondary_indexes
-│
-│ The given value is not suitable for child module variable
-│ "global_secondary_indexes" defined at
-│ ..\aws-common\dynamodb\variables.tf:33,1-36: map of object required.
-╵
-╷
-│ Error: Invalid value for module argument
-│
-│   on main.tf line 156, in module "platform_dynamodb_table":
-│  156:   global_secondary_indexes  = each.value.global_secondary_indexes
-│
-│ The given value is not suitable for child module variable
-│ "global_secondary_indexes" defined at
-│ ..\aws-common\dynamodb\variables.tf:33,1-36: map of object required.
-╵
-╷
-│ Error: Invalid value for module argument
-│
-│   on main.tf line 156, in module "platform_dynamodb_table":
-│  156:   global_secondary_indexes  = each.value.global_secondary_indexes
-│
-│ The given value is not suitable for child module variable
-│ "global_secondary_indexes" defined at
-│ ..\aws-common\dynamodb\variables.tf:33,1-36: map of object required.
-╵
-╷
-│ Error: Invalid value for module argument
-│
-│   on main.tf line 156, in module "platform_dynamodb_table":
-│  156:   global_secondary_indexes  = each.value.global_secondary_indexes
-│
-│ The given value is not suitable for child module variable
-│ "global_secondary_indexes" defined at
-│ ..\aws-common\dynamodb\variables.tf:33,1-36: map of object required.
-╵
-╷
-│ Error: Invalid value for module argument
-│
-│   on main.tf line 156, in module "platform_dynamodb_table":
-│  156:   global_secondary_indexes  = each.value.global_secondary_indexes
-│
-│ The given value is not suitable for child module variable
-│ "global_secondary_indexes" defined at
-│ ..\aws-common\dynamodb\variables.tf:33,1-36: map of object required.
-╵
-╷
-│ Error: Invalid value for module argument
-│
-│   on main.tf line 156, in module "platform_dynamodb_table":
-│  156:   global_secondary_indexes  = each.value.global_secondary_indexes
-│
-│ The given value is not suitable for child module variable
-│ "global_secondary_indexes" defined at
-│ ..\aws-common\dynamodb\variables.tf:33,1-36: map of object required.
-╵
-╷
-│ Error: Invalid value for module argument
-│
-│   on main.tf line 156, in module "platform_dynamodb_table":
-│  156:   global_secondary_indexes  = each.value.global_secondary_indexes
-│
-│ The given value is not suitable for child module variable
-│ "global_secondary_indexes" defined at
-│ ..\aws-common\dynamodb\variables.tf:33,1-36: map of object required.
-╵
-╷
-│ Error: Invalid value for module argument
-│
-│   on main.tf line 156, in module "platform_dynamodb_table":
-│  156:   global_secondary_indexes  = each.value.global_secondary_indexes
-│
-│ The given value is not suitable for child module variable
-│ "global_secondary_indexes" defined at
-│ ..\aws-common\dynamodb\variables.tf:33,1-36: map of object required.
-╵
-╷
-│ Error: Invalid value for module argument
-│
-│   on main.tf line 156, in module "platform_dynamodb_table":
-│  156:   global_secondary_indexes  = each.value.global_secondary_indexes
-│
-│ The given value is not suitable for child module variable
-│ "global_secondary_indexes" defined at
-│ ..\aws-common\dynamodb\variables.tf:33,1-36: map of object required.
-╵
-╷
-│ Error: Invalid value for module argument
-│
-│   on main.tf line 156, in module "platform_dynamodb_table":
-│  156:   global_secondary_indexes  = each.value.global_secondary_indexes
-│
-│ The given value is not suitable for child module variable
-│ "global_secondary_indexes" defined at
-│ ..\aws-common\dynamodb\variables.tf:33,1-36: map of object required.
-╵
-╷
-│ Error: Invalid value for module argument
-│
-│   on main.tf line 156, in module "platform_dynamodb_table":
-│  156:   global_secondary_indexes  = each.value.global_secondary_indexes
-│
-│ The given value is not suitable for child module variable
-│ "global_secondary_indexes" defined at
-│ ..\aws-common\dynamodb\variables.tf:33,1-36: map of object required.
-╵
-╷
-│ Error: Invalid value for module argument
-│
-│   on main.tf line 156, in module "platform_dynamodb_table":
-│  156:   global_secondary_indexes  = each.value.global_secondary_indexes
-│
-│ The given value is not suitable for child module variable
-│ "global_secondary_indexes" defined at
-│ ..\aws-common\dynamodb\variables.tf:33,1-36: map of object required.
-╵
-time=2024-02-06T16:22:43+05:30 level=error msg=Terraform invocation failed in C:/.terragrunt-cache/XTQi-oi0p63BODQSy4EBJhN-Zak/VlJQvwBldSrlCuJoozEeVg97DMM/platform-datastore prefix=[C:\Users\umababy.kannan\OneDrive - HCL Technologies Ltd\Documents\Star CAP\platform-infra\live\dev\eu-central-1\platform-datastore]
-
-time=2024-02-06T16:22:43+05:30 level=error msg=1 error occurred:
-        * exit status 1
-
-
-
-umababy.kannan@LP-5CG2311RDH MINGW64 ~/OneDrive - HCL Technologies Ltd/Documents/Star CAP/platform-infra/live/dev/eu-central-1/platform-datastore (org-catalog)
-$
