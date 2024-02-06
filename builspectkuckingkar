@@ -1,55 +1,47 @@
-module.platform_dynamodb_table["UserRoleDetails"].aws_dynamodb_table.table: Refreshing state... [id=UserRoleDetails]
-Releasing state lock. This may take a few moments...
-time=2024-02-06T17:13:35+05:30 level=error msg=Module C:/Users/umababy.kannan/OneDrive - HCL Technologies Ltd/Documents/Star CAP/platform-infra/live/dev/eu-central-1/platform-datastore has finished with an error: 1 error occurred:
-        * exit status 1
+Error:
 
- prefix=[C:\Users\umababy.kannan\OneDrive - HCL Technologies Ltd\Documents\Star CAP\platform-infra\live\dev\eu-central-1\platform-datastore]
-time=2024-02-06T17:13:35+05:30 level=info msg=╷
-│ Error: 1 error occurred:
-│       * all indexes must match a defined attribute. Unmatched indexes: ["data_set_id" "status"]
+time=2024-02-06T19:45:43+05:30 level=info msg=╷
+│ Error: Invalid value for module argument
 │
+│   on main.tf line 158, in module "platform_dynamodb_table":
+│  158:   global_secondary_indexes = each.value.global_secondary_indexes
 │
-│
-│   with module.platform_dynamodb_table["DataAsset"].aws_dynamodb_table.table,
-│   on ..\aws-common\dynamodb\main.tf line 2, in resource "aws_dynamodb_table" "table":
-│    2:   resource "aws_dynamodb_table" "table" {
-│
+│ The given value is not suitable for child module variable
+│ "global_secondary_indexes" defined at
+│ ..\aws-common\dynamodb\variables.tf:33,1-36: element 0: attribute
+│ "range_key" is required.
 ╵
 ╷
-│ Error: 1 error occurred:
-│       * all indexes must match a defined attribute. Unmatched indexes: ["data_set_id" "data_asset_id"]
+│ Error: Invalid value for module argument
 │
+│   on main.tf line 158, in module "platform_dynamodb_table":
+│  158:   global_secondary_indexes = each.value.global_secondary_indexes
 │
-│
-│   with module.platform_dynamodb_table["DataAssetFile"].aws_dynamodb_table.table,
-│   on ..\aws-common\dynamodb\main.tf line 2, in resource "aws_dynamodb_table" "table":
-│    2:   resource "aws_dynamodb_table" "table" {
-│
+│ The given value is not suitable for child module variable
+│ "global_secondary_indexes" defined at
+│ ..\aws-common\dynamodb\variables.tf:33,1-36: element 0: attribute
+│ "range_key" is required.
 ╵
 ╷
-│ Error: 1 error occurred:
-│       * all indexes must match a defined attribute. Unmatched indexes: ["data_asset_id"]
+│ Error: Invalid value for module argument
 │
+│   on main.tf line 158, in module "platform_dynamodb_table":
+│  158:   global_secondary_indexes = each.value.global_secondary_indexes
 │
-│
-│   with module.platform_dynamodb_table["DataAssetMetadata"].aws_dynamodb_table.table,
-│   on ..\aws-common\dynamodb\main.tf line 2, in resource "aws_dynamodb_table" "table":
-│    2:   resource "aws_dynamodb_table" "table" {
-│
+│ The given value is not suitable for child module variable
+│ "global_secondary_indexes" defined at
+│ ..\aws-common\dynamodb\variables.tf:33,1-36: element 0: attribute
+│ "range_key" is required.
 ╵
-╷
-│ Error: 1 error occurred:
-│       * all indexes must match a defined attribute. Unmatched indexes: ["org_key#project_key" "created_by" "org_key" "dataset_name"]
-│
-│
-│
-│   with module.platform_dynamodb_table["Dataset"].aws_dynamodb_table.table,
-│   on ..\aws-common\dynamodb\main.tf line 2, in resource "aws_dynamodb_table" "table":
-│    2:   resource "aws_dynamodb_table" "table" {
-│
-╵
-time=2024-02-06T17:13:35+05:30 level=error msg=Terraform invocation failed in C:/.terragrunt-cache/XTQi-oi0p63BODQSy4EBJhN-Zak/VlJQvwBldSrlCuJoozEeVg97DMM/platform-datastore prefix=[C:\Users\umababy.kannan\OneDrive - HCL Technologies Ltd\Documents\Star CAP\platform-infra\live\dev\eu-central-1\platform-datastore]
 
-time=2024-02-06T17:13:35+05:30 level=error msg=1 error occurred:
-        * exit status 1
 
+variable "global_secondary_indexes" {
+  description = "List of Global Secondary Indexes"
+  type        = list(object({
+    range_key = string
+    name      = string
+    hash_key  = string
+    projection_type = string
+  }))
+  default = []
+}
