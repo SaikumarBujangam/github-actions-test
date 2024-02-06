@@ -1,44 +1,9 @@
-time=2024-02-06T15:02:07+05:30 level=info msg=╷
-│ Error: Invalid value for module argument
-│
-│   on main.tf line 161, in module "platform_dynamodb_table":
-│  161:   global_secondary_indexes  = each.value.global_secondary_indexes
-│
-│ The given value is not suitable for child module variable
-│ "global_secondary_indexes" defined at
-│ ..\aws-common\dynamodb\variables.tf:33,1-36: element 0: attribute
-│ "attributes" is required.
-╵
-╷
-│ Error: Invalid value for module argument
-│
-│   on main.tf line 161, in module "platform_dynamodb_table":
-│  161:   global_secondary_indexes  = each.value.global_secondary_indexes
-│
-│ The given value is not suitable for child module variable
-│ "global_secondary_indexes" defined at
-│ ..\aws-common\dynamodb\variables.tf:33,1-36: element 0: attribute
-│ "attributes" is required.
-╵
-╷
-│ Error: Invalid value for module argument
-│
-│   on main.tf line 161, in module "platform_dynamodb_table":
-│  161:   global_secondary_indexes  = each.value.global_secondary_indexes
-│
-│ The given value is not suitable for child module variable
-│ "global_secondary_indexes" defined at
-│ ..\aws-common\dynamodb\variables.tf:33,1-36: element 0: attribute
-│ "attributes" is required.
-╵
-╷
-│ Error: Invalid value for module argument
-│
-│   on main.tf line 161, in module "platform_dynamodb_table":
-│  161:   global_secondary_indexes  = each.value.global_secondary_indexes
-│
-│ The given value is not suitable for child module variable
-│ "global_secondary_indexes" defined at
-│ ..\aws-common\dynamodb\variables.tf:33,1-36: element 0: attribute
-│ "attributes" is required.
-╵
+dynamic "global_secondary_index" {
+    for_each = var.global_secondary_indexes != null ? [1] : []
+    content {
+      name                      = var.global_secondary_indexes != null ? var.global_secondary_indexes : null
+      hash_key                  = var.global_secondary_indexes != null ? var.global_secondary_indexes : null
+      projection_type           = var.global_secondary_indexes != null ? var.global_secondary_indexes : null
+      range_key                 = var.global_secondary_indexes != null ? var.global_secondary_indexes : null
+    }
+  }
