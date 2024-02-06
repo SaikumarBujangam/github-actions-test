@@ -77,3 +77,14 @@ time=2024-02-06T16:35:18+05:30 level=error msg=Terraform invocation failed in C:
 time=2024-02-06T16:35:18+05:30 level=error msg=1 error occurred:
         * exit status 1
 
+
+ynamic "global_secondary_index" {
+    for_each = var.global_secondary_indexes != null ? toset(keys(var.global_secondary_indexes)) : []
+    content {
+      name                      = global_secondary_index.value.key
+      hash_key                  = var.global_secondary_indexes[global_secondary_index.key].hash_key
+      projection_type           = var.global_secondary_indexes[global_secondary_index.key].projection_type
+      range_key                 = var.global_secondary_indexes[global_secondary_index.key].range_key
+    }
+  }
+
