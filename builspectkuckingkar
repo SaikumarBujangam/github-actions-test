@@ -1,164 +1,118 @@
-Releasing state lock. This may take a few moments...
-time=2024-02-06T13:27:24+05:30 level=error msg=Module C:/Users/umababy.kannan/OneDrive - HCL Technologies Ltd/Documents/Star CAP/platform-infra/live/dev/eu-central-1/platform-datastore has finished with an error: 1 error occurred:
-        * exit status 1
-
  prefix=[C:\Users\umababy.kannan\OneDrive - HCL Technologies Ltd\Documents\Star CAP\platform-infra\live\dev\eu-central-1\platform-datastore]
-time=2024-02-06T13:27:24+05:30 level=info msg=╷
-│ Error: Ambiguous attribute key
+time=2024-02-06T13:33:51+05:30 level=info msg=╷
+│ Error: 1 error occurred:
+│       * all attributes must be indexed. Unused attributes: ["CreatedBy"]
 │
-│   on ..\aws-common\dynamodb\main.tf line 12, in resource "aws_dynamodb_table" "table":
-│   12:     for_each = var.range_key != null ? {var.range_key: "S"} : {}
 │
-│ If this expression is intended to be a reference, wrap it in parentheses.
-│ If it's instead intended as a literal name containing periods, wrap it in
-│ quotes to create a string literal.
+│
+│   with module.platform_dynamodb_table["FileUpload"].aws_dynamodb_table.table,
+│   on ..\aws-common\dynamodb\main.tf line 1, in resource "aws_dynamodb_table" "table":
+│    1: resource "aws_dynamodb_table" "table" {
+│
 ╵
 ╷
-│ Error: Ambiguous attribute key
+│ Error: 1 error occurred:
+│       * all attributes must be indexed. Unused attributes: ["org_key"]
 │
-│   on ..\aws-common\dynamodb\main.tf line 12, in resource "aws_dynamodb_table" "table":
-│   12:     for_each = var.range_key != null ? {var.range_key: "S"} : {}
 │
-│ If this expression is intended to be a reference, wrap it in parentheses.
-│ If it's instead intended as a literal name containing periods, wrap it in
-│ quotes to create a string literal.
+│
+│   with module.platform_dynamodb_table["Project"].aws_dynamodb_table.table,
+│   on ..\aws-common\dynamodb\main.tf line 1, in resource "aws_dynamodb_table" "table":
+│    1: resource "aws_dynamodb_table" "table" {
+│
 ╵
 ╷
-│ Error: Ambiguous attribute key
+│ Error: 1 error occurred:
+│       * all attributes must be indexed. Unused attributes: ["resource_key"]
 │
-│   on ..\aws-common\dynamodb\main.tf line 12, in resource "aws_dynamodb_table" "table":
-│   12:     for_each = var.range_key != null ? {var.range_key: "S"} : {}
 │
-│ If this expression is intended to be a reference, wrap it in parentheses.
-│ If it's instead intended as a literal name containing periods, wrap it in
-│ quotes to create a string literal.
+│
+│   with module.platform_dynamodb_table["ProjectInfraDetails"].aws_dynamodb_table.table,
+│   on ..\aws-common\dynamodb\main.tf line 1, in resource "aws_dynamodb_table" "table":
+│    1: resource "aws_dynamodb_table" "table" {
+│
 ╵
 ╷
-│ Error: Ambiguous attribute key
+│ Error: 1 error occurred:
+│       * all attributes must be indexed. Unused attributes: ["item_type"]
 │
-│   on ..\aws-common\dynamodb\main.tf line 12, in resource "aws_dynamodb_table" "table":
-│   12:     for_each = var.range_key != null ? {var.range_key: "S"} : {}
 │
-│ If this expression is intended to be a reference, wrap it in parentheses.
-│ If it's instead intended as a literal name containing periods, wrap it in
-│ quotes to create a string literal.
+│
+│   with module.platform_dynamodb_table["PlatformConfig"].aws_dynamodb_table.table,
+│   on ..\aws-common\dynamodb\main.tf line 1, in resource "aws_dynamodb_table" "table":
+│    1: resource "aws_dynamodb_table" "table" {
+│
 ╵
 ╷
-│ Error: Ambiguous attribute key
+│ Error: 1 error occurred:
+│       * all attributes must be indexed. Unused attributes: ["project_key"]
 │
-│   on ..\aws-common\dynamodb\main.tf line 12, in resource "aws_dynamodb_table" "table":
-│   12:     for_each = var.range_key != null ? {var.range_key: "S"} : {}
 │
-│ If this expression is intended to be a reference, wrap it in parentheses.
-│ If it's instead intended as a literal name containing periods, wrap it in
-│ quotes to create a string literal.
+│
+│   with module.platform_dynamodb_table["Instance"].aws_dynamodb_table.table,
+│   on ..\aws-common\dynamodb\main.tf line 1, in resource "aws_dynamodb_table" "table":
+│    1: resource "aws_dynamodb_table" "table" {
+│
 ╵
 ╷
-│ Error: Ambiguous attribute key
+│ Error: 1 error occurred:
+│       * all attributes must be indexed. Unused attributes: ["role_hashkey"]
 │
-│   on ..\aws-common\dynamodb\main.tf line 12, in resource "aws_dynamodb_table" "table":
-│   12:     for_each = var.range_key != null ? {var.range_key: "S"} : {}
 │
-│ If this expression is intended to be a reference, wrap it in parentheses.
-│ If it's instead intended as a literal name containing periods, wrap it in
-│ quotes to create a string literal.
+│
+│   with module.platform_dynamodb_table["UserRoleDetails"].aws_dynamodb_table.table,
+│   on ..\aws-common\dynamodb\main.tf line 1, in resource "aws_dynamodb_table" "table":
+│    1: resource "aws_dynamodb_table" "table" {
+│
 ╵
 ╷
-│ Error: Ambiguous attribute key
+│ Error: 1 error occurred:
+│       * all attributes must be indexed. Unused attributes: ["project_key"]
 │
-│   on ..\aws-common\dynamodb\main.tf line 12, in resource "aws_dynamodb_table" "table":
-│   12:     for_each = var.range_key != null ? {var.range_key: "S"} : {}
 │
-│ If this expression is intended to be a reference, wrap it in parentheses.
-│ If it's instead intended as a literal name containing periods, wrap it in
-│ quotes to create a string literal.
+│
+│   with module.platform_dynamodb_table["Audit"].aws_dynamodb_table.table,
+│   on ..\aws-common\dynamodb\main.tf line 1, in resource "aws_dynamodb_table" "table":
+│    1: resource "aws_dynamodb_table" "table" {
+│
 ╵
 ╷
-│ Error: Ambiguous attribute key
+│ Error: 1 error occurred:
+│       * all attributes must be indexed. Unused attributes: ["composed_key"]
 │
-│   on ..\aws-common\dynamodb\main.tf line 12, in resource "aws_dynamodb_table" "table":
-│   12:     for_each = var.range_key != null ? {var.range_key: "S"} : {}
 │
-│ If this expression is intended to be a reference, wrap it in parentheses.
-│ If it's instead intended as a literal name containing periods, wrap it in
-│ quotes to create a string literal.
+│
+│   with module.platform_dynamodb_table["DataIngress"].aws_dynamodb_table.table,
+│   on ..\aws-common\dynamodb\main.tf line 1, in resource "aws_dynamodb_table" "table":
+│    1: resource "aws_dynamodb_table" "table" {
+│
 ╵
 ╷
-│ Error: Ambiguous attribute key
+│ Error: 1 error occurred:
+│       * all attributes must be indexed. Unused attributes: ["date_time_changed"]
 │
-│   on ..\aws-common\dynamodb\main.tf line 12, in resource "aws_dynamodb_table" "table":
-│   12:     for_each = var.range_key != null ? {var.range_key: "S"} : {}
 │
-│ If this expression is intended to be a reference, wrap it in parentheses.
-│ If it's instead intended as a literal name containing periods, wrap it in
-│ quotes to create a string literal.
+│
+│   with module.platform_dynamodb_table["DataIngressLog"].aws_dynamodb_table.table,
+│   on ..\aws-common\dynamodb\main.tf line 1, in resource "aws_dynamodb_table" "table":
+│    1: resource "aws_dynamodb_table" "table" {
+│
 ╵
 ╷
-│ Error: Reference to "each" in context without for_each
+│ Error: Duplicate object key
 │
-│   on ..\aws-common\dynamodb\main.tf line 23, in resource "aws_dynamodb_table" "table":
-│   23:       name = each.key
+│   on ..\aws-common\dynamodb\main.tf line 21, in resource "aws_dynamodb_table" "table":
+│   21:     for_each = {for gsi in var.global_secondary_indexes : gsi.hash_key => "S"}
+│     ├────────────────
+│     │ gsi.hash_key is "data_set_id"
 │
-│ The "each" object can be used only in "module" or "resource" blocks, and
-│ only when the "for_each" argument is set.
+│ Two different items produced the key "data_set_id" in this 'for'
+│ expression. If duplicates are expected, use the ellipsis (...) after the
+│ value expression to enable grouping by key.
 ╵
-╷
-│ Error: Reference to "each" in context without for_each
-│
-│   on ..\aws-common\dynamodb\main.tf line 23, in resource "aws_dynamodb_table" "table":
-│   23:       name = each.key
-│
-│ The "each" object can be used only in "module" or "resource" blocks, and
-│ only when the "for_each" argument is set.
-╵
-╷
-│ Error: Reference to "each" in context without for_each
-│
-│   on ..\aws-common\dynamodb\main.tf line 23, in resource "aws_dynamodb_table" "table":
-│   23:       name = each.key
-│
-│ The "each" object can be used only in "module" or "resource" blocks, and
-│ only when the "for_each" argument is set.
-╵
-╷
-│ Error: Reference to "each" in context without for_each
-│
-│   on ..\aws-common\dynamodb\main.tf line 23, in resource "aws_dynamodb_table" "table":
-│   23:       name = each.key
-│
-│ The "each" object can be used only in "module" or "resource" blocks, and
-│ only when the "for_each" argument is set.
-╵
-╷
-│ Error: Reference to "each" in context without for_each
-│
-│   on ..\aws-common\dynamodb\main.tf line 31, in resource "aws_dynamodb_table" "table":
-│   31:       name = each.key
-│
-│ The "each" object can be used only in "module" or "resource" blocks, and
-│ only when the "for_each" argument is set.
-╵
-╷
-│ Error: Reference to "each" in context without for_each
-│
-│   on ..\aws-common\dynamodb\main.tf line 31, in resource "aws_dynamodb_table" "table":
-│   31:       name = each.key
-│
-│ The "each" object can be used only in "module" or "resource" blocks, and
-│ only when the "for_each" argument is set.
-╵
-╷
-│ Error: Reference to "each" in context without for_each
-│
-│   on ..\aws-common\dynamodb\main.tf line 31, in resource "aws_dynamodb_table" "table":
-│   31:       name = each.key
-│
-│ The "each" object can be used only in "module" or "resource" blocks, and
-│ only when the "for_each" argument is set.
-╵
-time=2024-02-06T13:27:24+05:30 level=error msg=Terraform invocation failed in C:/.terragrunt-cache/XTQi-oi0p63BODQSy4EBJhN-Zak/VlJQvwBldSrlCuJoozEeVg97DMM/platform-datastore prefix=[C:\Users\umababy.kannan\OneDrive - HCL Technologies Ltd\Documents\Star CAP\platform-infra\live\dev\eu-central-1\platform-datastore]
+time=2024-02-06T13:33:51+05:30 level=error msg=Terraform invocation failed in C:/.terragrunt-cache/XTQi-oi0p63BODQSy4EBJhN-Zak/VlJQvwBldSrlCuJoozEeVg97DMM/platform-datastore prefix=[C:\Users\umababy.kannan\OneDrive - HCL Technologies Ltd\Documents\Star CAP\platform-infra\live\dev\eu-central-1\platform-datastore]
 
-time=2024-02-06T13:27:24+05:30 level=error msg=1 error occurred:
+time=2024-02-06T13:33:51+05:30 level=error msg=1 error occurred:
         * exit status 1
 
 
