@@ -1,41 +1,9 @@
-Acquiring state lock. This may take a few moments...
-Releasing state lock. This may take a few moments...
-time=2024-02-06T20:38:57+05:30 level=error msg=Module C:/Users/umababy.kannan/OneDrive - HCL Technologies Ltd/Documents/Star CAP/platform-infra/live/dev/eu-central-1/platform-datastore has finished with an error: 1 error occurred:
-        * exit status 1
-
- prefix=[C:\Users\umababy.kannan\OneDrive - HCL Technologies Ltd\Documents\Star CAP\platform-infra\live\dev\eu-central-1\platform-datastore]
-time=2024-02-06T20:38:57+05:30 level=info msg=╷
-│ Error: Invalid value for module argument
-│
-│   on main.tf line 152, in module "platform_dynamodb_table":
-│  152:   global_secondary_indexes = can(local.tables[each.key].global_secondary_indexes) ? local.tables[each.key].global_secondary_indexes : []
-│
-│ The given value is not suitable for child module variable
-│ "global_secondary_indexes" defined at
-│ ..\aws-common\dynamodb\variables.tf:33,1-36: map has no element for
-│ required attribute "range_key".
-╵
-╷
-│ Error: Invalid value for module argument
-│
-│   on main.tf line 152, in module "platform_dynamodb_table":
-│  152:   global_secondary_indexes = can(local.tables[each.key].global_secondary_indexes) ? local.tables[each.key].global_secondary_indexes : []
-│
-│ The given value is not suitable for child module variable
-│ "global_secondary_indexes" defined at
-│ ..\aws-common\dynamodb\variables.tf:33,1-36: incorrect list element type:
-│ attribute "range_key" is required.
-╵
-╷
-│ Error: Invalid value for module argument
-│
-│   on main.tf line 152, in module "platform_dynamodb_table":
-│  152:   global_secondary_indexes = can(local.tables[each.key].global_secondary_indexes) ? local.tables[each.key].global_secondary_indexes : []
-│
-│ The given value is not suitable for child module variable
-│ "global_secondary_indexes" defined at
-│ ..\aws-common\dynamodb\variables.tf:33,1-36: incorrect list element type:
-│ attribute "range_key" is required.
-╵
-time=2024-02-06T20:38:57+05:30 level=error msg=Terraform invocation failed in C:/.terragrunt-cache/XTQi-oi0p63BODQSy4EBJhN-Zak/VlJQvwBldSrlCuJoozEeVg97DMM/platform-datastore prefix=[C:\Users\umababy.kannan\OneDrive - HCL Technologies Ltd\Documents\Star CAP\platform-infra\live\dev\eu-central-1\platform-datastore]
-
+dynamic "global_secondary_index" {
+    for_each = var.global_secondary_indexes != null ? var.global_secondary_indexes : []
+    content {
+      name                      = global_secondary_index.value.name
+      hash_key                  = global_secondary_index.value.hash_key
+      projection_type           = global_secondary_index.value.projection_type
+      range_key                 = global_secondary_index.value.range_key
+  }
+  }
