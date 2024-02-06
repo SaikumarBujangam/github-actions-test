@@ -1,68 +1,167 @@
-resource "aws_dynamodb_table" "table" {
-  name           = var.table_name
-  billing_mode   = "PAY_PER_REQUEST"
-  hash_key       = var.hash_key
+Releasing state lock. This may take a few moments...
+time=2024-02-06T13:27:24+05:30 level=error msg=Module C:/Users/umababy.kannan/OneDrive - HCL Technologies Ltd/Documents/Star CAP/platform-infra/live/dev/eu-central-1/platform-datastore has finished with an error: 1 error occurred:
+        * exit status 1
 
-  attribute {
-    name = var.hash_key
-    type = "S"
-  }
+ prefix=[C:\Users\umababy.kannan\OneDrive - HCL Technologies Ltd\Documents\Star CAP\platform-infra\live\dev\eu-central-1\platform-datastore]
+time=2024-02-06T13:27:24+05:30 level=info msg=╷
+│ Error: Ambiguous attribute key
+│
+│   on ..\aws-common\dynamodb\main.tf line 12, in resource "aws_dynamodb_table" "table":
+│   12:     for_each = var.range_key != null ? {var.range_key: "S"} : {}
+│
+│ If this expression is intended to be a reference, wrap it in parentheses.
+│ If it's instead intended as a literal name containing periods, wrap it in
+│ quotes to create a string literal.
+╵
+╷
+│ Error: Ambiguous attribute key
+│
+│   on ..\aws-common\dynamodb\main.tf line 12, in resource "aws_dynamodb_table" "table":
+│   12:     for_each = var.range_key != null ? {var.range_key: "S"} : {}
+│
+│ If this expression is intended to be a reference, wrap it in parentheses.
+│ If it's instead intended as a literal name containing periods, wrap it in
+│ quotes to create a string literal.
+╵
+╷
+│ Error: Ambiguous attribute key
+│
+│   on ..\aws-common\dynamodb\main.tf line 12, in resource "aws_dynamodb_table" "table":
+│   12:     for_each = var.range_key != null ? {var.range_key: "S"} : {}
+│
+│ If this expression is intended to be a reference, wrap it in parentheses.
+│ If it's instead intended as a literal name containing periods, wrap it in
+│ quotes to create a string literal.
+╵
+╷
+│ Error: Ambiguous attribute key
+│
+│   on ..\aws-common\dynamodb\main.tf line 12, in resource "aws_dynamodb_table" "table":
+│   12:     for_each = var.range_key != null ? {var.range_key: "S"} : {}
+│
+│ If this expression is intended to be a reference, wrap it in parentheses.
+│ If it's instead intended as a literal name containing periods, wrap it in
+│ quotes to create a string literal.
+╵
+╷
+│ Error: Ambiguous attribute key
+│
+│   on ..\aws-common\dynamodb\main.tf line 12, in resource "aws_dynamodb_table" "table":
+│   12:     for_each = var.range_key != null ? {var.range_key: "S"} : {}
+│
+│ If this expression is intended to be a reference, wrap it in parentheses.
+│ If it's instead intended as a literal name containing periods, wrap it in
+│ quotes to create a string literal.
+╵
+╷
+│ Error: Ambiguous attribute key
+│
+│   on ..\aws-common\dynamodb\main.tf line 12, in resource "aws_dynamodb_table" "table":
+│   12:     for_each = var.range_key != null ? {var.range_key: "S"} : {}
+│
+│ If this expression is intended to be a reference, wrap it in parentheses.
+│ If it's instead intended as a literal name containing periods, wrap it in
+│ quotes to create a string literal.
+╵
+╷
+│ Error: Ambiguous attribute key
+│
+│   on ..\aws-common\dynamodb\main.tf line 12, in resource "aws_dynamodb_table" "table":
+│   12:     for_each = var.range_key != null ? {var.range_key: "S"} : {}
+│
+│ If this expression is intended to be a reference, wrap it in parentheses.
+│ If it's instead intended as a literal name containing periods, wrap it in
+│ quotes to create a string literal.
+╵
+╷
+│ Error: Ambiguous attribute key
+│
+│   on ..\aws-common\dynamodb\main.tf line 12, in resource "aws_dynamodb_table" "table":
+│   12:     for_each = var.range_key != null ? {var.range_key: "S"} : {}
+│
+│ If this expression is intended to be a reference, wrap it in parentheses.
+│ If it's instead intended as a literal name containing periods, wrap it in
+│ quotes to create a string literal.
+╵
+╷
+│ Error: Ambiguous attribute key
+│
+│   on ..\aws-common\dynamodb\main.tf line 12, in resource "aws_dynamodb_table" "table":
+│   12:     for_each = var.range_key != null ? {var.range_key: "S"} : {}
+│
+│ If this expression is intended to be a reference, wrap it in parentheses.
+│ If it's instead intended as a literal name containing periods, wrap it in
+│ quotes to create a string literal.
+╵
+╷
+│ Error: Reference to "each" in context without for_each
+│
+│   on ..\aws-common\dynamodb\main.tf line 23, in resource "aws_dynamodb_table" "table":
+│   23:       name = each.key
+│
+│ The "each" object can be used only in "module" or "resource" blocks, and
+│ only when the "for_each" argument is set.
+╵
+╷
+│ Error: Reference to "each" in context without for_each
+│
+│   on ..\aws-common\dynamodb\main.tf line 23, in resource "aws_dynamodb_table" "table":
+│   23:       name = each.key
+│
+│ The "each" object can be used only in "module" or "resource" blocks, and
+│ only when the "for_each" argument is set.
+╵
+╷
+│ Error: Reference to "each" in context without for_each
+│
+│   on ..\aws-common\dynamodb\main.tf line 23, in resource "aws_dynamodb_table" "table":
+│   23:       name = each.key
+│
+│ The "each" object can be used only in "module" or "resource" blocks, and
+│ only when the "for_each" argument is set.
+╵
+╷
+│ Error: Reference to "each" in context without for_each
+│
+│   on ..\aws-common\dynamodb\main.tf line 23, in resource "aws_dynamodb_table" "table":
+│   23:       name = each.key
+│
+│ The "each" object can be used only in "module" or "resource" blocks, and
+│ only when the "for_each" argument is set.
+╵
+╷
+│ Error: Reference to "each" in context without for_each
+│
+│   on ..\aws-common\dynamodb\main.tf line 31, in resource "aws_dynamodb_table" "table":
+│   31:       name = each.key
+│
+│ The "each" object can be used only in "module" or "resource" blocks, and
+│ only when the "for_each" argument is set.
+╵
+╷
+│ Error: Reference to "each" in context without for_each
+│
+│   on ..\aws-common\dynamodb\main.tf line 31, in resource "aws_dynamodb_table" "table":
+│   31:       name = each.key
+│
+│ The "each" object can be used only in "module" or "resource" blocks, and
+│ only when the "for_each" argument is set.
+╵
+╷
+│ Error: Reference to "each" in context without for_each
+│
+│   on ..\aws-common\dynamodb\main.tf line 31, in resource "aws_dynamodb_table" "table":
+│   31:       name = each.key
+│
+│ The "each" object can be used only in "module" or "resource" blocks, and
+│ only when the "for_each" argument is set.
+╵
+time=2024-02-06T13:27:24+05:30 level=error msg=Terraform invocation failed in C:/.terragrunt-cache/XTQi-oi0p63BODQSy4EBJhN-Zak/VlJQvwBldSrlCuJoozEeVg97DMM/platform-datastore prefix=[C:\Users\umababy.kannan\OneDrive - HCL Technologies Ltd\Documents\Star CAP\platform-infra\live\dev\eu-central-1\platform-datastore]
 
-  dynamic "attribute" {
-    for_each = var.range_key != null ? {var.range_key: "S"} : {}
-    content {
-      name = each.key
-      type = each.value
-    }
-  }
+time=2024-02-06T13:27:24+05:30 level=error msg=1 error occurred:
+        * exit status 1
 
-  # Add attributes for GSI keys
-  dynamic "attribute" {
-    for_each = {for gsi in var.global_secondary_indexes : gsi.hash_key => "S"}
-    content {
-      name = each.key
-      type = "S"
-    }
-  }
 
-  dynamic "attribute" {
-    for_each = {for gsi in var.global_secondary_indexes : gsi.range_key => "S" if gsi.range_key != null}
-    content {
-      name = each.key
-      type = "S"
-    }
-  }
 
-  # Dynamically create GSIs
-  dynamic "global_secondary_index" {
-    for_each = var.global_secondary_indexes
-    content {
-      name               = global_secondary_index.value.name
-      hash_key           = global_secondary_index.value.hash_key
-      projection_type    = global_secondary_index.value.projection_type
-
-      # Conditionally add range_key
-      range_key          = global_secondary_index.value.range_key != "" ? global_secondary_index.value.range_key : null
-
-      # For INCLUDE projection type, specify non-key attributes
-      dynamic "non_key_attributes" {
-        for_each = global_secondary_index.value.projection_type == "INCLUDE" ? global_secondary_index.value.non_key_attributes : []
-        content {
-          non_key_attributes = non_key_attributes.value
-        }
-      }
-    }
-  }
-
-  dynamic "ttl" {
-    for_each = var.ttl_attribute_name != null ? [1] : []
-    content {
-      attribute_name  = var.ttl_attribute_name != null ? var.ttl_attribute_name : null
-      enabled         = var.ttl_attribute_name != null ? true : null
-    }
-  }
-
-  stream_enabled   = var.stream_enabled ? true : false
-  stream_view_type = var.stream_enabled ? "NEW_AND_OLD_IMAGES" : null
-  tags             = var.tags
-}
+umababy.kannan@LP-5CG2311RDH MINGW64 ~/OneDrive - HCL Technologies Ltd/Documents/Star CAP/platform-infra/live/dev/eu-central-1/platform-datastore (org-catalog)
+$
