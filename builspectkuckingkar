@@ -1,3 +1,28 @@
-output "data_ingress_table_stream_arn" {
-  value = module.platform_dynamodb_table["DataIngress"].dynamodb_table_stream_arn
+variable "global_secondary_indexes" {
+  description = "List of Global Secondary Indexes"
+  type        = list(object({
+    name             = string
+    hash_key         = string
+    range_key        = string
+    projection_type  = string
+  }))
 }
+
+
+resource "aws_dynamodb_table" "table" {
+  # ... other configuration settings ...
+
+  dynamic "global_secondary_index" {
+    for_each = var.global_secondary_indexes
+    content {
+      name             = global_secondary_index.value.name
+      hash_key         = global_secondary_index.value.hash_key
+      range_key        = global_secondary_index.value.range_key
+      projection_type  = global_secondary_index.value.projection_type
+    }
+  }
+
+  # ... other configuration settings ...
+}
+
+
