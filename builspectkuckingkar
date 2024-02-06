@@ -1,121 +1,31 @@
- prefix=[C:\Users\umababy.kannan\OneDrive - HCL Technologies Ltd\Documents\Star CAP\platform-infra\live\dev\eu-central-1\platform-datastore]
-time=2024-02-06T13:33:51+05:30 level=info msg=╷
-│ Error: 1 error occurred:
-│       * all attributes must be indexed. Unused attributes: ["CreatedBy"]
-│
-│
-│
-│   with module.platform_dynamodb_table["FileUpload"].aws_dynamodb_table.table,
-│   on ..\aws-common\dynamodb\main.tf line 1, in resource "aws_dynamodb_table" "table":
-│    1: resource "aws_dynamodb_table" "table" {
-│
-╵
-╷
-│ Error: 1 error occurred:
-│       * all attributes must be indexed. Unused attributes: ["org_key"]
-│
-│
-│
-│   with module.platform_dynamodb_table["Project"].aws_dynamodb_table.table,
-│   on ..\aws-common\dynamodb\main.tf line 1, in resource "aws_dynamodb_table" "table":
-│    1: resource "aws_dynamodb_table" "table" {
-│
-╵
-╷
-│ Error: 1 error occurred:
-│       * all attributes must be indexed. Unused attributes: ["resource_key"]
-│
-│
-│
-│   with module.platform_dynamodb_table["ProjectInfraDetails"].aws_dynamodb_table.table,
-│   on ..\aws-common\dynamodb\main.tf line 1, in resource "aws_dynamodb_table" "table":
-│    1: resource "aws_dynamodb_table" "table" {
-│
-╵
-╷
-│ Error: 1 error occurred:
-│       * all attributes must be indexed. Unused attributes: ["item_type"]
-│
-│
-│
-│   with module.platform_dynamodb_table["PlatformConfig"].aws_dynamodb_table.table,
-│   on ..\aws-common\dynamodb\main.tf line 1, in resource "aws_dynamodb_table" "table":
-│    1: resource "aws_dynamodb_table" "table" {
-│
-╵
-╷
-│ Error: 1 error occurred:
-│       * all attributes must be indexed. Unused attributes: ["project_key"]
-│
-│
-│
-│   with module.platform_dynamodb_table["Instance"].aws_dynamodb_table.table,
-│   on ..\aws-common\dynamodb\main.tf line 1, in resource "aws_dynamodb_table" "table":
-│    1: resource "aws_dynamodb_table" "table" {
-│
-╵
-╷
-│ Error: 1 error occurred:
-│       * all attributes must be indexed. Unused attributes: ["role_hashkey"]
-│
-│
-│
-│   with module.platform_dynamodb_table["UserRoleDetails"].aws_dynamodb_table.table,
-│   on ..\aws-common\dynamodb\main.tf line 1, in resource "aws_dynamodb_table" "table":
-│    1: resource "aws_dynamodb_table" "table" {
-│
-╵
-╷
-│ Error: 1 error occurred:
-│       * all attributes must be indexed. Unused attributes: ["project_key"]
-│
-│
-│
-│   with module.platform_dynamodb_table["Audit"].aws_dynamodb_table.table,
-│   on ..\aws-common\dynamodb\main.tf line 1, in resource "aws_dynamodb_table" "table":
-│    1: resource "aws_dynamodb_table" "table" {
-│
-╵
-╷
-│ Error: 1 error occurred:
-│       * all attributes must be indexed. Unused attributes: ["composed_key"]
-│
-│
-│
-│   with module.platform_dynamodb_table["DataIngress"].aws_dynamodb_table.table,
-│   on ..\aws-common\dynamodb\main.tf line 1, in resource "aws_dynamodb_table" "table":
-│    1: resource "aws_dynamodb_table" "table" {
-│
-╵
-╷
-│ Error: 1 error occurred:
-│       * all attributes must be indexed. Unused attributes: ["date_time_changed"]
-│
-│
-│
-│   with module.platform_dynamodb_table["DataIngressLog"].aws_dynamodb_table.table,
-│   on ..\aws-common\dynamodb\main.tf line 1, in resource "aws_dynamodb_table" "table":
-│    1: resource "aws_dynamodb_table" "table" {
-│
-╵
-╷
-│ Error: Duplicate object key
-│
-│   on ..\aws-common\dynamodb\main.tf line 21, in resource "aws_dynamodb_table" "table":
-│   21:     for_each = {for gsi in var.global_secondary_indexes : gsi.hash_key => "S"}
-│     ├────────────────
-│     │ gsi.hash_key is "data_set_id"
-│
-│ Two different items produced the key "data_set_id" in this 'for'
-│ expression. If duplicates are expected, use the ellipsis (...) after the
-│ value expression to enable grouping by key.
-╵
-time=2024-02-06T13:33:51+05:30 level=error msg=Terraform invocation failed in C:/.terragrunt-cache/XTQi-oi0p63BODQSy4EBJhN-Zak/VlJQvwBldSrlCuJoozEeVg97DMM/platform-datastore prefix=[C:\Users\umababy.kannan\OneDrive - HCL Technologies Ltd\Documents\Star CAP\platform-infra\live\dev\eu-central-1\platform-datastore]
+# Creates DynamoDB Table
+  resource "aws_dynamodb_table" "table" {
+  name           = var.table_name
+  billing_mode   = "PAY_PER_REQUEST"
+  hash_key       = var.hash_key
+  range_key      = var.range_key
+ 
+  attribute {
+    name = var.hash_key
+    type = "S"
+  }
 
-time=2024-02-06T13:33:51+05:30 level=error msg=1 error occurred:
-        * exit status 1
+  dynamic "attribute" {
+    for_each = var.range_key != null ? [1] : []
+    content {
+      name = var.range_key != null ? var.range_key : null
+      type = var.range_key != null ? "S" : null
+    }
+  }
 
-
-
-umababy.kannan@LP-5CG2311RDH MINGW64 ~/OneDrive - HCL Technologies Ltd/Documents/Star CAP/platform-infra/live/dev/eu-central-1/platform-datastore (org-catalog)
-$
+  dynamic "ttl" {
+    for_each = var.ttl_attribute_name != null ? [1] : []
+    content {
+      attribute_name  = var.ttl_attribute_name != null ? var.ttl_attribute_name : null
+      enabled         = var.ttl_attribute_name != null ? true : null
+    }
+  }
+  stream_enabled   = var.stream_enabled ? true : false 
+  stream_view_type = var.stream_enabled ? "NEW_AND_OLD_IMAGES" : null 
+  tags             = var.tags
+  }
