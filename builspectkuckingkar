@@ -1,5 +1,8 @@
 dynamic "attribute" {
-  for_each = flatten([for gsi in var.global_secondary_indexes : [gsi.hash_key, gsi.range_key !=null ? gsi.range_key : null]])
+  for_each = flatten([
+    for gsi in var.global_secondary_indexes : 
+    gsi.range_key != "" ? [gsi.hash_key, gsi.range_key] : [gsi.hash_key]
+  ])
   content {
     name = attribute.value
     type = contains(var.global_secondary_indexes[*].hash_key, attribute.value) ? "S" : "N"
