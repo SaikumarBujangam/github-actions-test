@@ -1,9 +1,359 @@
-dynamic "global_secondary_index" {
-    for_each = var.global_secondary_indexes != null ? [1] : []
-    content {
-      name                      = var.global_secondary_indexes != null ? var.global_secondary_indexes : null
-      hash_key                  = var.global_secondary_indexes != null ? var.global_secondary_indexes : null
-      projection_type           = var.global_secondary_indexes != null ? var.global_secondary_indexes : null
-      range_key                 = var.global_secondary_indexes != null ? var.global_secondary_indexes : null
-    }
-  }
+locals { 
+  tables = [
+      {
+          name      = "Organisation",
+          hash_key  = "org_key"
+      },
+      {
+          name      = "PlatformConfig",
+          hash_key  = "item_name"
+          range_key = "item_type",
+      },
+      {
+          name      = "Project",
+          hash_key  = "project_key"
+          range_key = "org_key", 
+      },
+      {
+          name      = "User",
+          hash_key  = "id" 
+      },
+      {
+          name      = "UserRoleDetails",
+          hash_key  = "user_id"
+          range_key = "role_hashkey",
+      },
+      {
+          name      = "UserTrainingDetails",
+          hash_key  = "id"  
+      },
+      {
+          name      = "DataIngress",
+          hash_key  = "project_key"
+          range_key = "composed_key",
+          stream_enabled = true 
+      },
+      {
+          name                  = "UserLoginDetails",
+          hash_key              = "user_email"
+          ttl_attribute_name    = "expiry_time"
+      },
+      {
+          name      = "ProjectInfraDetails",
+          hash_key  = "project_key"
+          range_key = "resource_key", 
+      },
+      {
+          name      = "RoleDetails",
+          hash_key  = "role_id" 
+      },
+      {
+          name      = "Audit",
+          hash_key  = "audit_id",
+          range_key = "project_key"  
+      },
+      {
+          name      = "DataIngressLog",
+          hash_key  = "log_id",
+          range_key = "date_time_changed"
+      },
+      {
+          name      = "Sites",
+          hash_key  = "id"
+      },
+      {
+          name      = "ProjectNetworkDetails",
+          hash_key  = "id"
+      },
+      {
+          name      = "OrganisationNetworkDetails",
+          hash_key  = "id"
+      },
+      {
+          name      = "Instance",
+          hash_key  = "instance_id",
+          range_key = "project_key"
+      },
+      {
+          name      = "FileUpload",
+          hash_key  = "FileId",
+          range_key = "CreatedBy"
+      },
+      {
+          name      = "Dataset",
+          hash_key  = "dataset_id"
+          global_secondary_indexes = {
+            "OrgKey-DatasetName-Index" = {
+              hash_key           = "org_key"
+              range_key          = "dataset_name"
+              projection_type    = "ALL"
+            },
+            "OrgKey-ProjectKey-CreatedBy-Index" = {
+              hash_key           = "org_key#project_key"
+              range_key          = "created_by"
+              projection_type    = "ALL"
+            }
+        }
+      },
+      {
+          name      = "DataAsset",
+          hash_key  = "data_asset_id"
+          global_secondary_indexes = {
+            "DatasetId-Status-Index" = {
+              hash_key           = "data_set_id"
+              range_key          = "status"
+              projection_type    = "ALL"
+            },
+            "DatasetIdIndex" = {
+              hash_key           = "data_set_id"
+              range_key          = null
+              projection_type    = "ALL"
+            }
+        }
+      },
+      {
+          name      = "DataAssetFile",
+          hash_key  = "data_asset_file_id"
+          global_secondary_indexes = {
+            "DataAssetIdIndex" = {
+              hash_key           = "data_asset_id"
+              range_key          = null
+              projection_type    = "ALL"
+            },
+            "DatasetIdIndex" = {
+              hash_key           = "data_set_id"
+              range_key          = null
+              projection_type    = "ALL"
+            }
+        }
+      },
+      {
+          name      = "DataAssetMetadata",
+          hash_key  = "data_asset_metadata_id"
+          global_secondary_indexes = {
+            "DataAssetIdIndex" = {
+              hash_key           = "data_asset_id"
+              range_key          = null
+              projection_type    = "ALL"
+
+            }
+
+          }
+      }
+  ]
+}
+
+# Creation of platform dynamodb tables
+module "platform_dynamodb_table" {
+  source      = "../aws-common/dynamodb"
+
+  for_each                  = { for table in local.tables : table.name => merge(var.default_table_attributes, table)  }
+  table_name                = each.key
+  hash_key                  = each.value.hash_key
+  range_key                 = each.value.range_key
+  ttl_attribute_name        = each.value.ttl_attribute_name
+  stream_enabled            = each.value.stream_enabled
+  global_secondary_indexes  = each.value.global_secondary_indexes
+}
+
+
+Error:
+
+umababy.kannan@LP-5CG2311RDH MINGW64 ~/OneDrive - HCL Technologies Ltd/Documents/Star CAP/platform-infra/live/dev/eu-central-1/platform-datastore (org-catalog)
+$ terragrunt run-all plan --terragrunt-non-interactive
+time=2024-02-06T16:22:14+05:30 level=error msg=failed to get console mode: The handle is invalid.
+
+time=2024-02-06T16:22:14+05:30 level=error msg=failed to get console mode: The handle is invalid.
+
+time=2024-02-06T16:22:14+05:30 level=error msg=failed to get console mode: The handle is invalid.
+
+time=2024-02-06T16:22:14+05:30 level=info msg=The stack at C:/Users/umababy.kannan/OneDrive - HCL Technologies Ltd/Documents/Star CAP/platform-infra/live/dev/eu-central-1/platform-datastore will be processed in the following order for command plan:
+Group 1
+- Module C:/Users/umababy.kannan/OneDrive - HCL Technologies Ltd/Documents/Star CAP/platform-infra/live/dev/eu-central-1/platform-datastore
+
+
+Acquiring state lock. This may take a few moments...
+Releasing state lock. This may take a few moments...
+time=2024-02-06T16:22:43+05:30 level=error msg=Module C:/Users/umababy.kannan/OneDrive - HCL Technologies Ltd/Documents/Star CAP/platform-infra/live/dev/eu-central-1/platform-datastore has finished with an error: 1 error occurred:
+        * exit status 1
+
+ prefix=[C:\Users\umababy.kannan\OneDrive - HCL Technologies Ltd\Documents\Star CAP\platform-infra\live\dev\eu-central-1\platform-datastore]
+time=2024-02-06T16:22:43+05:30 level=info msg=╷
+│ Error: Invalid value for module argument
+│
+│   on main.tf line 156, in module "platform_dynamodb_table":
+│  156:   global_secondary_indexes  = each.value.global_secondary_indexes
+│
+│ The given value is not suitable for child module variable
+│ "global_secondary_indexes" defined at
+│ ..\aws-common\dynamodb\variables.tf:33,1-36: map of object required.
+╵
+╷
+│ Error: Invalid value for module argument
+│
+│   on main.tf line 156, in module "platform_dynamodb_table":
+│  156:   global_secondary_indexes  = each.value.global_secondary_indexes
+│
+│ The given value is not suitable for child module variable
+│ "global_secondary_indexes" defined at
+│ ..\aws-common\dynamodb\variables.tf:33,1-36: map of object required.
+╵
+╷
+│ Error: Invalid value for module argument
+│
+│   on main.tf line 156, in module "platform_dynamodb_table":
+│  156:   global_secondary_indexes  = each.value.global_secondary_indexes
+│
+│ The given value is not suitable for child module variable
+│ "global_secondary_indexes" defined at
+│ ..\aws-common\dynamodb\variables.tf:33,1-36: map of object required.
+╵
+╷
+│ Error: Invalid value for module argument
+│
+│   on main.tf line 156, in module "platform_dynamodb_table":
+│  156:   global_secondary_indexes  = each.value.global_secondary_indexes
+│
+│ The given value is not suitable for child module variable
+│ "global_secondary_indexes" defined at
+│ ..\aws-common\dynamodb\variables.tf:33,1-36: map of object required.
+╵
+╷
+│ Error: Invalid value for module argument
+│
+│   on main.tf line 156, in module "platform_dynamodb_table":
+│  156:   global_secondary_indexes  = each.value.global_secondary_indexes
+│
+│ The given value is not suitable for child module variable
+│ "global_secondary_indexes" defined at
+│ ..\aws-common\dynamodb\variables.tf:33,1-36: map of object required.
+╵
+╷
+│ Error: Invalid value for module argument
+│
+│   on main.tf line 156, in module "platform_dynamodb_table":
+│  156:   global_secondary_indexes  = each.value.global_secondary_indexes
+│
+│ The given value is not suitable for child module variable
+│ "global_secondary_indexes" defined at
+│ ..\aws-common\dynamodb\variables.tf:33,1-36: map of object required.
+╵
+╷
+│ Error: Invalid value for module argument
+│
+│   on main.tf line 156, in module "platform_dynamodb_table":
+│  156:   global_secondary_indexes  = each.value.global_secondary_indexes
+│
+│ The given value is not suitable for child module variable
+│ "global_secondary_indexes" defined at
+│ ..\aws-common\dynamodb\variables.tf:33,1-36: map of object required.
+╵
+╷
+│ Error: Invalid value for module argument
+│
+│   on main.tf line 156, in module "platform_dynamodb_table":
+│  156:   global_secondary_indexes  = each.value.global_secondary_indexes
+│
+│ The given value is not suitable for child module variable
+│ "global_secondary_indexes" defined at
+│ ..\aws-common\dynamodb\variables.tf:33,1-36: map of object required.
+╵
+╷
+│ Error: Invalid value for module argument
+│
+│   on main.tf line 156, in module "platform_dynamodb_table":
+│  156:   global_secondary_indexes  = each.value.global_secondary_indexes
+│
+│ The given value is not suitable for child module variable
+│ "global_secondary_indexes" defined at
+│ ..\aws-common\dynamodb\variables.tf:33,1-36: map of object required.
+╵
+╷
+│ Error: Invalid value for module argument
+│
+│   on main.tf line 156, in module "platform_dynamodb_table":
+│  156:   global_secondary_indexes  = each.value.global_secondary_indexes
+│
+│ The given value is not suitable for child module variable
+│ "global_secondary_indexes" defined at
+│ ..\aws-common\dynamodb\variables.tf:33,1-36: map of object required.
+╵
+╷
+│ Error: Invalid value for module argument
+│
+│   on main.tf line 156, in module "platform_dynamodb_table":
+│  156:   global_secondary_indexes  = each.value.global_secondary_indexes
+│
+│ The given value is not suitable for child module variable
+│ "global_secondary_indexes" defined at
+│ ..\aws-common\dynamodb\variables.tf:33,1-36: map of object required.
+╵
+╷
+│ Error: Invalid value for module argument
+│
+│   on main.tf line 156, in module "platform_dynamodb_table":
+│  156:   global_secondary_indexes  = each.value.global_secondary_indexes
+│
+│ The given value is not suitable for child module variable
+│ "global_secondary_indexes" defined at
+│ ..\aws-common\dynamodb\variables.tf:33,1-36: map of object required.
+╵
+╷
+│ Error: Invalid value for module argument
+│
+│   on main.tf line 156, in module "platform_dynamodb_table":
+│  156:   global_secondary_indexes  = each.value.global_secondary_indexes
+│
+│ The given value is not suitable for child module variable
+│ "global_secondary_indexes" defined at
+│ ..\aws-common\dynamodb\variables.tf:33,1-36: map of object required.
+╵
+╷
+│ Error: Invalid value for module argument
+│
+│   on main.tf line 156, in module "platform_dynamodb_table":
+│  156:   global_secondary_indexes  = each.value.global_secondary_indexes
+│
+│ The given value is not suitable for child module variable
+│ "global_secondary_indexes" defined at
+│ ..\aws-common\dynamodb\variables.tf:33,1-36: map of object required.
+╵
+╷
+│ Error: Invalid value for module argument
+│
+│   on main.tf line 156, in module "platform_dynamodb_table":
+│  156:   global_secondary_indexes  = each.value.global_secondary_indexes
+│
+│ The given value is not suitable for child module variable
+│ "global_secondary_indexes" defined at
+│ ..\aws-common\dynamodb\variables.tf:33,1-36: map of object required.
+╵
+╷
+│ Error: Invalid value for module argument
+│
+│   on main.tf line 156, in module "platform_dynamodb_table":
+│  156:   global_secondary_indexes  = each.value.global_secondary_indexes
+│
+│ The given value is not suitable for child module variable
+│ "global_secondary_indexes" defined at
+│ ..\aws-common\dynamodb\variables.tf:33,1-36: map of object required.
+╵
+╷
+│ Error: Invalid value for module argument
+│
+│   on main.tf line 156, in module "platform_dynamodb_table":
+│  156:   global_secondary_indexes  = each.value.global_secondary_indexes
+│
+│ The given value is not suitable for child module variable
+│ "global_secondary_indexes" defined at
+│ ..\aws-common\dynamodb\variables.tf:33,1-36: map of object required.
+╵
+time=2024-02-06T16:22:43+05:30 level=error msg=Terraform invocation failed in C:/.terragrunt-cache/XTQi-oi0p63BODQSy4EBJhN-Zak/VlJQvwBldSrlCuJoozEeVg97DMM/platform-datastore prefix=[C:\Users\umababy.kannan\OneDrive - HCL Technologies Ltd\Documents\Star CAP\platform-infra\live\dev\eu-central-1\platform-datastore]
+
+time=2024-02-06T16:22:43+05:30 level=error msg=1 error occurred:
+        * exit status 1
+
+
+
+umababy.kannan@LP-5CG2311RDH MINGW64 ~/OneDrive - HCL Technologies Ltd/Documents/Star CAP/platform-infra/live/dev/eu-central-1/platform-datastore (org-catalog)
+$
