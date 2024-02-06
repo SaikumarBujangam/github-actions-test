@@ -19,7 +19,7 @@
   }
 
   dynamic "global_secondary_index" {
-    for_each = var.global_secondary_indexes != null ? var.global_secondary_indexes : []
+    for_each = var.global_secondary_indexes != null ? [1] : []
     content {
       name               = global_secondary_index.value.name
       hash_key           = global_secondary_index.value.hash_key
