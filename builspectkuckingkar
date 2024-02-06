@@ -1,12 +1,215 @@
-variable "global_secondary_indexes" {
-  type = list(object({
-    name            = string
-    hash_key        = string
-    range_key       = string
-    projection_type = string
-    // Include these if using provisioned capacity
-    // read_capacity_units  = number
-    // write_capacity_units = number
-  }))
-  default = []
-}
+│ Error: Unsupported attribute
+│
+│   on main.tf line 158, in module "platform_dynamodb_table":
+│  158:   global_secondary_indexes = each.value.global_secondary_indexes
+│     ├────────────────
+│     │ each.value is object with 6 attributes
+│
+│ This object does not have an attribute named "global_secondary_indexes".
+╵
+╷
+│ Error: Unsupported attribute
+│
+│   on main.tf line 158, in module "platform_dynamodb_table":
+│  158:   global_secondary_indexes = each.value.global_secondary_indexes
+│     ├────────────────
+│     │ each.value is object with 6 attributes
+│
+│ This object does not have an attribute named "global_secondary_indexes".
+╵
+╷
+│ Error: Unsupported attribute
+│
+│   on main.tf line 158, in module "platform_dynamodb_table":
+│  158:   global_secondary_indexes = each.value.global_secondary_indexes
+│     ├────────────────
+│     │ each.value is object with 5 attributes
+│
+│ This object does not have an attribute named "global_secondary_indexes".
+╵
+╷
+│ Error: Unsupported attribute
+│
+│   on main.tf line 158, in module "platform_dynamodb_table":
+│  158:   global_secondary_indexes = each.value.global_secondary_indexes
+│     ├────────────────
+│     │ each.value is object with 5 attributes
+│
+│ This object does not have an attribute named "global_secondary_indexes".
+╵
+╷
+│ Error: Unsupported attribute
+│
+│   on main.tf line 158, in module "platform_dynamodb_table":
+│  158:   global_secondary_indexes = each.value.global_secondary_indexes
+│     ├────────────────
+│     │ each.value is object with 5 attributes
+│
+│ This object does not have an attribute named "global_secondary_indexes".
+╵
+╷
+│ Error: Unsupported attribute
+│
+│   on main.tf line 158, in module "platform_dynamodb_table":
+│  158:   global_secondary_indexes = each.value.global_secondary_indexes
+│     ├────────────────
+│     │ each.value is object with 5 attributes
+│
+│ This object does not have an attribute named "global_secondary_indexes".
+╵
+╷
+│ Error: Unsupported attribute
+│
+│   on main.tf line 158, in module "platform_dynamodb_table":
+│  158:   global_secondary_indexes = each.value.global_secondary_indexes
+│     ├────────────────
+│     │ each.value is object with 5 attributes
+│
+│ This object does not have an attribute named "global_secondary_indexes".
+╵
+╷
+│ Error: Unsupported attribute
+│
+│   on main.tf line 158, in module "platform_dynamodb_table":
+│  158:   global_secondary_indexes = each.value.global_secondary_indexes
+│     ├────────────────
+│     │ each.value is object with 5 attributes
+│
+│ This object does not have an attribute named "global_secondary_indexes".
+╵
+╷
+│ Error: Unsupported attribute
+│
+│   on main.tf line 158, in module "platform_dynamodb_table":
+│  158:   global_secondary_indexes = each.value.global_secondary_indexes
+│     ├────────────────
+│     │ each.value is object with 5 attributes
+│
+│ This object does not have an attribute named "global_secondary_indexes".
+╵
+╷
+│ Error: Unsupported attribute
+│
+│   on main.tf line 158, in module "platform_dynamodb_table":
+│  158:   global_secondary_indexes = each.value.global_secondary_indexes
+│     ├────────────────
+│     │ each.value is object with 5 attributes
+│
+│ This object does not have an attribute named "global_secondary_indexes".
+╵
+╷
+│ Error: Unsupported attribute
+│
+│   on main.tf line 158, in module "platform_dynamodb_table":
+│  158:   global_secondary_indexes = each.value.global_secondary_indexes
+│     ├────────────────
+│     │ each.value is object with 5 attributes
+│
+│ This object does not have an attribute named "global_secondary_indexes".
+╵
+╷
+│ Error: Unsupported attribute
+│
+│   on main.tf line 158, in module "platform_dynamodb_table":
+│  158:   global_secondary_indexes = each.value.global_secondary_indexes
+│     ├────────────────
+│     │ each.value is object with 5 attributes
+│
+│ This object does not have an attribute named "global_secondary_indexes".
+╵
+╷
+│ Error: Unsupported attribute
+│
+│   on main.tf line 158, in module "platform_dynamodb_table":
+│  158:   global_secondary_indexes = each.value.global_secondary_indexes
+│     ├────────────────
+│     │ each.value is object with 5 attributes
+│
+│ This object does not have an attribute named "global_secondary_indexes".
+╵
+╷
+│ Error: Unsupported attribute
+│
+│   on main.tf line 158, in module "platform_dynamodb_table":
+│  158:   global_secondary_indexes = each.value.global_secondary_indexes
+│     ├────────────────
+│     │ each.value is object with 6 attributes
+│
+│ This object does not have an attribute named "global_secondary_indexes".
+╵
+╷
+│ Error: Unsupported attribute
+│
+│   on main.tf line 158, in module "platform_dynamodb_table":
+│  158:   global_secondary_indexes = each.value.global_secondary_indexes
+│     ├────────────────
+│     │ each.value is object with 6 attributes
+│
+│ This object does not have an attribute named "global_secondary_indexes".
+╵
+╷
+│ Error: Unsupported attribute
+│
+│   on main.tf line 158, in module "platform_dynamodb_table":
+│  158:   global_secondary_indexes = each.value.global_secondary_indexes
+│     ├────────────────
+│     │ each.value is object with 5 attributes
+│
+│ This object does not have an attribute named "global_secondary_indexes".
+╵
+╷
+│ Error: Unsupported attribute
+│
+│   on main.tf line 158, in module "platform_dynamodb_table":
+│  158:   global_secondary_indexes = each.value.global_secondary_indexes
+│     ├────────────────
+│     │ each.value is object with 5 attributes
+│
+│ This object does not have an attribute named "global_secondary_indexes".
+╵
+╷
+│ Error: Unsupported attribute
+│
+│   on main.tf line 158, in module "platform_dynamodb_table":
+│  158:   global_secondary_indexes = each.value.global_secondary_indexes
+│     ├────────────────
+│     │ each.value is object with 5 attributes
+│
+│ This object does not have an attribute named "global_secondary_indexes".
+╵
+╷
+│ Error: Unsupported attribute
+│
+│   on main.tf line 158, in module "platform_dynamodb_table":
+│  158:   global_secondary_indexes = each.value.global_secondary_indexes
+│     ├────────────────
+│     │ each.value is object with 5 attributes
+│
+│ This object does not have an attribute named "global_secondary_indexes".
+╵
+╷
+│ Error: Unsupported attribute
+│
+│   on main.tf line 158, in module "platform_dynamodb_table":
+│  158:   global_secondary_indexes = each.value.global_secondary_indexes
+│     ├────────────────
+│     │ each.value is object with 5 attributes
+│
+│ This object does not have an attribute named "global_secondary_indexes".
+╵
+╷
+│ Error: Unsupported attribute
+│
+│   on main.tf line 158, in module "platform_dynamodb_table":
+│  158:   global_secondary_indexes = each.value.global_secondary_indexes
+│     ├────────────────
+│     │ each.value is object with 5 attributes
+│
+│ This object does not have an attribute named "global_secondary_indexes".
+╵
+time=2024-02-06T11:32:57+05:30 level=error msg=Terraform invocation failed in C:/.terragrunt-cache/XTQi-oi0p63BODQSy4EBJhN-Zak/VlJQvwBldSrlCuJoozEeVg97DMM/platform-datastore prefix=[C:\Users\umababy.kannan\OneDrive - HCL Technologies Ltd\Documents\Star CAP\platform-infra\live\dev\eu-central-1\platform-datastore]
+
+time=2024-02-06T11:32:57+05:30 level=error msg=1 error occurred:
+        * exit status 1
+
+
