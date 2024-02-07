@@ -1,27 +1,68 @@
-Crafting a professional and polite email to request a change in your office location can increase the chances of approval. Here's a template you can adapt to your situation:
+module "eks" {
+  source  = "terraform-aws-modules/eks/aws"
+  version = "~> 20.0"
 
----
+  cluster_name    = "my-cluster"
+  cluster_version = "1.29"
 
-Subject: Request for Office Location Change to CDC5
+  cluster_endpoint_public_access  = true
 
-Dear [Recipient's Name],
+  cluster_addons = {
+    coredns = {
+      most_recent = true
+    }
+    kube-proxy = {
+      most_recent = true
+    }
+    vpc-cni = {
+      most_recent = true
+    }
+  }
 
-I hope this message finds you well. I am writing to request a change in my designated office location from OTP to CDC5. After careful consideration, I believe that this change would not only significantly benefit my daily commute but also enhance my productivity and work-life balance.
+  vpc_id                   = "vpc-1234556abcdef"
+  subnet_ids               = ["subnet-abcde012", "subnet-bcde012a", "subnet-fghi345a"]
+  control_plane_subnet_ids = ["subnet-xyzde987", "subnet-slkjf456", "subnet-qeiru789"]
 
-Currently, my commute to OTP involves a journey of approximately 35 kilometers from my accommodation, which presents considerable challenges in terms of travel time and logistics. On the other hand, CDC5 is only 5 kilometers away, offering a more manageable and efficient commute. The proximity of CDC5 to my residence would greatly reduce travel time, allowing me to dedicate more energy and focus to my work responsibilities.
+  # EKS Managed Node Group(s)
+  eks_managed_node_group_defaults = {
+    instance_types = ["m6i.large", "m5.large", "m5n.large", "m5zn.large"]
+  }
 
-I understand that such requests require careful consideration, and I assure you that my commitment to my role and responsibilities will remain my top priority. I believe that being closer to home will enable me to maintain a healthier balance between my professional and personal life, ultimately contributing to a more productive and engaged work environment.
+  eks_managed_node_groups = {
+    example = {
+      min_size     = 1
+      max_size     = 10
+      desired_size = 1
 
-I am more than willing to discuss this request further at your convenience and provide any additional information you may need. I appreciate your understanding and consideration of my situation, and I look forward to your favorable response.
+      instance_types = ["t3.large"]
+      capacity_type  = "SPOT"
+    }
+  }
 
-Thank you very much for your time and attention to this matter.
+  # Cluster access entry
+  # To add the current caller identity as an administrator
+  enable_cluster_creator_admin_permissions = true
 
-Best regards,
+  access_entries = {
+    # One access entry with a policy associated
+    example = {
+      kubernetes_groups = []
+      principal_arn     = "arn:aws:iam::123456789012:role/something"
 
-[Your Name]  
-[Your Position]  
-[Your Contact Information]
+      policy_associations = {
+        example = {
+          policy_arn = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSViewPolicy"
+          access_scope = {
+            namespaces = ["default"]
+            type       = "namespace"
+          }
+        }
+      }
+    }
+  }
 
----
-
-Remember to personalize the email with the recipient's name, your details, and any specific points that support your request. Being clear, concise, and respectful in your communication will help in presenting your case effectively.
+  tags = {
+    Environment = "dev"
+    Terraform   = "true"
+  }
+}
