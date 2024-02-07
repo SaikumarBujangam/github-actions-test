@@ -1,68 +1,85 @@
+
 module "eks" {
-  source  = "terraform-aws-modules/eks/aws"
-  version = "~> 20.0"
+  source = "terraform-aws-modules/eks/aws"
+  version = "19.15.1"
 
-  cluster_name    = "my-cluster"
-  cluster_version = "1.29"
-
-  cluster_endpoint_public_access  = true
+  cluster_name                   = local.name
+  cluster_version                = local.cluster_version
+  cluster_endpoint_public_access = true
 
   cluster_addons = {
+    kube-proxy = {}
+    vpc-cni    = {}
     coredns = {
-      most_recent = true
-    }
-    kube-proxy = {
-      most_recent = true
-    }
-    vpc-cni = {
-      most_recent = true
+      configuration_values = jsonencode({
+        computeType = "Fargate"
+      })
     }
   }
 
-  vpc_id                   = "vpc-1234556abcdef"
-  subnet_ids               = ["subnet-abcde012", "subnet-bcde012a", "subnet-fghi345a"]
-  control_plane_subnet_ids = ["subnet-xyzde987", "subnet-slkjf456", "subnet-qeiru789"]
+  vpc_id                   = data.aws_vpc.domain_vpc.id
+  subnet_ids               = data.aws_subnets.domain_subnets.ids
 
-  # EKS Managed Node Group(s)
-  eks_managed_node_group_defaults = {
-    instance_types = ["m6i.large", "m5.large", "m5n.large", "m5zn.large"]
-  }
+  # Fargate profiles use the cluster primary security group so these are not utilized
+  create_cluster_security_group = false
+  create_node_security_group    = false
 
-  eks_managed_node_groups = {
-    example = {
-      min_size     = 1
-      max_size     = 10
-      desired_size = 1
-
-      instance_types = ["t3.large"]
-      capacity_type  = "SPOT"
+  manage_aws_auth_configmap = true
+  # Role arn values needs to change as variables
+  aws_auth_roles = [
+    {
+      rolearn  = "arn:aws:iam::${local.account_id}:role/StarCapEngineering"
+      username = "StarCapEngineering"
+      groups = ["system:masters"]
+    },
+    {
+      rolearn  = "arn:aws:iam::${local.account_id}:role/StarCapDevOps"
+      username = "StarCapDevOps"
+      groups = ["system:masters"]
+    }
+  ]
+  
+  fargate_profile_defaults = {
+    iam_role_additional_policies = {
+      additional = aws_iam_policy.additional.arn
     }
   }
 
-  # Cluster access entry
-  # To add the current caller identity as an administrator
-  enable_cluster_creator_admin_permissions = true
-
-  access_entries = {
-    # One access entry with a policy associated
-    example = {
-      kubernetes_groups = []
-      principal_arn     = "arn:aws:iam::123456789012:role/something"
-
-      policy_associations = {
-        example = {
-          policy_arn = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSViewPolicy"
-          access_scope = {
-            namespaces = ["default"]
-            type       = "namespace"
+  fargate_profiles = merge(
+    {
+      backend = {
+        name = "backend"
+        selectors = [
+          {
+            namespace = "backend"
+          },
+          {
+            namespace = "app-*"
+            labels = {
+              Application = "app-wildcard"
+            }
           }
+        ]
+
+        tags = {
+          Owner = "secondary"
+        }
+
+        timeouts = {
+          create = "20m"
+          delete = "20m"
         }
       }
+    },
+    { for i in range(2) :
+      "kube-system-${element(split("-", local.azs[i]), 2)}" => {
+        selectors = [
+          { namespace = "kube-system" }
+        ]
+        # We want to create a profile per AZ for high availability
+        subnet_ids = [tolist(data.aws_subnets.domain_subnets.ids)[0]]
+      }
     }
-  }
+  )
 
-  tags = {
-    Environment = "dev"
-    Terraform   = "true"
-  }
 }
