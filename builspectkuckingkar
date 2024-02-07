@@ -1,85 +1,90 @@
-
-module "eks" {
-  source = "terraform-aws-modules/eks/aws"
-  version = "19.15.1"
-
-  cluster_name                   = local.name
-  cluster_version                = local.cluster_version
-  cluster_endpoint_public_access = true
-
-  cluster_addons = {
-    kube-proxy = {}
-    vpc-cni    = {}
-    coredns = {
-      configuration_values = jsonencode({
-        computeType = "Fargate"
-      })
-    }
-  }
-
-  vpc_id                   = data.aws_vpc.domain_vpc.id
-  subnet_ids               = data.aws_subnets.domain_subnets.ids
-
-  # Fargate profiles use the cluster primary security group so these are not utilized
-  create_cluster_security_group = false
-  create_node_security_group    = false
-
-  manage_aws_auth_configmap = true
-  # Role arn values needs to change as variables
-  aws_auth_roles = [
-    {
-      rolearn  = "arn:aws:iam::${local.account_id}:role/StarCapEngineering"
-      username = "StarCapEngineering"
-      groups = ["system:masters"]
-    },
-    {
-      rolearn  = "arn:aws:iam::${local.account_id}:role/StarCapDevOps"
-      username = "StarCapDevOps"
-      groups = ["system:masters"]
-    }
-  ]
+# Create a CloudFront distribution with the S3 bucket as the origin
+resource "aws_cloudfront_distribution" "distribution" {
   
-  fargate_profile_defaults = {
-    iam_role_additional_policies = {
-      additional = aws_iam_policy.additional.arn
+  enabled             = true
+  aliases             = ["v2.${var.domain_name}"]
+
+  logging_config {
+    bucket          = var.log_bucket_domain_name
+    include_cookies = false
+    prefix          = "v2-cloudfront-logs/"
+  }
+
+  origin {
+    domain_name = aws_s3_bucket.frontend.bucket_regional_domain_name
+    origin_id   = aws_s3_bucket.frontend.id
+    origin_path = ""
+    s3_origin_config {
+      origin_access_identity = aws_cloudfront_origin_access_identity.oai.cloudfront_access_identity_path
     }
   }
 
-  fargate_profiles = merge(
-    {
-      backend = {
-        name = "backend"
-        selectors = [
-          {
-            namespace = "backend"
-          },
-          {
-            namespace = "app-*"
-            labels = {
-              Application = "app-wildcard"
-            }
-          }
-        ]
+  default_root_object = "/index.html"
+  http_version        = "http2"
+  is_ipv6_enabled     = true
+  retain_on_delete    = false
+  web_acl_id		      = var.global_waf_arn
 
-        tags = {
-          Owner = "secondary"
-        }
+  wait_for_deployment = true
 
-        timeouts = {
-          create = "20m"
-          delete = "20m"
-        }
-      }
-    },
-    { for i in range(2) :
-      "kube-system-${element(split("-", local.azs[i]), 2)}" => {
-        selectors = [
-          { namespace = "kube-system" }
-        ]
-        # We want to create a profile per AZ for high availability
-        subnet_ids = [tolist(data.aws_subnets.domain_subnets.ids)[0]]
+  custom_error_response {
+    error_caching_min_ttl = 300
+    error_code            = 403
+    response_code         = 200
+    response_page_path    = "/index.html"
+  }
+  custom_error_response {
+    error_caching_min_ttl = 300
+    error_code            = 404
+    response_code         = 200
+    response_page_path    = "/index.html"
+  }
+
+  default_cache_behavior {
+    allowed_methods = [
+      "GET",
+      "HEAD",
+    ]
+    cached_methods = [
+      "GET",
+      "HEAD",
+    ]
+    compress               = false
+    default_ttl            = 0
+    max_ttl                = 900
+    min_ttl                = 0
+    smooth_streaming       = false
+    target_origin_id       = aws_s3_bucket.frontend.id
+    viewer_protocol_policy = "allow-all"
+
+    forwarded_values {
+      query_string = false
+
+      cookies {
+        forward           = "none"
+        whitelisted_names = []
       }
     }
-  )
+  }
 
+  restrictions {
+    geo_restriction {
+      locations        = []
+      restriction_type = "none"
+    }
+  }
+
+  viewer_certificate {
+    acm_certificate_arn            = var.acm_arn_v2
+	  cloudfront_default_certificate = false
+    minimum_protocol_version       = "TLSv1.2_2021"
+    ssl_support_method             = "sni-only"
+  }
+
+  #depends_on = [ module.logs_bucket ]
+}
+
+# Create an Origin Access Identity
+resource "aws_cloudfront_origin_access_identity" "oai" {
+  comment = "origin acess identity for UI v2"
 }
