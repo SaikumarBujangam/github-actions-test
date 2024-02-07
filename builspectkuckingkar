@@ -1,10 +1,27 @@
-dynamic "attribute" {
-  for_each = flatten([
-    for gsi in var.global_secondary_indexes : 
-    gsi.range_key != "" ? [gsi.hash_key, gsi.range_key] : [gsi.hash_key]
-  ])
-  content {
-    name = attribute.value
-    type = contains(var.global_secondary_indexes[*].hash_key, attribute.value) ? "S" : "N"
-  }
-}
+Crafting a professional and polite email to request a change in your office location can increase the chances of approval. Here's a template you can adapt to your situation:
+
+---
+
+Subject: Request for Office Location Change to CDC5
+
+Dear [Recipient's Name],
+
+I hope this message finds you well. I am writing to request a change in my designated office location from OTP to CDC5. After careful consideration, I believe that this change would not only significantly benefit my daily commute but also enhance my productivity and work-life balance.
+
+Currently, my commute to OTP involves a journey of approximately 35 kilometers from my accommodation, which presents considerable challenges in terms of travel time and logistics. On the other hand, CDC5 is only 5 kilometers away, offering a more manageable and efficient commute. The proximity of CDC5 to my residence would greatly reduce travel time, allowing me to dedicate more energy and focus to my work responsibilities.
+
+I understand that such requests require careful consideration, and I assure you that my commitment to my role and responsibilities will remain my top priority. I believe that being closer to home will enable me to maintain a healthier balance between my professional and personal life, ultimately contributing to a more productive and engaged work environment.
+
+I am more than willing to discuss this request further at your convenience and provide any additional information you may need. I appreciate your understanding and consideration of my situation, and I look forward to your favorable response.
+
+Thank you very much for your time and attention to this matter.
+
+Best regards,
+
+[Your Name]  
+[Your Position]  
+[Your Contact Information]
+
+---
+
+Remember to personalize the email with the recipient's name, your details, and any specific points that support your request. Being clear, concise, and respectful in your communication will help in presenting your case effectively.
