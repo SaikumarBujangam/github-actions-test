@@ -1,52 +1,13 @@
-terraform {
+module "eks_load_balancer_controller" {
+  source = "../aws-common/eks-load-balancer-controller"
 
-  required_providers {
-    aws = {
-      source  = "hashicorp/aws"
-      version = "4.65.0"
-    }
-    helm = {
-      source = "hashicorp/helm"
-      version = "2.11.0"
-    }
-    kubernetes = {
-      source = "hashicorp/kubernetes"
-      version = "2.23.0"
-    }
-    kubectl = {
-      source = "gavinbunney/kubectl"
-      version = "1.14.0"
-    }
-  }
-}
+  enabled = true
+  region  = var.region
+  vpc_id = var.vpc_id
 
+  cluster_identity_oidc_issuer     = module.eks.cluster_oidc_issuer_url
+  cluster_identity_oidc_issuer_arn = module.eks.oidc_provider_arn
+  cluster_name                     = module.eks.cluster_name
 
-data "aws_eks_cluster" "default" {
-  name = var.cluster_name
-}
-
-data "aws_eks_cluster_auth" "default" {
-  name = var.cluster_name
-}
-
-
-provider "helm" {
-  kubernetes {
-    host                   = data.aws_eks_cluster.default.endpoint
-    cluster_ca_certificate = base64decode(data.aws_eks_cluster.default.certificate_authority[0].data)
-    token                  = data.aws_eks_cluster_auth.default.token
-  }
-}
-
-provider "kubernetes" {
-  host                   = data.aws_eks_cluster.default.endpoint
-  cluster_ca_certificate = base64decode(data.aws_eks_cluster.default.certificate_authority[0].data)
-  token                  = data.aws_eks_cluster_auth.default.token
-}
-
-provider "kubectl" {
-  host                   = data.aws_eks_cluster.default.endpoint
-  cluster_ca_certificate = base64decode(data.aws_eks_cluster.default.certificate_authority[0].data)
-  token                  = data.aws_eks_cluster_auth.default.token
-  load_config_file       = false
+  depends_on = [module.eks.fargate_profiles]
 }
