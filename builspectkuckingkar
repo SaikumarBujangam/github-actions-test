@@ -1,13 +1,84 @@
-module "eks_load_balancer_controller" {
-  source = "../aws-common/eks-load-balancer-controller"
+module "eks" {
+  source = "terraform-aws-modules/eks/aws"
+  version = "19.15.1"
 
-  enabled = true
-  region  = var.region
-  vpc_id = var.vpc_id
+  cluster_name                   = local.name
+  cluster_version                = local.cluster_version
+  cluster_endpoint_public_access = true
 
-  cluster_identity_oidc_issuer     = module.eks.cluster_oidc_issuer_url
-  cluster_identity_oidc_issuer_arn = module.eks.oidc_provider_arn
-  cluster_name                     = module.eks.cluster_name
+  cluster_addons = {
+    kube-proxy = {}
+    vpc-cni    = {}
+    coredns = {
+      configuration_values = jsonencode({
+        computeType = "Fargate"
+      })
+    }
+  }
 
-  depends_on = [module.eks.fargate_profiles]
+  vpc_id                   = var.vpc_id
+  subnet_ids               = var.application_subnet_ids
+
+  # Fargate profiles use the cluster primary security group so these are not utilized
+  create_cluster_security_group = false
+  create_node_security_group    = false
+
+  manage_aws_auth_configmap = true
+  # Role arn values needs to change as variables
+  aws_auth_roles = [
+    {
+      rolearn  = "arn:aws:iam::${local.account_id}:role/StarCapEngineering"
+      username = "StarCapEngineering"
+      groups = ["system:masters"]
+    },
+    {
+      rolearn  = "arn:aws:iam::${local.account_id}:role/StarCapDevOps"
+      username = "StarCapDevOps"
+      groups = ["system:masters"]
+    }
+  ]
+  
+  fargate_profile_defaults = {
+    iam_role_additional_policies = {
+      additional = aws_iam_policy.additional.arn
+    }
+  }
+
+  fargate_profiles = merge(
+    {
+      backend = {
+        name = "backend"
+        selectors = [
+          {
+            namespace = "backend"
+          },
+          {
+            namespace = "app-*"
+            labels = {
+              Application = "app-wildcard"
+            }
+          }
+        ]
+
+        tags = {
+          Owner = "secondary"
+        }
+
+        timeouts = {
+          create = "20m"
+          delete = "20m"
+        }
+      }
+    },
+    { for i in range(2) :
+      "kube-system-${element(split("-", local.azs[i]), 2)}" => {
+        selectors = [
+          { namespace = "kube-system" }
+        ]
+        # We want to create a profile per AZ for high availability
+        subnet_ids = [element(var.application_subnet_ids, i)]
+      }
+    }
+  )
+
 }
