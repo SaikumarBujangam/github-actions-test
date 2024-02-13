@@ -1,3 +1,15 @@
+locals {
+  name            = "${var.env}-${var.platform}-platform-cluster"
+  cluster_version = "1.24"
+  account_id      = data.aws_caller_identity.current.account_id
+  azs             = var.azs
+
+}
+
+################################################################################
+# EKS Module
+################################################################################
+
 module "eks" {
   source = "terraform-aws-modules/eks/aws"
   version = "19.15.1"
@@ -81,4 +93,49 @@ module "eks" {
     }
   )
 
+}
+
+################################################################################
+# Supporting Resources
+################################################################################
+
+resource "aws_iam_policy" "additional" {
+  name = "${local.name}-additional"
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = [
+          "ec2:Describe*",
+        ]
+        Effect   = "Allow"
+        Resource = "*"
+      },
+      {
+        "Effect": "Allow",
+        "Action": [
+          "logs:CreateLogStream",
+          "logs:CreateLogGroup",
+          "logs:DescribeLogStreams",
+          "logs:PutLogEvents"
+        ],
+        "Resource": "*"
+      },
+    ]
+  })
+}
+
+module "eks_load_balancer_controller" {
+  source = "../aws-common/eks-load-balancer-controller"
+
+  enabled = true
+  region  = var.region
+  vpc_id = var.vpc_id
+
+  cluster_identity_oidc_issuer     = module.eks.cluster_oidc_issuer_url
+  cluster_identity_oidc_issuer_arn = module.eks.oidc_provider_arn
+  cluster_name                     = module.eks.cluster_name
+
+  depends_on = [module.eks.fargate_profiles]
 }
