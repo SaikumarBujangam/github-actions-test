@@ -1,117 +1,23 @@
-name: Check Pull Request Branches
+The changes made in the updated script compared to the old one reflect adjustments to match a new branching structure. Here's a summary of the key changes:
 
-on:
-  pull_request:
-    branches: [ master ]
-    types: [opened, reopened, edited]
-    
-  workflow_call:
+1. **Triggering Event Configuration**:
+    - The old script triggered on pull requests to `master, release/qa, release/qc, release/prod`.
+    - The updated script triggers only on pull requests to `master`.
 
-jobs:
-  adl-cicd-check-pull-request:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check Branches
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          echo "Pull Request on $GITHUB_REPOSITORY $GITHUB_HEAD_REF into $GITHUB_BASE_REF"
-          base_branch_category=${GITHUB_BASE_REF%%/*}
-          head_branch_category=${GITHUB_HEAD_REF%%/*}
-          if [[ ${base_branch_category} == "master" ]]
-          then
-            if [[ "${head_branch_category}" == "feature" || "${head_branch_category}" == "hotfix" ]]
-            then
-              echo "Merging a ${head_branch_category} branch into ${base_branch_category} is allowed"
-              if [[ "${head_branch_category}" == "hotfix" ]]
-              then
-                num_open_pr=$(gh api /repos/$GITHUB_REPOSITORY/pulls?state=open\&base=$GITHUB_BASE_REF | jq "keys | length")
-                echo "Number of open PRs against master: ${num_open_pr}"
-                if [[ "${num_open_pr}" -gt 1 ]];
-                then
-                  echo "Only 1 PR is allowed to be open at a time for hotfix branches"
-                  exit 1
-                fi
-              fi
+2. **Environment Variable for GitHub Token**:
+    - The new script introduces an environment variable `GH_TOKEN` set to `secrets.GITHUB_TOKEN`, allowing authenticated GitHub API calls. This is not present in the old script.
 
-              exit 0
-            else
-              echo "Merging a non-feature/hotfix branch into $GITHUB_BASE_REF is not allowed"
-              exit 1
-            fi
-          fi
+3. **Branch Category Checks**:
+    - The old script had a more complex branching logic, allowing merges from `master` to `release/qa`, from `release/qa` to `release/qc`, and from `release/qc` to `release/prod`. It also allowed merging `hotfix` branches into `release/prod`.
+    - The updated script simplifies this by focusing on merges into `master` only, specifically from `feature` or `hotfix` branches. This change indicates a streamlined approach to managing pull requests, focusing on a direct line of development into `master` with specific allowances for `feature` and `hotfix` branches.
 
-          echo "Merging into master is only allowed from feature or hotfix branches"
-          exit 1
+4. **Hotfix Branches Special Check**:
+    - In the new script, there's an added check for `hotfix` branches to ensure only one PR is open at a time against `master`. This is achieved by querying GitHub's API to count open PRs against `master` and enforcing the rule if more than one is found. This specific logic is new and focuses on maintaining a strict workflow for hotfixes, ensuring they are treated with priority and minimizing the risk of multiple concurrent hotfixes.
 
-+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+5. **Removal of Release Branch Logic**:
+    - The old script contained logic for managing transitions between various release branches (`release/qa`, `release/qc`, `release/prod`). This has been removed in the new script, indicating a possible change in release management strategy, possibly moving towards a simpler or different release process.
 
-the below is the old script:
+6. **Error Handling and Messages**:
+    - The updated script includes more detailed messages regarding the allowed branch merging strategies, particularly emphasizing the conditions under which merges into `master` are permitted. This provides clearer guidance for contributors on the expected branching workflow.
 
-name: Check Pull Request Branches
-
-on:
-  pull_request:
-    branches: [ master, release/qa, release/qc, release/prod ]
-    types: [opened, reopened, edited]
-    
-  workflow_call:
-    secrets:
-      envPAT:
-        required: true
-jobs:
-  adl-cicd-check-pull-request:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check Branches
-        run: |
-          echo "Pull Request on $GITHUB_REPOSITORY $GITHUB_HEAD_REF into $GITHUB_BASE_REF"
-          base_branch_category=${GITHUB_BASE_REF%%/*}
-          head_branch_category=${GITHUB_HEAD_REF%%/*}
-          if [[ ${base_branch_category} == "master" ]]
-          then
-            if [[ "${head_branch_category}" == "feature" ]]
-            then
-              echo "Merging a feature branch into master is allowed"
-              exit 0
-            else
-              echo "Merging a non-feature branch into master is not allowed"
-              exit 1
-            fi
-          fi
-          if [[ ${base_branch_category} == "release" ]]
-          then
-            if [[ ${GITHUB_HEAD_REF} == "master" && ${GITHUB_BASE_REF} == "release/qa" ]]
-            then
-              echo "Merging the master branch into release/qa is allowed"
-              exit 0
-            fi
-            if [[ ${GITHUB_HEAD_REF} == "release/qa" && ${GITHUB_BASE_REF} == "release/qc" ]]
-            then
-              echo "Merging the release/qa branch into release/qc is allowed"
-              exit 0
-            fi
-            if [[ ${GITHUB_HEAD_REF} == "release/qc" && ${GITHUB_BASE_REF} == "release/prod" ]]
-            then
-              echo "Merging the release/qc branch into release/prod is allowed"
-              exit 0
-            fi
-
-            if [[ "${head_branch_category}" == "hotfix" ]]
-            then
-              if [[ ${GITHUB_BASE_REF} == "release/prod" ]]
-              then
-                echo "Merging a hotfix branch into release/prod is allowed"
-                exit 0
-              else
-                echo "Merging a hotfix branch is only allowed into release/prod"
-                exit 1
-              fi
-            fi
-          fi
-          echo "Checks Fail cannot merge ${GITHUB_HEAD_REF} into ${GITHUB_BASE_REF}"
-          exit 2
-
-++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-What changes I have made to match the new branching structure? 
+These changes suggest a shift towards a simplified and more controlled branching strategy, emphasizing direct development on `master` with specific paths for features and hotfixes, alongside a new operational constraint for `hotfix` branches to ensure focused and sequential handling.
