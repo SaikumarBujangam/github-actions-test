@@ -43,3 +43,75 @@ jobs:
 
           echo "Merging into master is only allowed from feature or hotfix branches"
           exit 1
+
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+the below is the old script:
+
+name: Check Pull Request Branches
+
+on:
+  pull_request:
+    branches: [ master, release/qa, release/qc, release/prod ]
+    types: [opened, reopened, edited]
+    
+  workflow_call:
+    secrets:
+      envPAT:
+        required: true
+jobs:
+  adl-cicd-check-pull-request:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check Branches
+        run: |
+          echo "Pull Request on $GITHUB_REPOSITORY $GITHUB_HEAD_REF into $GITHUB_BASE_REF"
+          base_branch_category=${GITHUB_BASE_REF%%/*}
+          head_branch_category=${GITHUB_HEAD_REF%%/*}
+          if [[ ${base_branch_category} == "master" ]]
+          then
+            if [[ "${head_branch_category}" == "feature" ]]
+            then
+              echo "Merging a feature branch into master is allowed"
+              exit 0
+            else
+              echo "Merging a non-feature branch into master is not allowed"
+              exit 1
+            fi
+          fi
+          if [[ ${base_branch_category} == "release" ]]
+          then
+            if [[ ${GITHUB_HEAD_REF} == "master" && ${GITHUB_BASE_REF} == "release/qa" ]]
+            then
+              echo "Merging the master branch into release/qa is allowed"
+              exit 0
+            fi
+            if [[ ${GITHUB_HEAD_REF} == "release/qa" && ${GITHUB_BASE_REF} == "release/qc" ]]
+            then
+              echo "Merging the release/qa branch into release/qc is allowed"
+              exit 0
+            fi
+            if [[ ${GITHUB_HEAD_REF} == "release/qc" && ${GITHUB_BASE_REF} == "release/prod" ]]
+            then
+              echo "Merging the release/qc branch into release/prod is allowed"
+              exit 0
+            fi
+
+            if [[ "${head_branch_category}" == "hotfix" ]]
+            then
+              if [[ ${GITHUB_BASE_REF} == "release/prod" ]]
+              then
+                echo "Merging a hotfix branch into release/prod is allowed"
+                exit 0
+              else
+                echo "Merging a hotfix branch is only allowed into release/prod"
+                exit 1
+              fi
+            fi
+          fi
+          echo "Checks Fail cannot merge ${GITHUB_HEAD_REF} into ${GITHUB_BASE_REF}"
+          exit 2
+
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+What changes I have made to match the new branching structure? 
