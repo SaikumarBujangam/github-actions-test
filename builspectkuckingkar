@@ -1,79 +1,8 @@
----
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  namespace: backend
-  name: ingress-alb
-  annotations:
-    alb.ingress.kubernetes.io/load-balancer-name: ingress-alb
-    alb.ingress.kubernetes.io/scheme: internal
-    alb.ingress.kubernetes.io/target-type: ip
-    alb.ingress.kubernetes.io/healthcheck-path: /healthCheck
-spec:
-  ingressClassName: alb
-  rules:
-    - http:
-        paths:
-        - path: /org-management-services
-          pathType: Prefix
-          backend:
-            service:
-              name: org-management-services
-              port:
-                number: 80
-        - path: /user-management-services
-          pathType: Prefix
-          backend:
-            service:
-              name: user-management-services
-              port:
-                number: 80
-        - path: /login-services
-          pathType: Prefix
-          backend:
-            service:
-              name: login-services
-              port:
-                number: 80
-        - path: /data-ingress-services
-          pathType: Prefix
-          backend:
-            service:
-              name: data-ingress-services
-              port:
-                number: 80
-        - path: /project-management-services
-          pathType: Prefix
-          backend:
-            service:
-              name: project-management-services
-              port:
-                number: 80
-        - path: /data-catalog-services
-          pathType: Prefix
-          backend:
-            service:
-              name: data-catalog-services
-              port:
-                number: 80  
-        - path: /project-audit-services
-          pathType: Prefix
-          backend:
-            service:
-              name: project-audit-services
-              port:
-                number: 80
-        - path: /nextflow-services
-          pathType: Prefix
-          backend:
-            service:
-              name: nextflow-services
-              port:
-                number: 80  
-        - path: /org-catalog-services
-          pathType: Prefix
-          backend:
-            service:
-              name: org-catalog-services
-              port:
-                number: 80  
+resource "kubernetes_namespace" "lb_controller" {
+  depends_on = [var.mod_dependency]
+  count      = (var.enabled && var.create_namespace && var.namespace != "kube-system") ? 1 : 0
+
+  metadata {
+    name = var.namespace
+  }
+}
