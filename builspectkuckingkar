@@ -1,23 +1,79 @@
-The changes made in the updated script compared to the old one reflect adjustments to match a new branching structure. Here's a summary of the key changes:
-
-1. **Triggering Event Configuration**:
-    - The old script triggered on pull requests to `master, release/qa, release/qc, release/prod`.
-    - The updated script triggers only on pull requests to `master`.
-
-2. **Environment Variable for GitHub Token**:
-    - The new script introduces an environment variable `GH_TOKEN` set to `secrets.GITHUB_TOKEN`, allowing authenticated GitHub API calls. This is not present in the old script.
-
-3. **Branch Category Checks**:
-    - The old script had a more complex branching logic, allowing merges from `master` to `release/qa`, from `release/qa` to `release/qc`, and from `release/qc` to `release/prod`. It also allowed merging `hotfix` branches into `release/prod`.
-    - The updated script simplifies this by focusing on merges into `master` only, specifically from `feature` or `hotfix` branches. This change indicates a streamlined approach to managing pull requests, focusing on a direct line of development into `master` with specific allowances for `feature` and `hotfix` branches.
-
-4. **Hotfix Branches Special Check**:
-    - In the new script, there's an added check for `hotfix` branches to ensure only one PR is open at a time against `master`. This is achieved by querying GitHub's API to count open PRs against `master` and enforcing the rule if more than one is found. This specific logic is new and focuses on maintaining a strict workflow for hotfixes, ensuring they are treated with priority and minimizing the risk of multiple concurrent hotfixes.
-
-5. **Removal of Release Branch Logic**:
-    - The old script contained logic for managing transitions between various release branches (`release/qa`, `release/qc`, `release/prod`). This has been removed in the new script, indicating a possible change in release management strategy, possibly moving towards a simpler or different release process.
-
-6. **Error Handling and Messages**:
-    - The updated script includes more detailed messages regarding the allowed branch merging strategies, particularly emphasizing the conditions under which merges into `master` are permitted. This provides clearer guidance for contributors on the expected branching workflow.
-
-These changes suggest a shift towards a simplified and more controlled branching strategy, emphasizing direct development on `master` with specific paths for features and hotfixes, alongside a new operational constraint for `hotfix` branches to ensure focused and sequential handling.
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  namespace: backend
+  name: ingress-alb
+  annotations:
+    alb.ingress.kubernetes.io/load-balancer-name: ingress-alb
+    alb.ingress.kubernetes.io/scheme: internal
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/healthcheck-path: /healthCheck
+spec:
+  ingressClassName: alb
+  rules:
+    - http:
+        paths:
+        - path: /org-management-services
+          pathType: Prefix
+          backend:
+            service:
+              name: org-management-services
+              port:
+                number: 80
+        - path: /user-management-services
+          pathType: Prefix
+          backend:
+            service:
+              name: user-management-services
+              port:
+                number: 80
+        - path: /login-services
+          pathType: Prefix
+          backend:
+            service:
+              name: login-services
+              port:
+                number: 80
+        - path: /data-ingress-services
+          pathType: Prefix
+          backend:
+            service:
+              name: data-ingress-services
+              port:
+                number: 80
+        - path: /project-management-services
+          pathType: Prefix
+          backend:
+            service:
+              name: project-management-services
+              port:
+                number: 80
+        - path: /data-catalog-services
+          pathType: Prefix
+          backend:
+            service:
+              name: data-catalog-services
+              port:
+                number: 80  
+        - path: /project-audit-services
+          pathType: Prefix
+          backend:
+            service:
+              name: project-audit-services
+              port:
+                number: 80
+        - path: /nextflow-services
+          pathType: Prefix
+          backend:
+            service:
+              name: nextflow-services
+              port:
+                number: 80  
+        - path: /org-catalog-services
+          pathType: Prefix
+          backend:
+            service:
+              name: org-catalog-services
+              port:
+                number: 80  
