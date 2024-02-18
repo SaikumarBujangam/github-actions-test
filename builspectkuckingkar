@@ -1,121 +1,28 @@
----
-kind: ConfigMap
-apiVersion: v1
-metadata:
-  name: aws-logging
-  namespace: aws-observability
-data:
-  output.conf: |
-    [OUTPUT]
-        Name cloudwatch_logs
-        Match *org-management-services*
-        region eu-central-1
-        log_group_name starcap/cluster/org-management-services
-        log_stream_prefix org-management-services-
-        auto_create_group true
-        log_key log
+###################################################
+# OIDC Identity Provider
+###################################################
 
-    [OUTPUT]
-        Name cloudwatch_logs
-        Match *user-management-services*
-        region eu-central-1
-        log_group_name starcap/cluster/user-management-services
-        log_stream_prefix user-management-services-
-        auto_create_group true
-        log_key log
+data "tls_certificate" "this" {
+  count = var.auto_thumbprint_enabled ? 1 : 0
 
-    [OUTPUT]
-        Name cloudwatch_logs
-        Match *login-services*
-        region eu-central-1
-        log_group_name starcap/cluster/login-services
-        log_stream_prefix login-services-
-        auto_create_group true
-        log_key log
+  url = var.url
+}
 
-    [OUTPUT]
-        Name cloudwatch_logs
-        Match *utility-services*
-        region eu-central-1
-        log_group_name starcap/cluster/utility-services
-        log_stream_prefix utility-services-
-        auto_create_group true
-        log_key log
+resource "aws_iam_openid_connect_provider" "this" {
+  url = var.url
 
-    [OUTPUT]
-        Name cloudwatch_logs
-        Match *project-management-services*
-        region eu-central-1
-        log_group_name starcap/cluster/project-management-services
-        log_stream_prefix project-management-services-
-        auto_create_group true
-        log_key log
+  client_id_list = var.audiences
+  thumbprint_list = setunion(
+    var.thumbprints,
+    (var.auto_thumbprint_enabled
+      ? data.tls_certificate.this[*].certificates[0].sha1_fingerprint
+      : []
+    )
+  )
 
-    [OUTPUT]
-        Name cloudwatch_logs
-        Match *project-infra-provisioning-services*
-        region eu-central-1
-        log_group_name starcap/cluster/project-infra-provisioning-services
-        log_stream_prefix project-infra-provisioning-services-
-        auto_create_group true
-        log_key log
+  lifecycle {
+    ignore_changes = [ thumbprint_list ]
+  }
 
-    [OUTPUT]
-        Name cloudwatch_logs
-        Match *data-ingress-services*
-        region eu-central-1
-        log_group_name starcap/cluster/data-ingress-services
-        log_stream_prefix data-ingress-services-
-        auto_create_group true
-        log_key log
-
-    [OUTPUT]
-        Name cloudwatch_logs
-        Match *data-catalog-services*
-        region eu-central-1
-        log_group_name starcap/cluster/data-catalog-services
-        log_stream_prefix data-catalog-services-
-        auto_create_group true
-        log_key log
-
-    [OUTPUT]
-        Name cloudwatch_logs
-        Match *project-audit-services*
-        region eu-central-1
-        log_group_name starcap/cluster/project-audit-services
-        log_stream_prefix project-audit-services-
-        auto_create_group true
-        log_key log
-    
-    [OUTPUT]
-        Name cloudwatch_logs
-        Match *nextflow-services*
-        region eu-central-1
-        log_group_name starcap/cluster/nextflow-services
-        log_stream_prefix nextflow-services-
-        auto_create_group true
-        log_key log
-
-    [OUTPUT]
-        Name cloudwatch_logs
-        Match *org-catalog-services*
-        region eu-central-1
-        log_group_name starcap/cluster/org-catalog-services
-        log_stream_prefix org-catalog-services-
-        auto_create_group true
-        log_key log
-
-  parsers.conf: |
-    [PARSER]
-        Name crio
-        Format Regex
-        Regex ^(?<time>[^ ]+) (?<stream>stdout|stderr) (?<logtag>P|F) (?<log>.*)$
-        Time_Key    time
-        Time_Format %Y-%m-%dT%H:%M:%S.%L%z
-  
-  filters.conf: |
-     [FILTER]
-        Name parser
-        Match *
-        Key_name log
-        Parser crio
+  tags = var.tags
+}
