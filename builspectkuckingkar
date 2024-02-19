@@ -1,180 +1,24 @@
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  namespace: backend
-  name: utility-services
-spec:
-  selector:
-    matchLabels:
-      app.kubernetes.io/name: utility-services
-  replicas: 1
-  template:
-    metadata:
-      labels:
-        app.kubernetes.io/name: utility-services
-    spec:
-      volumes:
-      - name: datadog-config
-        configMap:
-          name: datadog-config
-          items:
-          - key: datadog.yaml
-            path: datadog.yaml
-      containers:
-        - env:
-          - name: DD_ENV  # mount the env var from configmap
-            valueFrom:
-              configMapKeyRef:
-                name: platform-config 
-                key: env_name
-          - name: DD_TAGS
-            value: product:kamino component:backend
-          - name: DD_ORCHESTRATOR_EXPLORER_ENABLED
-            value: "true"
-          - name: DD_CLUSTER_AGENT_URL
-            value: https://datadog-cluster-agent.backend.svc.cluster.local:5005
-          - name: DD_CLUSTER_AGENT_AUTH_TOKEN
-            valueFrom:
-              secretKeyRef:
-                key: token
-                name: datadog-cluster-agent
-          - name: DD_API_KEY
-            valueFrom:
-              secretKeyRef:
-                key: api-key
-                name: datadog-agent
-          - name: DD_SITE
-            value: datadoghq.eu
-          - name: DD_EKS_FARGATE
-            value: "true"
-          - name: DD_CLUSTER_NAME
-            value: dev-starcap-platform-cluster
-          - name: DD_KUBERNETES_KUBELET_NODENAME
-            valueFrom:
-              fieldRef:
-                apiVersion: v1
-                fieldPath: spec.nodeName
-          image: datadog/agent
-          imagePullPolicy: Always
-          ports:
-          - containerPort: 4317
-            name: otlp-grpc
-          - containerPort: 4318
-            name: otlp-http
-          volumeMounts:
-          - name: datadog-config
-            mountPath: /etc/datadog-agent/datadog.yaml
-            subPath: datadog.yaml
-          name: datadog-agent
-        - image: 195227247767.dkr.ecr.eu-central-1.amazonaws.com/dev-microservices-repository:utility-services-<image_id>
-          imagePullPolicy: Always
-          name: utility-services
-          ports:
-            - containerPort: 8000
-          resources:
-            limits:
-              cpu: 1000m # the CPU limit is define in milicore (m)
-              memory: 1500Mi # the Memory is define in Mebibytes (Mi)
-          envFrom:
-            - configMapRef:
-                name: platform-config
-      serviceAccountName: microservice-service-account
----
-apiVersion: v1
-kind: Service
-metadata:
-  namespace: backend
-  name: utility-services
-spec:
-  ports:
-    - port: 80
-      targetPort: 8000
-      protocol: TCP
-  type: NodePort
-  selector:
-    app.kubernetes.io/name: utility-services
+# This is necessary for Datadog to post metrics
+resource "helm_release" "dd_cluster_agent" {
 
+  namespace = var.dd_cluster_agent_namespace
+  wait      = true
+  timeout   = 600
 
---------
+  name = "datadog"
 
----
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  namespace: backend
-  name: ingress-alb
-  annotations:
-    alb.ingress.kubernetes.io/load-balancer-name: ingress-alb
-    alb.ingress.kubernetes.io/scheme: internal
-    alb.ingress.kubernetes.io/target-type: ip
-    alb.ingress.kubernetes.io/healthcheck-path: /healthCheck
-spec:
-  ingressClassName: alb
-  rules:
-    - http:
-        paths:
-        - path: /org-management-services
-          pathType: Prefix
-          backend:
-            service:
-              name: org-management-services
-              port:
-                number: 80
-        - path: /user-management-services
-          pathType: Prefix
-          backend:
-            service:
-              name: user-management-services
-              port:
-                number: 80
-        - path: /login-services
-          pathType: Prefix
-          backend:
-            service:
-              name: login-services
-              port:
-                number: 80
-        - path: /data-ingress-services
-          pathType: Prefix
-          backend:
-            service:
-              name: data-ingress-services
-              port:
-                number: 80
-        - path: /project-management-services
-          pathType: Prefix
-          backend:
-            service:
-              name: project-management-services
-              port:
-                number: 80
-        - path: /data-catalog-services
-          pathType: Prefix
-          backend:
-            service:
-              name: data-catalog-services
-              port:
-                number: 80  
-        - path: /project-audit-services
-          pathType: Prefix
-          backend:
-            service:
-              name: project-audit-services
-              port:
-                number: 80
-        - path: /nextflow-services
-          pathType: Prefix
-          backend:
-            service:
-              name: nextflow-services
-              port:
-                number: 80  
-        - path: /org-catalog-services
-          pathType: Prefix
-          backend:
-            service:
-              name: org-catalog-services
-              port:
-                number: 80  
+  repository = "https://helm.datadoghq.com"
+  chart      = "datadog"
+  version    = "v3.40.0"
 
+  values     = [
+    templatefile("${path.module}/values/dd-cluster-agent-values.yaml", {
+      cluster_name   = var.cluster_name
+      datadog_url    = var.datadog_url
+      env            = var.env
+      component      = var.component
+      product        = var.product
+      datadog_secret = var.datadog_secret_name
+    })
+  ]
+}
