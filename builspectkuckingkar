@@ -1,28 +1,78 @@
-###################################################
-# OIDC Identity Provider
-###################################################
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: backend
+  name: login-services
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: login-services
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: login-services
+    spec:
+      containers:
+      - env:
+        - name: DD_ORCHESTRATOR_EXPLORER_ENABLED
+          value: "true"
+        - name: DD_CLUSTER_AGENT_URL
+          value: https://datadog-cluster-agent.backend.svc.cluster.local:5005
+        - name: DD_CLUSTER_AGENT_AUTH_TOKEN
+          valueFrom:
+            secretKeyRef:
+              key: token
+              name: datadog-cluster-agent
+        - name: DD_API_KEY
+          valueFrom:
+            secretKeyRef:
+              key: api-key
+              name: datadog-agent
+        - name: DD_SITE
+          value: datadoghq.eu
+        - name: DD_EKS_FARGATE
+          value: "true"
+        - name: DD_CLUSTER_NAME
+          value: dev-starcap-platform-cluster
+        - name: DD_KUBERNETES_KUBELET_NODENAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: spec.nodeName
+        image: datadog/agent
+        imagePullPolicy: Always
+        name: datadog-agent
+      - envFrom:
+        - configMapRef:
+            name: platform-config
+        image: 195227247767.dkr.ecr.eu-central-1.amazonaws.com/dev-microservices-repository:login-services-<image_id>
+        imagePullPolicy: Always
+        name: login-services
+        ports:
+        - containerPort: 2000
+          protocol: TCP
+        resources:
+          limits:
+            cpu: "1000m"
+            memory: 1800Mi
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+      serviceAccountName: microservice-service-account
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: backend
+  name: login-services
+spec:
+  ports:
+    - port: 80
+      targetPort: 2000
+      protocol: TCP
+  type: NodePort
+  selector:
+    app.kubernetes.io/name: login-services
 
-data "tls_certificate" "this" {
-  count = var.auto_thumbprint_enabled ? 1 : 0
 
-  url = var.url
-}
-
-resource "aws_iam_openid_connect_provider" "this" {
-  url = var.url
-
-  client_id_list = var.audiences
-  thumbprint_list = setunion(
-    var.thumbprints,
-    (var.auto_thumbprint_enabled
-      ? data.tls_certificate.this[*].certificates[0].sha1_fingerprint
-      : []
-    )
-  )
-
-  lifecycle {
-    ignore_changes = [ thumbprint_list ]
-  }
-
-  tags = var.tags
-}
