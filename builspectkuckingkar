@@ -3,5 +3,35 @@ locals {
   devops_account_id       = "195227247767"
   product                 = "kamino"
   datadog_url             = "datadoghq.eu"
-  fw_allowed_domain_list  = ["anaconda.org", "cpan.org", "conan.io", "maven.apache.org", "npmjs.com", "gradle.org", ".docker.com", "github.com", "cran.r-project.org", "pypi.org", ".amazonaws.com", ".amazon.com", ".jfrog.io", ".docker.io", "cmake.org", ".oracle.com", "mirrors.ocf.berkeley.edu", "github.com", ".nactem.ac.uk", "drive.google.com", ".ncbi.nlm.nih.gov", "repo.anaconda.com", "pypi.org", "files.pythonhosted.org", "aws.amazon.com", "aws.amazon.com", ".platform.navify.com", ".quay.io", "vscode.download.prss.microsoft.com", "update.code.visualstudio.com", ".githubusercontent.com", ".seqera.io"]
+  fw_allowed_domain_list  = [
+    "anaconda.org",
+    "cpan.org",
+    "conan.io",
+    "maven.apache.org",
+    "npmjs.com",
+    "gradle.org",
+    ".docker.com",
+    "github.com",
+    "cran.r-project.org",
+    "pypi.org",
+    ".amazonaws.com",
+    ".amazon.com",
+    ".jfrog.io",
+    ".docker.io",
+    "cmake.org",
+    ".oracle.com",
+    "mirrors.ocf.berkeley.edu",
+    ".nactem.ac.uk",
+    "drive.google.com",
+    ".ncbi.nlm.nih.gov",
+    "repo.anaconda.com",
+    "files.pythonhosted.org",
+    "aws.amazon.com",
+    ".platform.navify.com",
+    ".quay.io",
+    "vscode.download.prss.microsoft.com",
+    "update.code.visualstudio.com",
+    ".githubusercontent.com",
+    ".seqera.io"
+  ]
 }
