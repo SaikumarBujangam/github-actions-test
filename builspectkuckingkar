@@ -1,46 +1,16 @@
-from alight.foundation.informatica.api.impl import PlatformApi, TaskflowApi, SessionApi
-from alight.foundation.informatica.api.platform.lookup import ProjectObjectLookup
-from alight.foundation.informatica.api.dataintegration.publish import ProjectPublish
-from alight.foundation.informatica.api.platform.scm import ProjectDeployer
-from alight.foundation.informatica.api.platform.client import RestClient
-from alight.foundation.util.argparsebuilder import GenerateParser
-from alight.foundation.util.logging.standardlogger import StandardLogger
-
-if __name__ == "__main__":
-  logger = StandardLogger().getDefaultLogger()
-  try:
-    args = GenerateParser().build()
-    session_api = SessionApi(base_url=args.loginBaseUrl,
-                         api_version_path=args.platformVersionPath,
-                         user_name=args.informaticaUserName,
-                         user_pass=args.informaticaPassword,
-                         api_security_style=args.informaticaSecurityStyle)
-
-    client = RestClient()
-    client.open_session(login_api=session_api)
-    platformApi=PlatformApi(base_url=args.platformBaseUrl, api_version=args.platformVersionPath)
-    deployer = ProjectDeployer(client=client, api=platformApi)
-    deployer.request(args.commitHash, args.projectName)
-    objectLookup = ProjectObjectLookup(client=client, api=PlatformApi(base_url=args.platformBaseUrl, api_version=args.platformVersionPath))
-    taskflow_array = objectLookup.request(object_path=args.projectName)
-    folder_array = objectLookup.request(object_path=args.projectName, object_type="Folder")
-    for folder in folder_array:
-        taskflow_array += objectLookup.request(object_path=folder)
-    if len(taskflow_array) > 0:
-        publisher = ProjectPublish(client=client, api=TaskflowApi(base_url=args.taskflowBaseUrl, api_version=args.taskflowVersionPath))
-        publisher.request(taskflows=taskflow_array)
-    else:
-        logger.info("No Taskflows were found to publish")
-  except Exception as e:
-    logger.error(e)
-
- python adl-awsdeploy-cicd/src/alight/foundation/app/deploy/informatica.py 
- --base-arg-parser-config-file-location adl-awsdeploy-cicd/config 
- --base-arg-parser-config-file-name informatica-build-args.json 
- --login-base-url https://dm-us.informaticacloud.com 
- --platform-base-url https://use6.dm-us.informaticacloud.com 
- --taskflow-base-url https://use6.dm-us.informaticacloud.com 
- --informatica-user-name IICS_USER_NAME 
- --informatica-password IICS_USER_PASSWORD 
- --commit-hash bd8942ba9adefee4f9fb7dccdb6a2dfcd5e12e20 
- --project-name adl-di-ytr-us05320
+ Error: Provider produced inconsistent result after apply
+│
+│ When applying changes to
+│ module.opensearch.aws_opensearchserverless_security_policy.oss_security_encryption_policy,
+│ provider
+│ "module.opensearch.provider[\"registry.terraform.io/hashicorp/aws\"]"
+│ produced an unexpected new value: .policy: was cty.StringVal("{\r\n
+│ \"Rules\": [\r\n    {\r\n      \"Resource\": [\r\n
+│ \"collection/test-kamino-datacatalog-os\"\r\n      ],\r\n
+│ \"ResourceType\": \"collection\"\r\n    }\r\n  ],\r\n  \"AWSOwnedKey\":
+│ true\r\n}"), but now
+│ cty.StringVal("{\"AWSOwnedKey\":true,\"Rules\":[{\"Resource\":[\"collection/test-kamino-datacatalog-os\"],\"ResourceType\":\"collection\"}]}").
+│
+│ This is a bug in the provider, which should be reported in the provider's
+│ own issue tracker.
+╵
