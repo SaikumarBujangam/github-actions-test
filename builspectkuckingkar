@@ -1,91 +1,38 @@
-name: ADL CICD Informatica Project Deploy
-on:
-  repository_dispatch:
-    types:
-      - adl-cicd-informatica-project-deploy
+from alight.foundation.informatica.api.impl import PlatformApi, TaskflowApi, SessionApi
+from alight.foundation.informatica.api.platform.lookup import ProjectObjectLookup
+from alight.foundation.informatica.api.dataintegration.publish import ProjectPublish
+from alight.foundation.informatica.api.platform.scm import ProjectDeployer
+from alight.foundation.informatica.api.platform.client import RestClient
+from alight.foundation.util.argparsebuilder import GenerateParser
+from alight.foundation.util.logging.standardlogger import StandardLogger
 
-jobs:
-  adl-cicd-informatica-project-deploy:
-    env:
-      event_deploy_project: ${{ github.event.client_payload.deploy-project }}
-      event_deploy_environment: ${{ github.event.client_payload.deploy-environment }}
-      event_deploy_repository: ${{ github.event.client_payload.deploy-repository }}
-      calling_repo_name: ${{ github.event.repository.full_name }}
-      dispatch_repo_name: ${{ 'adl-awsdeploy-cicd' }}
+if __name__ == "__main__":
+  logger = StandardLogger().getDefaultLogger()
+  try:
+    args = GenerateParser().build()
+    session_api = SessionApi(base_url=args.loginBaseUrl,
+                         api_version_path=args.platformVersionPath,
+                         user_name=args.informaticaUserName,
+                         user_pass=args.informaticaPassword,
+                         api_security_style=args.informaticaSecurityStyle)
 
-    runs-on: ubuntu-latest
-    steps:
-      - name: Log Environment Variables
-        run: |
-          echo "This is the calling_repo_name: ${calling_repo_name}"
-          echo "This is the event_deploy_repository: ${event_deploy_repository}"
-          echo "This is the event_deploy_project: ${event_deploy_project}"
-          echo "This is the event_deploy_environment: ${event_deploy_environment}"
-
-      - name: Check Calling Repository
-        run: |
-          calling_repo_base_name=${calling_repo_name##*/}
-          if [[ ${calling_repo_base_name} != ${dispatch_repo_name} ]]
-          then
-            echo "adl-aws-deploy called from invalid origin, fail and exit"
-            exit 1
-          fi
-      - name: Get Requesting Repository
-        env:
-          github_user: ${{ secrets.GH_USER_NAME }}
-          github_token: ${{ secrets.GH_CLONE_REPO }}
-        run: |
-          calling_repo_base_name=${calling_repo_name##*/}
-          git clone https://${github_user}:${github_token}@github.com/${calling_repo_name}.git
-          git -C ${calling_repo_base_name} branch
-      - name: ADL Set Environment Credentials
-        id: adl-set-env-creds
-        run: |
-          source ${dispatch_repo_name}/scripts/.mdshrc ${event_deploy_environment}
-          mdsh_init ${event_deploy_environment} local adl ${dispatch_repo_name} localhost
-          echo "aws_access_key_id_name=ADL_${credential_env}_ACCESS_KEY" >> $GITHUB_OUTPUT
-          echo "aws_secret_access_key_name=ADL_${credential_env}_SECRET_KEY" >> $GITHUB_OUTPUT
-          echo "informatica_user_name=ADL_${credential_env}_IICS_DEPLOY_USER" >> $GITHUB_OUTPUT
-          echo "informatica_user_password=ADL_${credential_env}_IICS_DEPLOY_PASSWORD" >> $GITHUB_OUTPUT
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v1-node16
-        env:
-          AWS_ACCESS_KEY_ID_NAME: ${{ steps.adl-set-env-creds.outputs.aws_access_key_id_name }}
-          AWS_SECRET_ACCESS_KEY_NAME: ${{ steps.adl-set-env-creds.outputs.aws_secret_access_key_name }}
-        with:
-          aws-access-key-id: ${{ secrets[env.AWS_ACCESS_KEY_ID_NAME] }}
-          aws-secret-access-key: ${{ secrets[env.AWS_SECRET_ACCESS_KEY_NAME] }}
-          aws-region: us-east-1
-      - name: Run CICD Pipeline
-        env:
-          IICS_DEPLOY_USER_KEY_NAME: ${{ steps.adl-set-env-creds.outputs.informatica_user_name }}
-          IICS_DEPLOY_PASSWORD_KEY_NAME: ${{ steps.adl-set-env-creds.outputs.informatica_user_password }}
-        run: |
-          source ${dispatch_repo_name}/scripts/.mdshrc ${event_deploy_environment}
-          mdsh_init ${event_deploy_environment} local adl ${event_deploy_repository} localhost
-          init_app_area
-          pip install --upgrade pip
-          pip install -r ${dispatch_repo_name}/requirements.txt
-          export PYTHONPATH=${PWD}/${dispatch_repo_name}/src:$PYTHONPATH
-          export IICS_USER_NAME=$(echo ${{ secrets[format('{0}', env.IICS_DEPLOY_USER_KEY_NAME)] }})
-          export IICS_USER_PASSWORD=$(echo ${{ secrets[format('{0}', env.IICS_DEPLOY_PASSWORD_KEY_NAME)] }})
-          aws s3 cp s3://${deployment_bucket}/cicd/informatica/${event_deploy_repository}/${event_deploy_project}/last_sha.txt last_sha.txt
-          run_logger python ${dispatch_repo_name}/src/alight/foundation/app/deploy/informatica.py \
-          --base-arg-parser-config-file-location ${dispatch_repo_name}/config \
-          --base-arg-parser-config-file-name informatica-build-args.json \
-          --login-base-url ${iics_base_login_url} \
-          --platform-base-url ${iics_base_pod_url} \
-          --taskflow-base-url ${iics_base_pod_url} \
-          --informatica-user-name IICS_USER_NAME \
-          --informatica-password IICS_USER_PASSWORD \
-          --commit-hash $(cat last_sha.txt | head -1) \
-          --project-name ${event_deploy_project}
-          
-          echo "Dumping logs..."
-          cat ${APP_LOG_DIR}/mdsh-${APP_ENV}-${APP_VERSION}-${CURRENT_BUILD_NUMBER}.log
-          cat ${APP_LOG_DIR}/mdsh-${APP_ENV}-${APP_VERSION}-${CURRENT_BUILD_NUMBER}-error.log
-          echo "Dumped logs..."
-          echo "Finished..."
+    client = RestClient()
+    client.open_session(login_api=session_api)
+    platformApi=PlatformApi(base_url=args.platformBaseUrl, api_version=args.platformVersionPath)
+    deployer = ProjectDeployer(client=client, api=platformApi)
+    deployer.request(args.commitHash, args.projectName)
+    objectLookup = ProjectObjectLookup(client=client, api=PlatformApi(base_url=args.platformBaseUrl, api_version=args.platformVersionPath))
+    taskflow_array = objectLookup.request(object_path=args.projectName)
+    folder_array = objectLookup.request(object_path=args.projectName, object_type="Folder")
+    for folder in folder_array:
+        taskflow_array += objectLookup.request(object_path=folder)
+    if len(taskflow_array) > 0:
+        publisher = ProjectPublish(client=client, api=TaskflowApi(base_url=args.taskflowBaseUrl, api_version=args.taskflowVersionPath))
+        publisher.request(taskflows=taskflow_array)
+    else:
+        logger.info("No Taskflows were found to publish")
+  except Exception as e:
+    logger.error(e)
 
  python adl-awsdeploy-cicd/src/alight/foundation/app/deploy/informatica.py 
  --base-arg-parser-config-file-location adl-awsdeploy-cicd/config 
