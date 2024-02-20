@@ -1,16 +1,34 @@
- Error: Provider produced inconsistent result after apply
-│
-│ When applying changes to
-│ module.opensearch.aws_opensearchserverless_security_policy.oss_security_encryption_policy,
-│ provider
-│ "module.opensearch.provider[\"registry.terraform.io/hashicorp/aws\"]"
-│ produced an unexpected new value: .policy: was cty.StringVal("{\r\n
-│ \"Rules\": [\r\n    {\r\n      \"Resource\": [\r\n
-│ \"collection/test-kamino-datacatalog-os\"\r\n      ],\r\n
-│ \"ResourceType\": \"collection\"\r\n    }\r\n  ],\r\n  \"AWSOwnedKey\":
-│ true\r\n}"), but now
-│ cty.StringVal("{\"AWSOwnedKey\":true,\"Rules\":[{\"Resource\":[\"collection/test-kamino-datacatalog-os\"],\"ResourceType\":\"collection\"}]}").
-│
-│ This is a bug in the provider, which should be reported in the provider's
-│ own issue tracker.
-╵
+data "aws_caller_identity" "current" {}
+
+resource "aws_opensearchserverless_access_policy" "example" {
+  name        = "example"
+  type        = "data"
+  description = "read and write permissions"
+  policy = jsonencode([
+    {
+      Rules = [
+        {
+          ResourceType = "index",
+          Resource = [
+            "index/example-collection/*"
+          ],
+          Permission = [
+            "aoss:*"
+          ]
+        },
+        {
+          ResourceType = "collection",
+          Resource = [
+            "collection/example-collection"
+          ],
+          Permission = [
+            "aoss:*"
+          ]
+        }
+      ],
+      Principal = [
+        data.aws_caller_identity.current.arn
+      ]
+    }
+  ])
+}
