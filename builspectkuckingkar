@@ -1,29 +1,42 @@
 [
-    {
-      "Description": "VPC access for collection endpoint",
-      "Rules": [
-        {
-          "ResourceType": "collection",
-          "Resource": [
-            "collection/${collection_name}"
-          ]
-        }
-      ],
-      "AllowFromPublic": false,
-      "SourceVPCEs": [
-        "${vpc_endpoint_id}"
-      ]
-    },
-    {
-      "Description": "Public access for dashboards",
-      "Rules": [
-        {
-          "ResourceType": "dashboard",
-          "Resource": [
-            "collection/${collection_name}"
-          ]
-        }
-      ],
-      "AllowFromPublic": true
-    }
+  {
+    "Description": "collection-policy",
+    "Rules": [
+      {
+        "Principals": [
+          "${principal_arn}"
+        ],
+        "Resource": [
+          "collection/${collection_name}"
+        ],
+        "Permissions": [
+          "aoss:CreateCollectionItems",
+          "aoss:DeleteCollectionItems",
+          "aoss:UpdateCollectionItems",
+          "aoss:DescribeCollectionItems"
+        ]
+      }
+    ]
+  },
+  {
+    "Description": "index-policy",
+    "Rules": [
+      {
+        "Principals": [
+          "${principal_arn}"
+        ],
+        "Resource": [
+          "index/${index_name}/*"
+        ],
+        "Permissions": [
+          "aoss:CreateIndex",
+          "aoss:DeleteIndex",
+          "aoss:UpdateIndex",
+          "aoss:DescribeIndex",
+          "aoss:ReadDocument",
+          "aoss:WriteDocument"
+        ]
+      }
+    ]
+  }
 ]
