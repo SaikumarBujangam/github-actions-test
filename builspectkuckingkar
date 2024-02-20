@@ -1,88 +1,34 @@
-### values
-commonLabels:
-  env: ${env}
-  product: ${product}
-  component: ${component}
-datadog:
-  otlp:
-    receiver:
-      protocols:
-        # datadog.otlp.receiver.protocols.grpc - OTLP/gRPC configuration
-        grpc:
-          # datadog.otlp.receiver.protocols.grpc.enabled -- Enable the OTLP/gRPC endpoint
-          enabled: true
-          # datadog.otlp.receiver.protocols.grpc.endpoint -- OTLP/gRPC endpoint
-          endpoint: "0.0.0.0:4317"
-          # datadog.otlp.receiver.protocols.grpc.useHostPort -- Enable the Host Port for the OTLP/gRPC endpoint
-          useHostPort: true
+data "aws_caller_identity" "current" {}
 
-        # datadog.otlp.receiver.protocols.http - OTLP/HTTP configuration
-        http:
-          # datadog.otlp.receiver.protocols.http.enabled -- Enable the OTLP/HTTP endpoint
-          enabled: true
-          # datadog.otlp.receiver.protocols.http.endpoint -- OTLP/HTTP endpoint
-          endpoint: "0.0.0.0:4318"
-          # datadog.otlp.receiver.protocols.http.useHostPort -- Enable the Host Port for the OTLP/HTTP endpoint
-          useHostPort: true
-  logs:
-    enabled: true
-    containerCollectAll: true
-  site: ${datadog_url}
-  apiKeyExistingSecret: ${datadog_secret}
-  appKeyExistingSecret: ${datadog_secret}
-  clusterName: ${cluster_name}
-  kubeStateMetricsCore:
-    enabled: true
-    # labelsAsTags:
-    #   env: ${env}
-    #   product: ${product}
-    #   component: ${component}
-  tags: 
-    - "product:${product}"
-    - "env:${env}"
-    - "component:${component}"
-agents:
-  enabled: false # must be false in sidecar setup
-clusterAgent:
-  additionalLabels:
-    env: ${env}
-    product: ${product}
-    component: ${component}
-  createPodDisruptionBudget: true
-  enabled: true
-  replicas: 2
-  env:
-    - name: DD_EKS_FARGATE
-      value: "true"
-  tolerations:
-  - key: "eks.amazonaws.com/compute-type"
-    operator: Equal
-    value: fargate
-    effect: "NoSchedule"
-targetSystem: linux
-
-
-# This is necessary for Datadog to post metrics
-resource "helm_release" "dd_cluster_agent" {
-
-  namespace = var.dd_cluster_agent_namespace
-  wait      = true
-  timeout   = 600
-
-  name = "datadog"
-
-  repository = "https://helm.datadoghq.com"
-  chart      = "datadog"
-  version    = "v3.40.0"
-
-  values     = [
-    templatefile("${path.module}/values/dd-cluster-agent-values.yaml", {
-      cluster_name   = var.cluster_name
-      datadog_url    = var.datadog_url
-      env            = var.env
-      component      = var.component
-      product        = var.product
-      datadog_secret = var.datadog_secret_name
-    })
-  ]
+resource "aws_opensearchserverless_access_policy" "example" {
+  name        = "example"
+  type        = "data"
+  description = "read and write permissions"
+  policy = jsonencode([
+    {
+      Rules = [
+        {
+          ResourceType = "index",
+          Resource = [
+            "index/example-collection/*"
+          ],
+          Permission = [
+            "aoss:*"
+          ]
+        },
+        {
+          ResourceType = "collection",
+          Resource = [
+            "collection/example-collection"
+          ],
+          Permission = [
+            "aoss:*"
+          ]
+        }
+      ],
+      Principal = [
+        data.aws_caller_identity.current.arn
+      ]
+    }
+  ])
 }
