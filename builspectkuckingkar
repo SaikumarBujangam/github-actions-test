@@ -1,7 +1,29 @@
-# Creates a VPC endpoint
-resource "aws_opensearchserverless_vpc_endpoint" "vpc_endpoint" {
-  name               = "example-vpc-endpoint"
-  vpc_id             = aws_vpc.vpc.id
-  subnet_ids         = [aws_subnet.subnet.id]
-  security_group_ids = [aws_security_group.security_group.id]
-}
+[
+    {
+      "Description": "VPC access for collection endpoint",
+      "Rules": [
+        {
+          "ResourceType": "collection",
+          "Resource": [
+            "collection/${collection_name}"
+          ]
+        }
+      ],
+      "AllowFromPublic": false,
+      "SourceVPCEs": [
+        "${vpc_endpoint_id}"
+      ]
+    },
+    {
+      "Description": "Public access for dashboards",
+      "Rules": [
+        {
+          "ResourceType": "dashboard",
+          "Resource": [
+            "collection/${collection_name}"
+          ]
+        }
+      ],
+      "AllowFromPublic": true
+    }
+]
