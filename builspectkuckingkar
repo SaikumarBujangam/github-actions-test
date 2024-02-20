@@ -1,42 +1,11 @@
-[
-  {
-    "Description": "collection-policy",
-    "Rules": [
-      {
-        "Principals": [
-          "${principal_arn}"
-        ],
-        "Resource": [
-          "collection/${collection_name}"
-        ],
-        "Permissions": [
-          "aoss:CreateCollectionItems",
-          "aoss:DeleteCollectionItems",
-          "aoss:UpdateCollectionItems",
-          "aoss:DescribeCollectionItems"
-        ]
-      }
-    ]
-  },
-  {
-    "Description": "index-policy",
-    "Rules": [
-      {
-        "Principals": [
-          "${principal_arn}"
-        ],
-        "Resource": [
-          "index/${index_name}/*"
-        ],
-        "Permissions": [
-          "aoss:CreateIndex",
-          "aoss:DeleteIndex",
-          "aoss:UpdateIndex",
-          "aoss:DescribeIndex",
-          "aoss:ReadDocument",
-          "aoss:WriteDocument"
-        ]
-      }
-    ]
-  }
-]
+{
+  "Rules": [
+    {
+      "Resource": [
+        "collection/${collection_name}"
+      ],
+      "ResourceType": "collection"
+    }
+  ],
+  "AWSOwnedKey": true
+}
