@@ -1,34 +1,7 @@
-data "aws_caller_identity" "current" {}
-
-resource "aws_opensearchserverless_access_policy" "example" {
-  name        = "example"
-  type        = "data"
-  description = "read and write permissions"
-  policy = jsonencode([
-    {
-      Rules = [
-        {
-          ResourceType = "index",
-          Resource = [
-            "index/example-collection/*"
-          ],
-          Permission = [
-            "aoss:*"
-          ]
-        },
-        {
-          ResourceType = "collection",
-          Resource = [
-            "collection/example-collection"
-          ],
-          Permission = [
-            "aoss:*"
-          ]
-        }
-      ],
-      Principal = [
-        data.aws_caller_identity.current.arn
-      ]
-    }
-  ])
+# Creates a VPC endpoint
+resource "aws_opensearchserverless_vpc_endpoint" "vpc_endpoint" {
+  name               = "example-vpc-endpoint"
+  vpc_id             = aws_vpc.vpc.id
+  subnet_ids         = [aws_subnet.subnet.id]
+  security_group_ids = [aws_security_group.security_group.id]
 }
