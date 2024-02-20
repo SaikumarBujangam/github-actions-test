@@ -1,11 +1,22 @@
-{
-  "Rules": [
-    {
-      "Resource": [
-        "collection/${collection_name}"
-      ],
-      "ResourceType": "collection"
-    }
-  ],
-  "AWSOwnedKey": true
-}
+umababy.kannan@LP-5CG2311RDH MINGW64 ~/OneDrive - HCL Technologies Ltd/Documents/Star CAP/project-infra-provisioning-services-test/terraform-init (feature/increase-cloud9-diskspace)
+$ terraform plan
+╷
+│ Error: Invalid function argument
+│
+│   on ..\infra-scripts\user-infra-services\opensearch-serverless\oss_policies.tf line 29, in resource "aws_opensearchserverless_access_policy" "oss_data_access_policy":
+│   29:   policy            = templatefile("../templates/policy_data_access_opensearch.tpl", {
+│   30:    collection_name  = aws_opensearchserverless_collection.oss_collection.name
+│   31:    index_name       = var.index_name
+│   32:    principal_arn    = "arn:aws:iam::745252665765:role/Roche/Products/StarCap/StarCapEngineering"
+│   33:    })
+│
+│ Invalid value for "path" parameter: no file exists at
+│ ../templates/policy_data_access_opensearch.tpl; this function works only
+│ with files that are distributed as part of the configuration source code,
+│ so if this file will be created by a resource in this configuration you
+│ must instead obtain this result from an attribute of that resource.
+╵
+
+umababy.kannan@LP-5CG2311RDH MINGW64 ~/OneDrive - HCL Technologies Ltd/Documents/Star CAP/project-infra-provisioning-services-test/terraform-init (feature/increase-cloud9-diskspace)
+$
+
