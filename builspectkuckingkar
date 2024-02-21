@@ -1,34 +1,87 @@
-This new workflow, named "ADL CICD Deploy," is designed to automate the deployment process of artifacts (such as code, configurations, etc.) to various environments based on inputs provided. Here's an explanation of how it works:
+# This is necessary for Datadog to post metrics
+resource "helm_release" "dd_cluster_agent" {
 
-Workflow Trigger:
+  namespace = var.dd_cluster_agent_namespace
+  wait      = true
+  timeout   = 600
 
-This workflow is triggered by a workflow_call event, which allows external systems or workflows to trigger this workflow and provide inputs.
-Inputs:
+  name = "datadog"
 
-The workflow expects several inputs, which are provided when triggering the workflow. These inputs include:
-event_repo_name: The name of the repository containing the artifacts to be deployed.
-event_repo_branch: The branch of the repository to be deployed.
-deploy_env: The deployment environment (e.g., dev, qa, prod).
-feature_branch_name: (Optional) The name of the feature branch to be deployed.
-calling_repo_name: (Optional) The full reference of the CICD repository triggering the workflow.
-dispatch_repo_name: (Optional) The name of the CICD repository.
-Jobs:
+  repository = "https://helm.datadoghq.com"
+  chart      = "datadog"
+  version    = "v3.40.0"
 
-The workflow contains a single job named adl-cicd-deploy.
-This job orchestrates the deployment process based on the provided inputs.
-Steps:
+  values     = [
+    templatefile("${path.module}/values/dd-cluster-agent-values.yaml", {
+      cluster_name   = var.cluster_name
+      datadog_url    = var.datadog_url
+      env            = var.env
+      component      = var.component
+      product        = var.product
+      datadog_secret = var.datadog_secret_name
+    })
+  ]
+}
 
-Log Environment Variables: Logs the provided inputs for visibility.
-Get Repositories: Clones the repositories specified in the inputs (calling repository and repository to be deployed) based on the provided branch.
-Increment Calling Repo Version: Increments the version of the repository being deployed under certain conditions (e.g., production environment and master branch).
-ADL Set Environment Credentials: Sets environment credentials based on the deployment environment.
-Configure AWS Credentials: Configures AWS credentials for the deployment.
-Install Dependencies: Installs dependencies required for the deployment.
-Run CICD Pipeline: Executes the CICD pipeline for deployment, passing relevant environment and repository information.
-Environment Variables:
+### values
+commonLabels:
+  env: ${env}
+  product: ${product}
+  component: ${component}
+datadog:
+  otlp:
+    receiver:
+      protocols:
+        # datadog.otlp.receiver.protocols.grpc - OTLP/gRPC configuration
+        grpc:
+          # datadog.otlp.receiver.protocols.grpc.enabled -- Enable the OTLP/gRPC endpoint
+          enabled: true
+          # datadog.otlp.receiver.protocols.grpc.endpoint -- OTLP/gRPC endpoint
+          endpoint: "0.0.0.0:4317"
+          # datadog.otlp.receiver.protocols.grpc.useHostPort -- Enable the Host Port for the OTLP/gRPC endpoint
+          useHostPort: true
 
-Environment variables such as repository names, branches, deployment environment, etc., are set and used throughout the workflow to streamline the deployment process.
-AWS Configuration:
-
-AWS credentials are configured using GitHub secrets to enable deployment tasks that interact with AWS services.
-Overall, this workflow provides a structured and automated approach to deploying artifacts to different environments, allowing for flexibility and customization based on provided inputs. It streamlines the deployment process, reduces manual intervention, and ensures consistency across deployments.
+        # datadog.otlp.receiver.protocols.http - OTLP/HTTP configuration
+        http:
+          # datadog.otlp.receiver.protocols.http.enabled -- Enable the OTLP/HTTP endpoint
+          enabled: true
+          # datadog.otlp.receiver.protocols.http.endpoint -- OTLP/HTTP endpoint
+          endpoint: "0.0.0.0:4318"
+          # datadog.otlp.receiver.protocols.http.useHostPort -- Enable the Host Port for the OTLP/HTTP endpoint
+          useHostPort: true
+  logs:
+    enabled: true
+    containerCollectAll: true
+  site: ${datadog_url}
+  apiKeyExistingSecret: ${datadog_secret}
+  appKeyExistingSecret: ${datadog_secret}
+  clusterName: ${cluster_name}
+  kubeStateMetricsCore:
+    enabled: true
+    # labelsAsTags:
+    #   env: ${env}
+    #   product: ${product}
+    #   component: ${component}
+  tags: 
+    - "product:${product}"
+    - "env:${env}"
+    - "component:${component}"
+agents:
+  enabled: false # must be false in sidecar setup
+clusterAgent:
+  additionalLabels:
+    env: ${env}
+    product: ${product}
+    component: ${component}
+  createPodDisruptionBudget: true
+  enabled: true
+  replicas: 2
+  env:
+    - name: DD_EKS_FARGATE
+      value: "true"
+  tolerations:
+  - key: "eks.amazonaws.com/compute-type"
+    operator: Equal
+    value: fargate
+    effect: "NoSchedule"
+targetSystem: linux
