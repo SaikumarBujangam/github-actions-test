@@ -1,32 +1,37 @@
-resource "kubernetes_config_map" "datadog_yaml" {
-  for_each = toset(var.dd_sidecar_namespaces)
+resource "kubernetes_cluster_role" "dd_sidecar_cluster_role" {
   metadata {
-    name = "datadog-config"
-    namespace = each.key
+    name = "datadog-agent"
+  }
+  rule {
+    api_groups = [""]
+    resources  = ["nodes", "namespaces", "endpoints"]
+    verbs      = ["get", "list"]
   }
 
-  data = {
-    "datadog.yaml" =<<EOF
-apm_config:
-  apm_non_local_traffic: true
-  ignore_resources: ["(GET|POST) /healthCheck"]
-tags:
-  - env:${var.env}
-  - product:${var.product}
-  - component:${var.component}
-logs_enabled: true
-inventories_configuration_enabled: true
-jmx_use_container_support: true
-process_config:
-  process_collection:
-    enabled: true   
-otlp_config:
-  receiver:
-    protocols:
-      grpc:
-        endpoint: localhost:4317
-      http:
-        endpoint: localhost:4318
-EOF
+  rule {
+    api_groups = [""]
+    resources  = ["nodes/metrics","nodes/spec", "nodes/stats", "nodes/proxy", "nodes/pods", "nodes/healthz"]
+    verbs      = ["get"]
+  }
+}
+
+# As pods can use not more than one serviceaccount, that serviceaccount must be bind to the clusterrole in order for DD sidecar to work
+resource "kubernetes_cluster_role_binding" "dd_sidecar_rolebinding" {
+  metadata {
+    name = "datadog-agent-clusterrolebinding"
+  }
+  role_ref {
+    api_group = "rbac.authorization.k8s.io"
+    kind      = "ClusterRole"
+    name      = "datadog-agent"
+  }
+
+  dynamic "subject" {
+    for_each = var.microservice_ns_and_serviceaccounts
+    content {
+      kind      = "ServiceAccount"
+      namespace = subject.key
+      name      = subject.value
+    }
   }
 }
