@@ -1,15 +1,3 @@
-1. Single Branch Configuration Limitation
+Project-Specific Folder Deployment Challenges:
 
-Informatica supports Git branching through Source Control Configurations but restricts the configuration to a single branch for the entire organization. This limitation complicates branching strategies and requires external tools for branch merging and conflict resolution, typically outside of IICS (e.g., in GitHub).
-2. Centralized Repository for Project Management
-
-To manage the single branch limitation, a centralized repository named "adl-informatica-etl" was created. This repository houses the code for all projects in the "Explore" folder, intending to streamline check-in/check-out operations and merge processes.
-3. Development Environment Deployment Workflow
-
-During development, teams merge changes into the master branch, which triggers a pipeline that logs the merge's commit ID in an S3 bucket. Teams then manually trigger project-specific pipelines to deploy to the development environment. This workflow, while functional for development stages, introduces complexity and manual steps.
-4. Challenges with Higher Environment Lifecycles
-
-The centralized repository approach poses significant challenges for deploying code through higher environment lifecycles (e.g., release/qa, release/qc, release/prod). Since the repository contains multiple projects' code, moving code to these environments necessitates including unrelated project code, complicating the deployment process.
-5. Lack of Support for Hotfixes and Rollbacks
-
-The current process does not effectively support the deployment of hotfixes or the execution of rollback deployments. This limitation can impact the organization's ability to quickly address production issues or revert changes in case of errors or unforeseen problems.
+In the centralized "adl-informatica-etl" repository, each team works on its project-specific folder. However, when attempting to advance only their project's code to higher environments (e.g., release/qa, release/qc, release/prod), teams face a critical bottleneck. The process of raising a Pull Request (PR) inadvertently includes changes from other projects due to the shared repository structure. This situation forces teams to consider code changes they do not manage and are not responsible for, leading to an untenable position where approving PRs could inadvertently affect the integrity and stability of the deployment in higher environments.
