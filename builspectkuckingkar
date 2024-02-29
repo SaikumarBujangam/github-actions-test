@@ -1,15 +1,12 @@
-We're introducing an improvement to our rollback capabilities within the CI/CD process. This enhancement focuses on extending our version tracking to include not just the latest commit ID but also the previous commit ID. This change aims to facilitate more robust and flexible rollback options.
-
-Key Features of the New Rollback Process:
-
-Enhanced Version Tracking:
-
-Alongside the latest commit ID, our system will now also capture and store the ID of the preceding commit. This dual-ID tracking ensures that we can accurately identify and revert to the previous state if needed.
-Flexible Rollback Workflow:
-
-The updated workflow supports a more intuitive rollback process. Users have the flexibility to select both the environment and the specific version they wish to revert to.
-By running the updated workflow, teams can choose the desired environment (e.g., QA, QC, Prod) and specify the version for rollback. This process is designed to be straightforward, allowing for quick selection and deployment.
-Streamlined Deployment of Selected Versions:
-
-Upon successful submission of the rollback request, the system will deploy the chosen version to the specified environment. This ensures that reverting to a prior state is not only possible but also efficient and reliable.
-This process enhancement underscores our commitment to operational flexibility and reliability, providing teams with the tools needed to quickly respond to and recover from issues by rolling back to previously stable versions across any lifecycle stage.
+{
+  "files": [
+    
+    {
+      "nested_path_root": "udf",
+      "file_details": {
+        "source": "apps/dataproduct/adlfound/adl-adlfound-udf-jar/bin",
+        "destination": "dataproduct/adlfound/adl-adlfound-udf-jar"
+      }
+    }
+  ]
+}
