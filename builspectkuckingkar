@@ -1,3 +1,13 @@
-Project-Specific Folder Deployment Challenges:
+  
 
-In the centralized "adl-informatica-etl" repository, each team works on its project-specific folder. However, when attempting to advance only their project's code to higher environments (e.g., release/qa, release/qc, release/prod), teams face a critical bottleneck. The process of raising a Pull Request (PR) inadvertently includes changes from other projects due to the shared repository structure. This situation forces teams to consider code changes they do not manage and are not responsible for, leading to an untenable position where approving PRs could inadvertently affect the integrity and stability of the deployment in higher environments.
+Current CICD process does not support any hotfix. This new hotfix feature will allow developers to directly deploy hotfix to production.  
+
+Process Overview:  
+
+Developer will clone the master branch from the centralized repository (adl-informatica-etl) into their local machines and create a hotfix/<name> branch from master.  
+
+Make the changes in their local hotfix branch and commit the code to local hotfix branch.  
+
+As soon as code is committed and pushed to the remote repository with the new hotfix/<name> branch, it will trigger a deployment to production after getting the approval from their leads. This process is the similar process as when the PR is merged from release/qc to release/prod, it does store the commit ID in the Prod bucket and from there the teams will run the manual workflow with the project names in the project specific repositories to do the deployment in the Production environment in the Informatica. Similarly, we will have a new addition to the backend code, so whenever there is a new hotfix branch being committed to the centralized informatica repository, it does store the commit ID in the Prod bucket and from there the teams will run the manual workflow with the project names in the project specific repositories to do the deployment in the Production environment in the Informatica. 
+
+Upon fixing the bug, hotfix branch will be merged into master via pull request. Once the code is pushed to master, it will trigger a deployment into the lower lifecycles qa, qc and Prod again where the teams need to individually traverse to the project specific repositories and run the manual workflows in the respective environments to have this updated code in the lower lifecycles. 
