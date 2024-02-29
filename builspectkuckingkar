@@ -1,20 +1,26 @@
-{
-  "files": [
-    
-    {
-      "nested_path_root": "udf",
-      "file_details": {
-        "source": "apps/dataproduct/adlfound/adl-adlfound-udf-jar/bin",
-        "destination": "dataproduct/adlfound/adl-adlfound-udf-jar"
-      }
-    }
-  ]
-}
+import boto3
+import os
+from alight.foundation.util.logging.standardlogger import StandardLogger
 
+class JarBuildUtil:
+    logger = StandardLogger().getDefaultLogger()
 
-[2024-02-29::16:31:38:IST)] [INFO] >>> python /d/Users/A1086139/git_repo/adl-awsdeploy-cicd/src/alight/foundation/app/deploy/jardeploytos3.py --base-arg
--parser-config-file-location /d/Users/A1086139/git_repo/adl-awsdeploy-cicd/config --base-arg-parser-config-file-name jar-build-args.json --base-repo-dir
- adl-foundation-etl --env-name d1 --data-product-name foundation --region us-east-1 --deployment-bucket adl-com-d1-all-codebase-us-east-1-wlxartd --jar-
-definition-file /d/Users/A1086139/git_repo/local/foundation/adl-foundation-etl/1.0.87/config/jar_build_definition.json <<<
-[2024-02-29 16:31:40,156] [jardeploytos3] [consolelogger] [<module>:33] [ERROR]: "An error occured: [WinError 3] The system cannot find the path specifi
-ed: 'apps/dataproduct/adlfound/adl-adlfound-udf-jar/bin'"
+    def __init__(self, region='us-east-1', deployment_bucket=None):
+        self.region = region
+        self._s3_client = boto3.client('s3', region_name=region)
+        self._bucket_name = deployment_bucket
+        
+    def upload_files_to_s3(self, files, destination_path):
+        try:
+            for file_path in files:
+                s3_path = "{}/{}".format(destination_path, os.path.basename(file_path))
+                self._s3_client.upload_file(file_path, self._bucket_name, s3_path)
+                JarBuildUtil.logger.info("Uploaded file: {} to bucket {}: at path {}".format(file_path, self._bucket_name, s3_path))
+            return True
+        except FileNotFoundError as e:
+            JarBuildUtil.logger.error("File not found: {}. Error: {}".format(file_path, e))
+            return False
+        except Exception as e:
+            JarBuildUtil.logger.error("Failed to upload the files. Error: {}".format(e))
+            return False
+
