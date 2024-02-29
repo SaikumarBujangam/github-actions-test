@@ -24,3 +24,39 @@ class JarBuildUtil:
             JarBuildUtil.logger.error("Failed to upload the files. Error: {}".format(e))
             return False
 
+
+import os
+import sys
+import json
+
+from alight.foundation.aws.jarbuildutil import JarBuildUtil
+from alight.foundation.util.argparsebuilder import GenerateParser
+from alight.foundation.util.logging.standardlogger import StandardLogger
+
+if __name__ == "__main__":
+    logger = StandardLogger().getDefaultLogger()
+    try:
+        command_args = GenerateParser().build()
+        commandFile  = os.path.join(command_args.baseRepoDir, command_args.jarDefinitionFile)
+        with open(commandFile) as file:
+            config = json.load(file)
+
+        baseRepoName = command_args.baseRepoDir
+        dataProductName = command_args.dataProductName
+        environment  = command_args.envName
+        bucketName = command_args.deploymentBucket
+        jar_util = JarBuildUtil(deployment_bucket=bucketName)
+
+        for file_info in config['files']:
+            source_directory = file_info['file_details']['source']
+            destination_path = file_info['file_details']['destination']
+            files_to_upload = [os.path.join(source_directory, f) for f in os.listdir(source_directory)]
+
+            success = jar_util.upload_files_to_s3(files_to_upload, destination_path)
+            if not success:
+                logger.error("Failed to upload files from {} to {}".format(source_directory, destination_path))
+
+    except Exception as e:
+        logger.error("An error occured: {}".format(e))
+
+
