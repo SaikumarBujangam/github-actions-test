@@ -10,3 +10,11 @@
     }
   ]
 }
+
+
+[2024-02-29::16:31:38:IST)] [INFO] >>> python /d/Users/A1086139/git_repo/adl-awsdeploy-cicd/src/alight/foundation/app/deploy/jardeploytos3.py --base-arg
+-parser-config-file-location /d/Users/A1086139/git_repo/adl-awsdeploy-cicd/config --base-arg-parser-config-file-name jar-build-args.json --base-repo-dir
+ adl-foundation-etl --env-name d1 --data-product-name foundation --region us-east-1 --deployment-bucket adl-com-d1-all-codebase-us-east-1-wlxartd --jar-
+definition-file /d/Users/A1086139/git_repo/local/foundation/adl-foundation-etl/1.0.87/config/jar_build_definition.json <<<
+[2024-02-29 16:31:40,156] [jardeploytos3] [consolelogger] [<module>:33] [ERROR]: "An error occured: [WinError 3] The system cannot find the path specifi
+ed: 'apps/dataproduct/adlfound/adl-adlfound-udf-jar/bin'"
