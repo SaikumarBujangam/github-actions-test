@@ -1,12 +1,49 @@
-{
-  "files": [
-    
-    {
-      "nested_path_root": "udf",
-      "file_details": {
-        "source": "apps/dataproduct/adlfound/adl-adlfound-udf-jar/bin",
-        "destination": "dataproduct/adlfound/adl-adlfound-udf-jar"
-      }
-    }
-  ]
-}
+import boto3
+import os
+from alight.foundation.util.logging.standardlogger import StandardLogger
+
+class AirflowUtil:
+    logger = StandardLogger().getDefaultLogger()
+
+    def __init__(self, region='us-east-1', name=None, root_path=None, deployment_bucket=None, destination_path=None):
+        self.region = region
+        self._s3_client = boto3.client('s3', region_name=region)
+        self._airflow_function_name = name
+        self._airflow_function_code_path =root_path
+        self._bucket_name = deployment_bucket
+        self._s3_target_path = "{}".format(destination_path)
+
+    def update(self, plugins_file_path=None, requirements_file_path=None, startup_file_path=None ):
+        try:
+            # Upload Airflow DAG
+            base_dag_file_name = os.path.basename(self._airflow_function_code_path)
+            self._s3_client.upload_file(self._airflow_function_code_path, self._bucket_name, "{}/{}".format(self._s3_target_path, base_dag_file_name))
+            AirflowUtil.logger.info("Uploaded Airflow DAG: {} to bucket {}: to path: {}".format(self._airflow_function_code_path, self._bucket_name, self._s3_target_path))
+
+            # Upload plugins file if provided
+            # The checks for these are wrong and cause errors.
+            # if plugins_file_path:
+            #     plugins_target_path = "{}/plugins.zip".format(self._s3_target_path)
+            #     # Upload Plugins
+            #     self._s3_client.upload_file(plugins_file_path, self._bucket_name, plugins_target_path)
+            #     AirflowUtil.logger.info("Uploaded Plugins file: {} to bucket {}: to path: {}".format(plugins_file_path, self._bucket_name, plugins_target_path))
+            #
+            # # Upload requirements file if provided
+            # if requirements_file_path:
+            #     requirements_target_path = "{}/requirements.txt".format(self._s3_target_path)
+            #     # Upload requirements
+            #     self._s3_client.upload_file(requirements_file_path, self._bucket_name, requirements_target_path)
+            #     AirflowUtil.logger.info("Uploaded requirements file: {} to bucket {}: to path: {}".format(requirements_file_path, self._bucket_name, requirements_target_path))
+            #
+            # # Upload startup file if provided
+            # if startup_file_path:
+            #     startup_target_path = "{}/startup.sh".format(self._s3_target_path)
+            #     # Upload startup
+            #     self._s3_client.upload_file(startup_file_path, self._bucket_name, startup_target_path)
+            #     AirflowUtil.logger.info("Uploaded startup file: {} to bucket {}: to path: {}".format(startup_file_path, self._bucket_name, startup_target_path))
+
+            return True
+        except FileNotFoundError:
+            AirflowUtil.logger.error("Could not upload files to: {} to bucket :{} to path: {}".format(self._airflow_function_code_path, self._bucket_name, self._s3_target_path))
+            return False
+
