@@ -1,111 +1,12 @@
-import boto3
-import os
-from alight.foundation.util.logging.standardlogger import StandardLogger
-
-class AirflowUtil:
-    logger = StandardLogger().getDefaultLogger()
-
-    def __init__(self, region='us-east-1', name=None, root_path=None, deployment_bucket=None, destination_path=None):
-        self.region = region
-        self._s3_client = boto3.client('s3', region_name=region)
-        self._airflow_function_name = name
-        self._airflow_function_code_path =root_path
-        self._bucket_name = deployment_bucket
-        self._s3_target_path = "{}".format(destination_path)
-
-    def update(self, plugins_file_path=None, requirements_file_path=None, startup_file_path=None ):
-        try:
-            # Upload Airflow DAG
-            base_dag_file_name = os.path.basename(self._airflow_function_code_path)
-            self._s3_client.upload_file(self._airflow_function_code_path, self._bucket_name, "{}/{}".format(self._s3_target_path, base_dag_file_name))
-            AirflowUtil.logger.info("Uploaded Airflow DAG: {} to bucket {}: to path: {}".format(self._airflow_function_code_path, self._bucket_name, self._s3_target_path))
-
-            # Upload plugins file if provided
-            # The checks for these are wrong and cause errors.
-            # if plugins_file_path:
-            #     plugins_target_path = "{}/plugins.zip".format(self._s3_target_path)
-            #     # Upload Plugins
-            #     self._s3_client.upload_file(plugins_file_path, self._bucket_name, plugins_target_path)
-            #     AirflowUtil.logger.info("Uploaded Plugins file: {} to bucket {}: to path: {}".format(plugins_file_path, self._bucket_name, plugins_target_path))
-            #
-            # # Upload requirements file if provided
-            # if requirements_file_path:
-            #     requirements_target_path = "{}/requirements.txt".format(self._s3_target_path)
-            #     # Upload requirements
-            #     self._s3_client.upload_file(requirements_file_path, self._bucket_name, requirements_target_path)
-            #     AirflowUtil.logger.info("Uploaded requirements file: {} to bucket {}: to path: {}".format(requirements_file_path, self._bucket_name, requirements_target_path))
-            #
-            # # Upload startup file if provided
-            # if startup_file_path:
-            #     startup_target_path = "{}/startup.sh".format(self._s3_target_path)
-            #     # Upload startup
-            #     self._s3_client.upload_file(startup_file_path, self._bucket_name, startup_target_path)
-            #     AirflowUtil.logger.info("Uploaded startup file: {} to bucket {}: to path: {}".format(startup_file_path, self._bucket_name, startup_target_path))
-
-            return True
-        except FileNotFoundError:
-            AirflowUtil.logger.error("Could not upload files to: {} to bucket :{} to path: {}".format(self._airflow_function_code_path, self._bucket_name, self._s3_target_path))
-            return False
-
-
-
-import os
-import sys
-import json
-
-from alight.foundation.aws.airflowutil import AirflowUtil
-from alight.foundation.util.argparsebuilder import GenerateParser
-from alight.foundation.util.deployment import DeploymentGroup
-from alight.foundation.util.logging.standardlogger import StandardLogger
-
-
-if __name__ == "__main__":
-    logger = StandardLogger().getDefaultLogger()
-    try:
-        command_args = GenerateParser().build()
-        commandFile  = os.path.join(command_args.baseRepoDir, command_args.airflowDefinitionFile)
-        with open(commandFile) as deployment_group_file:
-            deployment_dict = json.load(deployment_group_file)
-
-        baseRepoName = command_args.baseRepoDir
-        dataProductName = command_args.dataProductName
-        environment  = command_args.envName
-        bucketName = command_args.deploymentBucket
-        deployment_group = DeploymentGroup(config_dict=deployment_dict, deployment_type="airflow", deployment_list_name="airflow_list")
-        airflow_config_list = deployment_group.get_deployment_list()
- 
-        try:
-            for airflow_config in airflow_config_list:
-                dag_file_path = airflow_config['dag_file_path']
-                schedule_interval = airflow_config.get('schedule_interval', None)
-                airflow_environment_name = "adl-com-{}-{}-{}".format(environment, dataProductName, airflow_config['name'])
-                airflow_deploy = AirflowUtil(name=airflow_environment_name, root_path="{}/{}".format(baseRepoName, dag_file_path), deployment_bucket=bucketName, destination_path=command_args.baseDeployPath)
-
-                # Check if the DAG files exist
-                if os.path.exists("{}/{}".format(baseRepoName, dag_file_path)):
-                    # The commented out code was causing deployment issues
-                    # Check the other optional files exist
-                    # plugins_file_path = os.path.join(baseRepoName, airflow_config.get('plugins_file', ''))
-                    # requirements_file_path = os.path.join(baseRepoName, airflow_config.get('requirements_file', ''))
-                    # startup_file_path = os.path.join(baseRepoName, airflow_config.get('startup_file', ''))
-                    #
-                    # if os.path.exists(plugins_file_path):
-                    #     airflow_deploy.update(plugins_file_path=plugins_file_path)
-                    #
-                    # if os.path.exists(requirements_file_path):
-                    #     airflow_deploy.update(requirements_file_path=requirements_file_path)
-                    #
-                    # if os.path.exists(startup_file_path):
-                    #     airflow_deploy.update(startup_file_path=startup_file_path)
-
-                    #else:
-                    #    airflow_deploy.update()
-                    airflow_deploy.update()
-                else:
-                    logger.error("DAG files does not exist at location: {}".format(dag_file_path))
-
-        except Exception as e:
-                logger.error(e)
-
-    except Exception as e:
-        logger.error(e)
+{
+  "files": [
+    
+    {
+      "nested_path_root": "udf",
+      "file_details": {
+        "source": "apps/dataproduct/adlfound/adl-adlfound-udf-jar/bin",
+        "destination": "dataproduct/adlfound/adl-adlfound-udf-jar"
+      }
+    }
+  ]
+}
