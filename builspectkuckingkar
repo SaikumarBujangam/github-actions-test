@@ -1,38 +1,26 @@
+import boto3
 import os
-import sys
-import json
-from alight.foundation.aws.jarbuildutil import JarBuildUtil
-from alight.foundation.util.argparsebuilder import GenerateParser
 from alight.foundation.util.logging.standardlogger import StandardLogger
 
-if __name__ == "__main__":
+class JarBuildUtil:
     logger = StandardLogger().getDefaultLogger()
-    try:
-        command_args = GenerateParser().build()
-        commandFile = os.path.join(command_args.baseRepoDir, command_args.jarDefinitionFile)
-        with open(commandFile) as file:
-            config = json.load(file)
 
-        baseRepoDir = command_args.baseRepoDir
-        bucketName = command_args.deploymentBucket
-        jar_util = JarBuildUtil(deployment_bucket=bucketName)
+    def __init__(self, region='us-east-1', deployment_bucket=None):
+        self.region = region
+        self._s3_client = boto3.client('s3', region_name=self.region)
+        self._bucket_name = deployment_bucket
 
-        for file_info in config['files']:
-            nested_path_root = file_info['nested_path_root']
-            file_details = file_info['file_details']
-            source_directory = os.path.join(baseRepoDir, nested_path_root, file_details['source'])
-            destination_path = file_details['destination']
-
-            # Ensure the source directory exists
-            if not os.path.exists(source_directory):
-                logger.error(f"The source directory does not exist: {source_directory}")
-                continue
-
-            files_to_upload = [os.path.join(root, f) for root, dirs, files in os.walk(source_directory) for f in files]
-
-            success = jar_util.upload_files_to_s3(files_to_upload, destination_path)
-            if not success:
-                logger.error(f"Failed to upload files from {source_directory} to {destination_path}")
-
-    except Exception as e:
-        logger.error(f"An error occurred: {e}")
+    def upload_files_to_s3(self, files, destination_path):
+        try:
+            for file_path in files:
+                # Adjust the S3 path to use slashes appropriate for S3 keys
+                s3_path = os.path.join(destination_path, os.path.basename(file_path)).replace(os.sep, '/')
+                self._s3_client.upload_file(file_path, self._bucket_name, s3_path)
+                JarBuildUtil.logger.info(f"Uploaded file: {file_path} to bucket: {self._bucket_name} at path: {s3_path}")
+            return True
+        except FileNotFoundError as e:
+            JarBuildUtil.logger.error(f"File not found: {file_path}. Error: {e}")
+            return False
+        except Exception as e:
+            JarBuildUtil.logger.error(f"Failed to upload the files. Error: {e}")
+            return False
