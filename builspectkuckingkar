@@ -1,4 +1,4 @@
-Cloning into 'github.com'...
-remote: Not Found
-fatal: repository 'https://github.com/.git/' not found
-Error: Process completed with exit code 128.
+Run echo "Reading bucket properties for dev"
+Reading bucket properties for dev
+Warning: The `set-output` command is deprecated and will be disabled soon. Please upgrade to using Environment Files. For more information see: https://github.blog/changelog/2022-10-11-github-actions-deprecating-save-state-and-set-output-commands/
+Warning: The `set-output` command is deprecated and will be disabled soon. Please upgrade to using Environment Files. For more information see: https://github.blog/changelog/2022-10-11-github-actions-deprecating-save-state-and-set-output-commands/
