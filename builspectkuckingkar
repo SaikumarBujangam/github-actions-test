@@ -1,6 +1,20 @@
-steps:
-  - name: Checkout a specific repository
-    uses: actions/checkout@v3
-    with:
-      repository: 'owner/repo-name'
-      token: ${{ secrets.GITHUB_TOKEN }} # Use a PAT if accessing a private repository outside of your current account
+Run actions/checkout@v3
+  with:
+    repository: $***calling_repo_name***.git
+    token: $***gh_token***
+    ssh-strict: true
+    persist-credentials: true
+    clean: true
+    sparse-checkout-cone-mode: true
+    fetch-depth: 1
+    fetch-tags: ***
+    lfs: ***
+    submodules: ***
+    set-safe-directory: true
+  env:
+    event_repo_name: AlightEngineering/adl-java-build-test
+    deploy_env: dev
+    calling_repo_name: AlightEngineering/adl-deploy-cicd
+    gh_user: ***
+    gh_token: ***
+Error: Invalid repository '$***calling_repo_name***.git'. Expected format ***owner***/***repo***.
