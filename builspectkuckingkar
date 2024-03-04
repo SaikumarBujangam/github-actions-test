@@ -1,22 +1,10 @@
-Dear Deependra, Amit, and Muthu,
+ <dependency>
+                        <groupId>jdk.tools</groupId>
+                        <artifactId>jdk.tools</artifactId>
+                        <scope>system</scope>
+                        <version>1.8</version>
+                        <systemPath>D:/jdk1.8.0_171/jdk1.8.0_171/lib/tools.jar</systemPath>
+                </dependency>
 
-I hope this message finds you well. First and foremost, I would like to extend my sincere thanks to each of you for your congratulatory messages and the support you've shown. It truly means a lot to me and serves as motivation to continue advancing in my professional development.
 
-Addressing Deependra's inquiry, I've given thoughtful consideration to how the AWS Solution Architect Associates Certification aligns with our current projects and long-term strategy. Here are a few key ways I believe the certification will contribute to our team's success:
-
-Enhanced Cloud Architecture Design: With the knowledge gained from the certification, I'm better equipped to design scalable, resilient, and cost-efficient cloud infrastructure. This directly contributes to improving the performance and reliability of our cloud-based projects.
-
-Optimized Resource Management: Understanding AWS's vast suite of services allows for more effective management of our resources, ensuring we can do more with less and stay within budget while maintaining or even enhancing service quality.
-
-Security and Compliance: The certification has deepened my understanding of AWS security best practices and compliance standards, vital for protecting our data and applications in the cloud. This knowledge is crucial as we navigate the complexities of data protection regulations.
-
-Innovation and Experimentation: With a solid foundation in AWS solutions, I am now more confident in experimenting with new technologies and services offered by AWS. This opens up opportunities for innovation within our projects, potentially leading to breakthroughs that could give us a competitive edge.
-
-Team Support and Leadership: Lastly, this certification positions me to better support our team members with cloud-related queries and challenges. I'm eager to share my knowledge and contribute to elevating our team's overall cloud expertise.
-
-In conclusion, I believe this certification not only enhances my personal skill set but also significantly contributes to our team's capabilities and strategic objectives. I look forward to applying this knowledge in our day-to-day operations and exploring ways we can further leverage AWS services to achieve our project goals and drive innovation.
-
-Thank you once again for your support and for recognizing this achievement. I'm excited about the opportunities this certification opens up for us as a team and am keen to discuss further how we can integrate these insights into our work with Alight.
-
-Best regards,
-Saikumar.
+This file can I keep in github diffrent folder and reference it?
