@@ -1,4 +1,16 @@
-Run echo "Reading bucket properties for dev"
-Reading bucket properties for dev
-Warning: The `set-output` command is deprecated and will be disabled soon. Please upgrade to using Environment Files. For more information see: https://github.blog/changelog/2022-10-11-github-actions-deprecating-save-state-and-set-output-commands/
-Warning: The `set-output` command is deprecated and will be disabled soon. Please upgrade to using Environment Files. For more information see: https://github.blog/changelog/2022-10-11-github-actions-deprecating-save-state-and-set-output-commands/
+      - name: Read bucket properties
+        id: read-bucket-properties
+        run: |
+          echo "Reading bucket properties for ${{ github.event.inputs.deploy_env }} from the config folder"
+          properties=$(cat config/bucket.properties)
+          echo "$properties" | while IFS='=' read -r key value ; do
+            if [[ $key == "${{ github.event.inputs.deploy_env }}_bucket" ]]; then
+              echo "bucket=$value" >> $GITHUB_ENV
+            fi
+            if [[ $key == "${{ github.event.inputs.deploy_env }}_path" ]]; then
+              echo "path=$value" >> $GITHUB_ENV
+            fi
+          done
+
+      - name: Upload JAR to S3
+        run: aws s3 cp target/*.jar s3://$bucket/$path
