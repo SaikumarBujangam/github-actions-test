@@ -1,23 +1,4 @@
-Error:
-
-Run git clone https://$***GH_USER_NAME***:$***GH_CLONE_REPO***@github.com/$***calling_repo_name***.git $***calling_repo_name***
-  git clone https://$***GH_USER_NAME***:$***GH_CLONE_REPO***@github.com/$***calling_repo_name***.git $***calling_repo_name***
-  source $***calling_repo_name***/config/.cicdrc $***deploy_env***
-  echo "aws_access_key_id_name=ADL_$***credential_env***_ACCESS_KEY" >> $GITHUB_OUTPUT
-  echo "aws_secret_access_key_name=ADL_$***credential_env***_SECRET_KEY" >> $GITHUB_OUTPUT
-  shell: /usr/bin/bash -e ***0***
-  env:
-    JAVA_HOME: /opt/hostedtoolcache/Java_Temurin-Hotspot_jdk/8.0.402-6/x64
-    JAVA_HOME_8_X64: /opt/hostedtoolcache/Java_Temurin-Hotspot_jdk/8.0.402-6/x64
 Cloning into 'github.com'...
 remote: Not Found
 fatal: repository 'https://github.com/.git/' not found
 Error: Process completed with exit code 128.
-
-- name: ADL Set Environment Credentials
-        id: adl-set-env-creds
-        run: |
-          git clone https://${GH_USER_NAME}:${GH_CLONE_REPO}@github.com/${calling_repo_name}.git ${calling_repo_name}
-          source ${calling_repo_name}/config/.cicdrc ${deploy_env}
-          echo "aws_access_key_id_name=ADL_${credential_env}_ACCESS_KEY" >> $GITHUB_OUTPUT
-          echo "aws_secret_access_key_name=ADL_${credential_env}_SECRET_KEY" >> $GITHUB_OUTPUT
