@@ -1,16 +1,6 @@
-      - name: Read bucket properties
-        id: read-bucket-properties
-        run: |
-          echo "Reading bucket properties for ${{ github.event.inputs.deploy_env }} from the config folder"
-          properties=$(cat config/bucket.properties)
-          echo "$properties" | while IFS='=' read -r key value ; do
-            if [[ $key == "${{ github.event.inputs.deploy_env }}_bucket" ]]; then
-              echo "bucket=$value" >> $GITHUB_ENV
-            fi
-            if [[ $key == "${{ github.event.inputs.deploy_env }}_path" ]]; then
-              echo "path=$value" >> $GITHUB_ENV
-            fi
-          done
-
-      - name: Upload JAR to S3
-        run: aws s3 cp target/*.jar s3://$bucket/$path
+steps:
+  - name: Checkout a specific repository
+    uses: actions/checkout@v3
+    with:
+      repository: 'owner/repo-name'
+      token: ${{ secrets.GITHUB_TOKEN }} # Use a PAT if accessing a private repository outside of your current account
