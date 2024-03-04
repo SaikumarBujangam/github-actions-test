@@ -1,10 +1,27 @@
- <dependency>
-                        <groupId>jdk.tools</groupId>
-                        <artifactId>jdk.tools</artifactId>
-                        <scope>system</scope>
-                        <version>1.8</version>
-                        <systemPath>D:/jdk1.8.0_171/jdk1.8.0_171/lib/tools.jar</systemPath>
-                </dependency>
+<build>
+		<plugins>
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>build-helper-maven-plugin</artifactId>
+				<version>3.2.0</version>
+				<executions>
+					<execution>
+						<id>add-source</id>
+						<phase>generate-sources</phase>
+						<goals>
+							<goal>add-source</goal>
+						</goals>
+						<configuration>
+							<sources>
+								<source>src/</source>
 
+							</sources>
+							<source>1.8</source>
+							<target>1.8</target>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
 
-This file can I keep in github diffrent folder and reference it?
+		</plugins>
+	</build>
