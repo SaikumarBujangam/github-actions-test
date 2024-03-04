@@ -1,11 +1,49 @@
-dev_bucket=my-dev-bucket-name
-dev_path=my/dev/path/
+name: Maven Build and Deploy to S3 Based on Environment
 
-qa_bucket=my-qa-bucket-name
-qa_path=my/qa/path/
+on:
+  workflow_dispatch:
+    inputs:
+      deploy_env:
+        description: 'Deployment environment (dev, qa, qc, prod)'
+        required: true
+        default: 'dev'
 
-qc_bucket=my-qc-bucket-name
-qc_path=my/qc/path/
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        name: Checkout code
 
-prod_bucket=my-prod-bucket-name
-prod_path=my/prod/path/
+      - name: Set up JDK 1.8
+        uses: actions/setup-java@v3
+        with:
+          java-version: '1.8'
+          distribution: 'temurin'
+
+      - name: Build with Maven
+        run: mvn clean package
+
+      - name: Read bucket properties
+        id: read-bucket-properties
+        run: |
+          echo "Reading bucket properties for ${{ github.event.inputs.deploy_env }}"
+          properties=$(cat bucket.properties)
+          echo "$properties" | while IFS='=' read -r key value ; do
+            if [[ $key == "${{ github.event.inputs.deploy_env }}_bucket" ]]; then
+              echo "::set-output name=bucket::$value"
+            fi
+            if [[ $key == "${{ github.event.inputs.deploy_env }}_path" ]]; then
+              echo "::set-output name=path::$value"
+            fi
+          done
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Upload JAR to S3
+        run: aws s3 cp target/*.jar s3://${{ steps.read-bucket-properties.outputs.bucket }}/${{ steps.read-bucket-properties.outputs.path }}
