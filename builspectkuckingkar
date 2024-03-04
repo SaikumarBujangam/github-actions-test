@@ -1,2 +1,39 @@
-    - name: Upload JAR to S3
-      run: aws s3 cp $GITHUB_WORKSPACE/$event_repo_base_name/target/*.jar s3://$bucket/$path/*
+Well done Sai! 
+
+As a curiosity can you please talk about how this certification is going to help you in your day-to-day work or strategically. I would like to get objective inputs from you and then talk to Alight instead of just saying that we have folks who have completed certification. Makes sense?
+
+Thanks & Regards,
+Deependra Kumar
+ 
+
+
+Internal - General Use
+From: Muthu Valliappan Ramaiah <muthu.ramaiah@wipro.com> 
+Sent: Monday, March 4, 2024 10:49 AM
+To: Amit Kumar <amit.kumar13@wipro.com>; Saikumar Bujangam <saikumar.bujangam@wipro.com>
+Cc: Deependra Kumar <deependra.kumar3@wipro.com>
+Subject: RE: Congratulations on completing AWS Solution Architect Associates Certification
+
+Many Congratulations Sai. Keep it up.  
+
+Regards
+Muthu
+
+
+Internal - General Use
+From: Amit Kumar <amit.kumar13@wipro.com> 
+Sent: Monday, March 4, 2024 10:38 AM
+To: Saikumar Bujangam <saikumar.bujangam@wipro.com>
+Cc: Muthu Valliappan Ramaiah <muthu.ramaiah@wipro.com>
+Subject: Congratulations on completing AWS Solution Architect Associates Certification
+
+Many congratulations Saikumar on completing AWS Certified Solution Architect Associates certification. Have the same learning rigor in the future also and keep up the good work. 
+
+Congratulations once again!!
+
+
+Thanks,
+Amit
+ 
+
+Internal - General Use
