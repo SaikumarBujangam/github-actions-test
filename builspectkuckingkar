@@ -1,145 +1,15 @@
-ADL CI/CD Java Build & Deployment Pipeline Documentation
-Introduction
-This document provides an overview and operational details of the ADL CI/CD Java Build & Deployment Pipeline. This GitHub Actions workflow automates the process of building, testing, and deploying Java applications in response to various triggers.
+The below code is part of my CICD process.
 
-Workflow Name
-ADL CICD Java Build & Deployment Pipeline
+2024-03-05T07:04:45.5112767Z [2024-03-05::07:04:45:UTC)] [INFO] >>> python /home/runner/work/adl-awsdeploy-cicd/adl-awsdeploy-cicd/AlightEngineering/adl-awsdeploy-cicd-d1.0.301/src/alight/foundation/app/deploy/sourcestage.py --base-arg-parser-config-file-location /home/runner/work/adl-awsdeploy-cicd/adl-awsdeploy-cicd/AlightEngineering/adl-awsdeploy-cicd-d1.0.301/config --base-arg-parser-config-file-name appspec-build-args.json --template-file-location build --template-file pkg-cdp-template.json --source-root . --generated-appspec-location build --zip-file-name cdp_deploy.zip --zip-file-location build --s3-bucket adl-com-p1-all-codebase-us-east-1-hdo8paj --s3-file-key cicd/codedeploy/interactns/adl-interactns-adhoc/cdp_deploy.zip --server-base-path /apps/dataproduct --allows-absolute-path True --deploy-owner-user-name adl_prd_all_mig_svc --deploy-owner-group-name adl_all_mig --hook-instructions-file-location /home/runner/work/adl-awsdeploy-cicd/adl-awsdeploy-cicd/AlightEngineering/adl-awsdeploy-cicd-d1.0.301/config --hook-instructions-file-name afterinstall_appspec_template.json <<<
+2024-03-05T07:04:45.9221785Z [2024-03-05 07:04:45,921] [spec] [consolelogger] [__init__:45] [INFO]: "self._generated_app_spec_location=build/appspec.yml"
+2024-03-05T07:04:45.9225394Z [2024-03-05 07:04:45,921] [spec] [consolelogger] [__init__:46] [INFO]: "self._template_file_path=build/pkg-cdp-template.json"
+2024-03-05T07:04:45.9229436Z [2024-03-05 07:04:45,921] [spec] [consolelogger] [__init__:47] [INFO]: "self._yaml_text=***'version': 0.0, 'files': [], 'file_exists_behavior': 'OVERWRITE', 'os': '', 'permissions': [], 'hooks': ***"
+2024-03-05T07:04:45.9241368Z [2024-03-05 07:04:45,923] [sourcestage] [consolelogger] [<module>:41] [INFO]: "PipelinePackager created the CodeDeploy Package: build/cdp_deploy.zip"
+2024-03-05T07:04:45.9246506Z [2024-03-05 07:04:45,923] [sourcestage] [consolelogger] [<module>:42] [INFO]: "Uploading the CodeDeploy Package to the deployment bucket: adl-com-p1-all-codebase-us-east-1-hdo8paj/cicd/codedeploy/interactns/adl-interactns-adhoc/cdp_deploy.zip."
+2024-03-05T07:04:46.6294201Z [2024-03-05 07:04:46,626] [sourcestage] [consolelogger] [<module>:45] [INFO]: "Uploaded the CodeDeploy Package"
+2024-03-05T07:04:46.6298775Z [2024-03-05 07:04:46,626] [sourcestage] [consolelogger] [<module>:46] [INFO]: "Sleeping for 30 seconds to give the CodeDeploy Agent time to work"
+2024-03-05T07:05:16.6578463Z [2024-03-05 07:05:16,657] [sourcestage] [consolelogger] [<module>:48] [INFO]: "Waking up after 30 seconds"
 
-Warning
-DO NOT MODIFY OR DELETE THIS WORKFLOW!!
+Once after the CodeDeploy package has been placed in the S3 bucket, there is a code pipeline that gets triggered with this s3 bucket as source and deploys into an EC2 machine. Currently the process is getting stopped only at uploading s3 package and I want something like, it should even monitor that code pipeline and then it should reflect whether it is success or failure. When GitHub pipeline puts data in S3, we need to start tracking the CodePipeline execution and return the result back so Github pipeline can succeed or fail based on deployment result.
 
-Triggers
-The workflow is triggered by the following events:
-
-Pull Requests to Master Branch:
-
-Activates when a pull request is opened, reopened, or edited against the master branch.
-Push to Specific Branches:
-
-Runs when commits are pushed to the master branch, feature branches (feature/*), or hotfix branches (hotfix/*).
-It ignores changes to certain paths such as .version, .github/, Explore/, README.md, CODEOWNERS, and .group.
-Workflow Dispatch (Manual Trigger):
-
-Allows for manual triggering of the workflow with specific inputs for the deployment environment (qa) and the feature branch name.
-Jobs and Steps
-adl-cicd-check-pull-request
-Condition: Executes if the trigger is a pull request.
-Action: References another workflow to perform checks on the pull request.
-adl-cicd-prod-approval
-Condition: Executes on a push to master.
-Action: A placeholder step that outputs a message indicating a pause for production deployment approval.
-adl-cicd-hotfix-approval
-Condition: Executes on a push to branches starting with hotfix/.
-Action: Outputs a message indicating a pause for hotfix deployment approval.
-adl-cicd-dev-deploy-phase
-Condition: Executes on a push to branches starting with feature/.
-Action: Triggers another workflow for the development deployment phase.
-adl-cicd-qa-deploy-phase
-Condition: Manually triggered through workflow dispatch for QA deployments.
-Action: Triggers another workflow for the QA deployment phase.
-adl-cicd-qc-deploy-phase
-Condition: Executes on a push to master.
-Action: Triggers another workflow for the QC deployment phase.
-adl-cicd-prod-deploy-phase
-Condition: Executes on a push to master, after production approval and QC deployment phase.
-Action: Triggers another workflow for the production deployment phase.
-adl-cicd-hotfix-phase
-Condition: Executes on a push to hotfix/ branches, after hotfix approval.
-Action: Triggers another workflow for the hotfix deployment phase.
-adl-log-event
-Action: Logs the GitHub event name and validates the feature branch name during a workflow dispatch event.
-Additional Information
-Secrets: Secrets are inherited from the organization level to securely access and deploy code without exposing sensitive information.
-Environments: Specified environment contexts (prod, hotfix) ensure that jobs execute with the appropriate permissions and settings.
-Conclusion
-The ADL CI/CD pipeline is a critical component of the development lifecycle, ensuring that code changes are thoroughly vetted and deployed in a controlled manner. It is crucial to adhere to the provided structure and comments to maintain the integrity and functionality of the pipeline.
-
-=========================
-
-The ADL CI/CD Java Build & Deployment Pipeline is a robust automation system that leverages GitHub Actions to manage the lifecycle of a Java application. Its primary role is to streamline the process of integrating changes, building the application, and deploying it across various environments, thereby facilitating a smooth and efficient continuous integration and continuous deployment pipeline.
-
-The pipeline springs into action upon several types of events. When a developer raises a pull request against the master branch, or when any commits are pushed to the master, feature, or hotfix branches, the pipeline triggers specific jobs. To prevent unnecessary builds, the pipeline is configured to ignore changes to non-essential files and directories, such as documentation and metadata files.
-
-A noteworthy feature of this pipeline is the manual triggering capability, which is particularly useful for QA deployments. Through the workflow_dispatch event, the pipeline accepts inputs like the deployment environment and the name of the feature branch, granting developers control over when and where to deploy.
-
-Once triggered, the pipeline executes a series of jobs, each tailored for specific branches and purposes. For pull requests, it checks for integration issues, while for pushes to the master branch, it awaits approval for production deployment. Similarly, pushes to hotfix branches hold for hotfix deployment approval. The pipeline ensures that features are not only developed but are also seamlessly integrated into the main codebase and eventually deployed to production.
-
-For development and feature branches, the pipeline deploys the application to the development environment, enabling developers to test new features in a live setting. When a QA deployment is initiated manually, the workflow dispatches a job that deploys the application to the QA environment, allowing for rigorous testing before any changes are merged into production.
-
-The pipeline also enforces quality checks and controls for the production environment. Prior to deploying to production, it mandates a pause for approval, ensuring that all changes are thoroughly reviewed and authorized. Once the production deployment receives the green light, and the QA deployment phase is successfully completed, the application is deployed to the production environment.
-
-Moreover, the pipeline takes special care of urgent changes required in the production environment. For hotfix branches, once the necessary approval is obtained, it expedites the deployment of critical fixes, minimizing any downtime or disruption of service.
-
-Each step of the pipeline is carefully logged, providing transparency and traceability. In the event of a workflow dispatch, the pipeline also verifies that the feature branch naming convention is followed, reinforcing best practices among developers.
-
-In essence, the ADL CI/CD pipeline embodies a disciplined and systematic approach to software development and deployment. By automating these processes, it not only ensures consistency and reliability but also empowers the development team to focus on building and enhancing features without being encumbered by the intricacies of the deployment process.
-
-==============
-
-
-
-The ADL CI/CD Java Build & Deployment Pipeline is a composite of two interconnected workflows that orchestrate the continuous integration and delivery process for Java applications within a GitHub environment. This pipeline is designed to automate the code integration from different branches, perform builds, run tests, and deploy the code to various environments, such as development, QA, and production.
-
-The primary workflow is triggered by actions like pull requests to the master branch, pushes to master, feature/*, and hotfix/* branches, or manually via the workflow_dispatch event. It handles the initial logic of the CI/CD process, such as checking pull requests for integration issues, awaiting approvals for production and hotfix deployments, and triggering downstream jobs that correspond to different deployment phases—development, QA, QC, and production—based on the context of the trigger event.
-
-When the primary workflow runs due to any of the specified triggers, it calls upon a secondary workflow. The secondary workflow, named "ADL CICD Java Build and Deploy," is a reusable component that is responsible for the actual build and deployment tasks. It accepts inputs like the repository name, branch to be deployed, deployment environment, and other details necessary to perform its operations.
-
-Upon being invoked, the secondary workflow executes the following steps in a job named adl-cicd-deploy:
-
-Log Environment Variables: It logs important information such as the repository name, branch name, and deployment environment, which are crucial for the subsequent steps.
-
-Get Repositories: This step clones the necessary code repositories. For QA environments, it clones the specified feature branch, whereas for other environments, it clones the respective branch that triggered the workflow.
-
-Set up JDK 1.8: The Java Development Kit (JDK) is set up to compile and build the Java application.
-
-Increment Calling Repo Version: If the deployment environment is QC and the branch is master, it increments the version of the repository. This is part of the versioning strategy to keep track of different releases.
-
-Set Environment Credentials: This step sources credentials from a configuration file, setting the stage for AWS credentials configuration.
-
-Configure AWS Credentials: Using the output from the previous step, this step configures AWS credentials that allow the workflow to interact with AWS services.
-
-Install Dependencies: Dependencies required for building the application are installed from a requirements.txt file.
-
-Build with Maven: Maven is used to clean the previous builds and package the application, producing the necessary artifacts, typically JAR files.
-
-Read bucket properties: The deployment bucket's properties are read from a configuration file, determining where the build artifacts will be stored on AWS S3.
-
-Upload JAR to S3: Finally, the built JAR file is uploaded to the specified S3 bucket, completing the deployment process.
-
-The combination of these workflows offers a comprehensive CI/CD pipeline, providing a seamless path from code commit to deployment. The processes are automated to minimize human error, enforce consistency, and enable rapid delivery of high-quality software to users. The use of environment variables, conditional logic based on branch types, and automated versioning ensures that the pipeline is both flexible and controlled, catering to the needs of a dynamic development environment.
-
-===========================
-
-The ADL CI/CD pipeline for Java build and deployment is an orchestrated sequence of operations spanning two GitHub Actions workflows. The primary workflow acts as a gateway, responding to development activities such as pull requests and push events across various branches, including master, feature, and hotfix branches. It also provides a manual trigger for QA deployments. This workflow emphasizes strict conditions to ensure that actions like build and deploy only occur when meaningful changes are detected in the codebase, excluding paths that are not part of the application build such as documentation or configuration files.
-
-Upon activation by one of its triggers, the primary workflow delegates specific jobs to a secondary workflow. These jobs include:
-
-Validating pull requests for integration with the master branch.
-Queueing production and hotfix deployments pending approval.
-Deploying to development, QA, or production environments based on the nature of the trigger.
-The secondary workflow, called by the workflow_call event, is where the heavy lifting of the CI/CD process takes place. It receives inputs such as the repository name, branch details, and the intended deployment environment, which guide its operations. The following steps are executed:
-
-Cloning the Necessary Repositories: It clones the client repository for the application code and the CI/CD repository that contains the necessary scripts and configuration.
-
-Setting Up the JDK: It prepares the environment by setting up the Java Development Kit, which is essential for building Java applications.
-
-Version Management: For quality control deployments, it increments the application version and tags the repository accordingly, ensuring traceability and a clear history of deployments.
-
-AWS Credential Configuration: It securely configures AWS credentials, allowing the workflow to interact with AWS services for operations like storing artifacts.
-
-Dependency Installation: The workflow installs any necessary dependencies required for the build process, according to the requirements.txt file.
-
-Building with Maven: Utilizing Maven, a build automation tool used primarily for Java projects, it compiles the source code, runs tests, and packages the binary artifacts.
-
-Reading Bucket Properties: It reads configuration properties to determine the correct AWS S3 bucket and path where the artifacts will be stored.
-
-Uploading Artifacts to S3: The built artifacts, typically JAR files, are uploaded to the designated AWS S3 bucket, making them available for deployment.
-
-Throughout the process, environment variables and outputs are logged and utilized to ensure that each step has the necessary context to execute correctly. The use of secrets ensures sensitive information is kept secure while still enabling automated access to required resources.
-
-In summary, this CI/CD pipeline is a sophisticated automation that manages the nuances of software development workflows, ensuring that code changes are built, tested, and deployed systematically and securely. This automation not only enforces best practices for software delivery but also allows for flexibility in handling different deployment scenarios, from development and QA to production and hotfixes.
-
-
-
-
-
+How to do this?
