@@ -1,5 +1,11 @@
-    - name: Upload JAR to S3
-      run: |
-        for jarfile in $GITHUB_WORKSPACE/$event_repo_base_name/target/*.jar; do
-          aws s3 cp "$jarfile" "s3://$bucket/$path/$(basename "$jarfile")"
+- name: Upload JARs to S3
+  run: |
+    for moduleDir in $GITHUB_WORKSPACE/$event_repo_base_name/src/*/target/; do
+      if [ -d "$moduleDir" ]; then
+        for jarfile in "$moduleDir"*.jar; do
+          if [ -f "$jarfile" ]; then
+            aws s3 cp "$jarfile" "s3://$bucket/$path/$(basename "$jarfile")"
+          fi
         done
+      fi
+    done
