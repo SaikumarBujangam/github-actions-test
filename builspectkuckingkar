@@ -1,11 +1,22 @@
-- name: Upload JARs to S3
-  run: |
-    for moduleDir in $GITHUB_WORKSPACE/$event_repo_base_name/src/*/target/; do
-      if [ -d "$moduleDir" ]; then
-        for jarfile in "$moduleDir"*.jar; do
-          if [ -f "$jarfile" ]; then
-            aws s3 cp "$jarfile" "s3://$bucket/$path/$(basename "$jarfile")"
-          fi
-        done
-      fi
-    done
+  
+[INFO] Scanning for projects...
+Error: ] Some problems were encountered while processing the POMs:
+Error:  Child module /home/runner/work/adl-java-build-test/adl-java-build-test/adl-java-build-test/decrypt of /home/runner/work/adl-java-build-test/adl-java-build-test/adl-java-build-test/pom.xml does not exist @ 
+Error:  Child module /home/runner/work/adl-java-build-test/adl-java-build-test/adl-java-build-test/encrypt of /home/runner/work/adl-java-build-test/adl-java-build-test/adl-java-build-test/pom.xml does not exist @ 
+Error:  Child module /home/runner/work/adl-java-build-test/adl-java-build-test/adl-java-build-test/hiveudf of /home/runner/work/adl-java-build-test/adl-java-build-test/adl-java-build-test/pom.xml does not exist @ 
+Error:  Child module /home/runner/work/adl-java-build-test/adl-java-build-test/adl-java-build-test/piimasking of /home/runner/work/adl-java-build-test/adl-java-build-test/adl-java-build-test/pom.xml does not exist @ 
+ @ 
+Error:  The build could not read 1 project -> [Help 1]
+Error:    
+Error:    The project com.example:parent-project:0.0.1-SNAPSHOT (/home/runner/work/adl-java-build-test/adl-java-build-test/adl-java-build-test/pom.xml) has 4 errors
+Error:      Child module /home/runner/work/adl-java-build-test/adl-java-build-test/adl-java-build-test/decrypt of /home/runner/work/adl-java-build-test/adl-java-build-test/adl-java-build-test/pom.xml does not exist
+Error:      Child module /home/runner/work/adl-java-build-test/adl-java-build-test/adl-java-build-test/encrypt of /home/runner/work/adl-java-build-test/adl-java-build-test/adl-java-build-test/pom.xml does not exist
+Error:      Child module /home/runner/work/adl-java-build-test/adl-java-build-test/adl-java-build-test/hiveudf of /home/runner/work/adl-java-build-test/adl-java-build-test/adl-java-build-test/pom.xml does not exist
+Error:      Child module /home/runner/work/adl-java-build-test/adl-java-build-test/adl-java-build-test/piimasking of /home/runner/work/adl-java-build-test/adl-java-build-test/adl-java-build-test/pom.xml does not exist
+Error:  
+Error:  To see the full stack trace of the errors, re-run Maven with the -e switch.
+Error:  Re-run Maven using the -X switch to enable full debug logging.
+Error:  
+Error:  For more information about the errors and possible solutions, please read the following articles:
+Error:  [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/ProjectBuildingException
+Error: Process completed with exit code 1.
