@@ -1,3 +1,2 @@
-[2024-03-07 16:38:44,273] [sourcestage] [consolelogger] [<module>:49] [INFO]: "Waking up after 30 seconds"
-[2024-03-07 16:38:44,326] [sourcestage] [consolelogger] [<module>:55] [ERROR]: "Error checking pipeline status: PipelineCheck.check_pipeline_status() mi
-ssing 1 required positional argument: 'pipeline_name'"
+[2024-03-07 16:47:24,328] [sourcestage] [consolelogger] [<module>:55] [ERROR]: "Error checking pipeline status: replace expected at least 2 arguments, g
+ot 1"
