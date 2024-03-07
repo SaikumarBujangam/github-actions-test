@@ -1,2 +1,2 @@
-[2024-03-07 16:47:24,328] [sourcestage] [consolelogger] [<module>:55] [ERROR]: "Error checking pipeline status: replace expected at least 2 arguments, g
-ot 1"
+[2024-03-07 16:52:57,722] [sourcestage] [consolelogger] [<module>:55] [ERROR]: "Error checking pipeline status: Replacement index 1 out of range for pos
+itional args tuple"
