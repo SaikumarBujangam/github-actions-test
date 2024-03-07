@@ -1,2 +1,25 @@
-[2024-03-07 18:05:38,643] [pipelinecheck] [consolelogger] [get_failure_details:64] [ERROR]: "Failed to fetch pipeline failure details: 'pipelineExecutio
-nStages'"
+def get_failure_details(self, pipeline_name):
+    """Fetch details on why a pipeline execution failed."""
+    try:
+        response = self.codepipeline.get_pipeline_execution(pipelineName=pipeline_name, pipelineExecutionId=self.latest_execution_id)
+        details = []
+
+        # Adjusting to correctly access stages from the pipeline execution details
+        # The correct key is 'stages' based on the documentation and typical API response structure
+        if 'pipelineExecution' in response and 'stages' in response['pipelineExecution']:
+            stages = response['pipelineExecution']['stages']
+            for stage in stages:
+                stage_name = stage['name']
+                actions = stage.get('actionStates', [])
+                for action in actions:
+                    if 'latestExecution' in action and 'status' in action['latestExecution'] and action['latestExecution']['status'] == 'Failed':
+                        error_details = action['latestExecution'].get('errorDetails', {})
+                        message = error_details.get('message', 'No error message provided.')
+                        details.append("Stage '{0}' failed: {1}".format(stage_name, message))
+        else:
+            return ["Failed to retrieve pipeline execution stages or stages key not found in response."]
+        
+        return details if details else ["No detailed error message found."]
+    except Exception as e:
+        self.logger.error("Failed to fetch pipeline failure details: {0}".format(e))
+        return []
