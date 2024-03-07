@@ -1,39 +1,62 @@
+import sys
 import os
-import boto3
 import time
+
+import boto3
+from alight.foundation.aws.codepipeline import PipelinePackager
+from alight.foundation.aws.spec import AppspecGenerator
+from alight.foundation.util.argparsebuilder import GenerateParser
 from alight.foundation.util.logging.standardlogger import StandardLogger
+from alight.foundation.util.stringutil import StringUtil
+from alight.foundation.util.pipelinecheck import PipelineCheck
 
-class PipelineCheck:
-    def __init__(self):
-        self.logger = StandardLogger().getDefaultLogger()
-        self.codepipeline = boto3.client('codepipeline')
-        self.app_subject_area = os.environ.get('APP_SUBJECT_AREA')
-        if self.app_subject_area is None:
-            raise ValueError("APP_SUBJECT_AREA environment variable is not set")
-        self.lifecycle_env = os.environ.get('lifecycle_env')
-        if self.lifecycle_env is None:
-            raise ValueError("lifecycle_env environment variable is not set")
+if __name__ == "__main__":
+    logger = StandardLogger().getDefaultLogger()
+    try:
+        command_args = GenerateParser(supports_duplicate_parameters=True).build()
+        su = StringUtil()
+        replacement_params = su.property_list_to_dict(input_list=command_args.cicdVar)
+        template_file_path = os.path.join(command_args.templateFileLocation, command_args.templateFile)
+        appspec_file_path = os.path.join(command_args.generatedAppSpecLocation, command_args.generatedAppSpec)
+        pkg_file_path = os.path.join(command_args.zipFileLocation, command_args.zipFileName)
+        hook_instructions_path=os.path.join(command_args.hookInstructionsFileLocation, command_args.hookInstructionsFileName)
 
-    def check_pipeline_status(self, pipeline_name, wait_time=30, max_attempts=120):
-        pipeline_name_prefix = "adl-com-{}".format(self.lifecycle_env)
-        pipeline_suffix = "codepipeline"
-        adjusted_app_subject_area = self.app_subject_area.replace("adl-", )
-        pipeline_name = "{}-{}-{}".format(pipeline_name_prefix, adjusted_app_subject_area, pipeline_suffix)
-        attempt = 0
-        while attempt < max_attempts:
-            response = self.codepipeline.list_pipeline_executions(pipelineName=pipeline_name, maxResults=1)
-            if not response['pipelineExecutionSummaries']:
-                raise Exception("No executions found for the pipeline.")
-            latest_execution = response['pipelineExecutionSummaries'][0]
-            execution_id = latest_execution['pipelineExecutionId']
+        pipelinePackager = PipelinePackager(
+            pkg_file_location=command_args.zipFileLocation,
+            pkg_file_name=command_args.zipFileName,
+            source_root=command_args.sourceRoot,
+            template_file_path=template_file_path,
+            appspec_file_name=command_args.generatedAppSpec,
+            appspec_file_location=command_args.generatedAppSpecLocation,
+            server_base_path=command_args.serverBasePath,
+            parameter_dict=replacement_params,
+            allows_absolute_path=command_args.allowsAbsolutePath,
+            deploy_owner_user_name=command_args.deployOwnerUserName,
+            deploy_owner_group_name=command_args.deployOwnerGroupName,
+            hook_instructions_path=hook_instructions_path
+        )
 
-            execution_details = self.codepipeline.get_pipeline_execution(pipelineName=pipeline_name, pipelineExecutionId=execution_id)
-            status = execution_details['pipelineExecution']['status']
 
-            if status in ['Succeeded', 'Failed', 'Stopped']:
-                return status
-            else:
-                time.sleep(wait_time)
-                attempt += 1
+        pipelinePackager.create()
 
-        raise TimeoutError("Max attempts reached while waiting for pipeline to complete.")
+        logger.info("PipelinePackager created the CodeDeploy Package: {}".format(pkg_file_path))
+        logger.info("Uploading the CodeDeploy Package to the deployment bucket: {}/{}.".format(command_args.s3Bucket, command_args.s3FileKey))
+        s3_resource = boto3.resource('s3')
+        s3_resource.meta.client.upload_file(pkg_file_path, command_args.s3Bucket, command_args.s3FileKey)
+        logger.info("Uploaded the CodeDeploy Package")
+        logger.info("Sleeping for {} seconds to give the CodeDeploy Agent time to work".format(command_args.deployPostWaitTime))
+        time.sleep(float(command_args.deployPostWaitTime))
+        logger.info("Waking up after {} seconds".format(command_args.deployPostWaitTime))
+        pipeline_checker = PipelineCheck()
+        try:
+            status=pipeline_checker.check_pipeline_status()
+            pipeline_checker.logger.info("Pipeline {} completed with status: {}".format(pipeline_checker.app_subject_area, status))
+        except Exception as e:
+            pipeline_checker.logger.error("Error checking pipeline status: {}".format(e))
+    except Exception as e:
+        logger.error(e)
+        sys.exit(1)
+
+Errors:
+
+[2024-03-07 16:27:30,593] [sourcestage] [consolelogger] [<module>:57] [ERROR]: "PipelineCheck.__init__() takes 1 positional argument but 2 were given"
