@@ -1,2 +1,39 @@
-[2024-03-07 16:52:57,722] [sourcestage] [consolelogger] [<module>:55] [ERROR]: "Error checking pipeline status: Replacement index 1 out of range for pos
-itional args tuple"
+import os
+import boto3
+import time
+from alight.foundation.util.logging.standardlogger import StandardLogger
+
+class PipelineCheck:
+    def __init__(self):
+        self.logger = StandardLogger().getDefaultLogger()
+        self.codepipeline = boto3.client('codepipeline')
+        self.app_subject_area = os.environ.get('APP_SUBJECT_AREA')
+        if self.app_subject_area is None:
+            raise ValueError("APP_SUBJECT_AREA environment variable is not set")
+        self.lifecycle_env = os.environ.get('lifecycle_env')
+        if self.lifecycle_env is None:
+            raise ValueError("lifecycle_env environment variable is not set")
+
+    def check_pipeline_status(self, wait_time=30, max_attempts=120):
+        pipeline_name_prefix = "adl-com-{}".format(self.lifecycle_env)
+        pipeline_suffix = "codepipeline"
+        adjusted_app_subject_area = self.app_subject_area.replace("adl-", "")
+        pipeline_name = "{}-{}-{}".format(pipeline_name_prefix, adjusted_app_subject_area, pipeline_suffix)
+        attempt = 0
+        while attempt < max_attempts:
+            response = self.codepipeline.list_pipeline_executions(pipelineName=pipeline_name, maxResults=1)
+            if not response['pipelineExecutionSummaries']:
+                raise Exception("No executions found for the pipeline.")
+            latest_execution = response['pipelineExecutionSummaries'][0]
+            execution_id = latest_execution['pipelineExecutionId']
+
+            execution_details = self.codepipeline.get_pipeline_execution(pipelineName=pipeline_name, pipelineExecutionId=execution_id)
+            status = execution_details['pipelineExecution']['status']
+
+            if status in ['Succeeded', 'Failed', 'Stopped']:
+                return status
+            else:
+                time.sleep(wait_time)
+                attempt += 1
+
+        raise TimeoutError("Max attempts reached while waiting for pipeline to complete.")
