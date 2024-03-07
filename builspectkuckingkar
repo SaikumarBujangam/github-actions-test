@@ -1,32 +1,5 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <modelVersion>4.0.0</modelVersion>
-    
-    <groupId>com.example</groupId>
-    <artifactId>parent-project</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
-    <packaging>pom</packaging>
-
-    <name>Parent Project</name>
-    <description>Parent POM for multi-module project</description>
-
-    <modules>
-        <module>decrypt</module>
-        <module>encrypt</module>
-        <module>hiveudf</module>
-        <module>piimasking</module>
-    </modules>
-
-    <properties>
-        <maven.compiler.target>1.8</maven.compiler.target>
-        <maven.compiler.source>1.8</maven.compiler.source>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    </properties>
-
-    <dependencyManagement>
-        <dependencies>
-            <!-- Place any shared dependencies here -->
-        </dependencies>
-    </dependencyManagement>
-</project>
+    - name: Upload JAR to S3
+      run: |
+        for jarfile in $GITHUB_WORKSPACE/$event_repo_base_name/target/*.jar; do
+          aws s3 cp "$jarfile" "s3://$bucket/$path/$(basename "$jarfile")"
+        done
