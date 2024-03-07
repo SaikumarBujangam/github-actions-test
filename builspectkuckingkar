@@ -3,26 +3,27 @@ import time
 from alight.foundation.util.logging.standardlogger import StandardLogger
 
 class PipelineCheck:
+    def __init__(self):
+        self.logger = StandardLogger().getDefaultLogger()
+        self.codepipeline = boto3.client('codepipeline')
 
+    def check_pipeline_status(self, pipeline_name, wait_time=30, max_attempts=120):
+        attempt = 0
 
-    def check_pipeline_status(pipeline_name, wait_time=30, max_attempts=120);
-    codepipeline = boto3.client('codepipeline')
-    attempt = 0
+        while attempt < max_attempts:
+            response = self.codepipeline.list_pipeline_executions(pipelineName=pipeline_name, maxResults=1)
+            if not response['pipelineExecutionSummaries']:
+                raise Exception("No executions found for the pipeline.")
+            latest_execution = response['pipelineExecutionSummaries'][0]
+            execution_id = latest_execution['pipelineExecutionId']
 
-    while attempt < max_attempts:
-        response = codepipeline.list_pipeline_executions(pipelineName=pipeline_name, maxResults=1)
-        if not response['pipelineExecutionSummaries']:
-            raise Exception("No executions found for the pipeline.")
-        latest_execution = response['pipelineExecutionSummaries'][0]
-        execution_id = latest_execution['pipelineExecutionId']
-        execution_details = codepipeline.get_pipeline_execution(pipelineName=pipeline_name, pipelineExecutionId=execution_id)
-        status = execution_details['pipelineExecution']['status']
+            execution_details = self.codepipeline.get_pipeline_execution(pipelineName=pipeline_name, pipelineExecutionId=execution_id)
+            status = execution_details['pipelineExecution']['status']
 
-        if status in ['Succeeded', 'Failed', 'Stopped']:
-            return status
-        else:
-            time.sleep(wait_time)
-            attempt +=1
+            if status in ['Succeeded', 'Failed', 'Stopped']:
+                return status
+            else:
+                time.sleep(wait_time)
+                attempt += 1
 
-    raise TimeoutError("Max attempts reached while waiting for pipeline to complete.")
-
+        raise TimeoutError("Max attempts reached while waiting for pipeline to complete.")
