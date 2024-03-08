@@ -1,16 +1,11 @@
-Input Parameters: The workflow is designed to accept various inputs including the repository name, branch, and deployment environment. These inputs dictate the source code to be used and the target environment for deployment.
+Yes, for the deployment process outlined in the ADL CICD Java Build and Deployment Pipeline to work properly, client repositories need to adhere to a specific setup and structure. This standardization is essential for ensuring that the pipeline operates efficiently and consistently across different projects. Here's a breakdown of the required setup:
 
-Environment Setup: Early in the workflow, environment variables are set using inputs and secrets. This setup includes defining variables for the repository name, branch, deployment environment, and credentials for accessing resources like GitHub and AWS.
+Parent pom.xml in the Root Directory: The root directory of each client repository should contain a parent pom.xml file. This Maven Project Object Model file is crucial for defining project-wide configurations, dependencies, and the relationship between submodule projects. It acts as an anchor for the build process, enabling the Maven build system to compile and package the entire project and its modules correctly.
 
-Cloning Repositories: Based on the deployment environment (qa, dev, prod, etc.), the workflow clones the specific branch of the repository that needs to be built and deployed. This is crucial for ensuring that the correct version of the application is being processed.
+Project Folders in the src Directory: Within the src directory, there should be several project folders, each potentially representing a Maven submodule or a specific component of the overall application. This organization allows for modular development and build processes, where each submodule can be built and deployed independently if needed, yet still be part of the larger, overarching project structure.
 
-JDK Setup and Build Preparation: The workflow sets up the Java Development Kit (JDK) environment to compile the Java application. It then proceeds to install dependencies and build the application using Maven.
+Child pom.xml Files in Project Folders: Each project folder within the src directory should contain its own pom.xml file. These child pom.xml files define the configuration, dependencies, and build lifecycle specific to each submodule. They inherit shared configurations from the parent pom.xml, ensuring consistency across the project while allowing for module-specific customizations.
 
-Reading Bucket Properties:
+Standardized Folder Structure for Artifact Upload: The pipeline's script for uploading build artifacts (JARs) to an AWS S3 bucket expects a specific folder structure to correctly identify and fetch the artifacts. The script likely traverses the target directories within the project folders to find the compiled JAR files. This standardized structure ensures that the script can reliably locate and upload the necessary artifacts without manual intervention or custom configurations for each project.
 
-The workflow reads a bucket.properties file located within the cloned repository. This file contains mappings of deployment environments to their respective AWS S3 bucket names and paths where the artifacts should be uploaded.
-It uses shell scripting to parse the bucket.properties file and extract the bucket and path values for the current deployment environment (dev, qa, prod, etc.). These values are then exported as environment variables for use in subsequent steps.
-Uploading Artifacts to S3:
-
-After the build process, the workflow iterates over the build artifacts (e.g., JAR files) located in the target directory of the application.
-Using the AWS CLI, it uploads these artifacts to the specified AWS S3 bucket and path, leveraging the environment variables set from the bucket.properties file. This step is crucial for storing the build outputs in a centralized location, accessible for deployment or further processing.
+By adhering to this setup and structure, you ensure that the ADL CICD Java Build and Deployment Pipeline can be applied uniformly across all deployments. This standardization simplifies the CI/CD process, making it more manageable and scalable, especially when dealing with multiple projects or services within the same organization. It also facilitates better collaboration and understanding among teams, as everyone follows the same organizational and build practices.
