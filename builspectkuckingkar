@@ -1,11 +1,15 @@
-Yes, for the deployment process outlined in the ADL CICD Java Build and Deployment Pipeline to work properly, client repositories need to adhere to a specific setup and structure. This standardization is essential for ensuring that the pipeline operates efficiently and consistently across different projects. Here's a breakdown of the required setup:
-
-Parent pom.xml in the Root Directory: The root directory of each client repository should contain a parent pom.xml file. This Maven Project Object Model file is crucial for defining project-wide configurations, dependencies, and the relationship between submodule projects. It acts as an anchor for the build process, enabling the Maven build system to compile and package the entire project and its modules correctly.
-
-Project Folders in the src Directory: Within the src directory, there should be several project folders, each potentially representing a Maven submodule or a specific component of the overall application. This organization allows for modular development and build processes, where each submodule can be built and deployed independently if needed, yet still be part of the larger, overarching project structure.
-
-Child pom.xml Files in Project Folders: Each project folder within the src directory should contain its own pom.xml file. These child pom.xml files define the configuration, dependencies, and build lifecycle specific to each submodule. They inherit shared configurations from the parent pom.xml, ensuring consistency across the project while allowing for module-specific customizations.
-
-Standardized Folder Structure for Artifact Upload: The pipeline's script for uploading build artifacts (JARs) to an AWS S3 bucket expects a specific folder structure to correctly identify and fetch the artifacts. The script likely traverses the target directories within the project folders to find the compiled JAR files. This standardized structure ensures that the script can reliably locate and upload the necessary artifacts without manual intervention or custom configurations for each project.
-
-By adhering to this setup and structure, you ensure that the ADL CICD Java Build and Deployment Pipeline can be applied uniformly across all deployments. This standardization simplifies the CI/CD process, making it more manageable and scalable, especially when dealing with multiple projects or services within the same organization. It also facilitates better collaboration and understanding among teams, as everyone follows the same organizational and build practices.
+ for version_item in "${version_array[@]}"
+  do
+    # Do a little error handling
+    is_matched_comment_pattern=$([[ $version_item =~ ^# ]] && echo 0 || echo 1)
+    if [ $is_matched_comment_pattern -eq 0 ]
+    then
+      echo $version_item >> ${version_path}/.tmp_version
+      continue
+    fi
+    is_matched_pattern=$([[ $version_item =~ ^version=[0-9]*\.[0-9]*\.[0-9]* ]] && echo 0 || echo 1)
+    if [ $is_matched_pattern -ne 0 ]
+    then
+      log_error "The semantic version in the file does not match the proper pattern" >&2
+      return 1
+    fi
