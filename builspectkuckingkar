@@ -13,3 +13,7 @@
       log_error "The semantic version in the file does not match the proper pattern" >&2
       return 1
     fi
+WHy I am getting the below error?
+
+$ bump_version patch adl-interactns-web-etl/
+[2024-03-08::17:34:11:IST)] [ERROR] The semantic version in the file does not match the proper pattern
