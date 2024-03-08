@@ -1,45 +1,16 @@
-name: Check Pull Request Branches
+Input Parameters: The workflow is designed to accept various inputs including the repository name, branch, and deployment environment. These inputs dictate the source code to be used and the target environment for deployment.
 
-on:
-  pull_request:
-    branches: [ master ]
-    types: [opened, reopened, edited]
-    
-  workflow_call:
+Environment Setup: Early in the workflow, environment variables are set using inputs and secrets. This setup includes defining variables for the repository name, branch, deployment environment, and credentials for accessing resources like GitHub and AWS.
 
-jobs:
-  adl-cicd-check-pull-request:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check Branches
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          echo "Pull Request on $GITHUB_REPOSITORY $GITHUB_HEAD_REF into $GITHUB_BASE_REF"
-          base_branch_category=${GITHUB_BASE_REF%%/*}
-          head_branch_category=${GITHUB_HEAD_REF%%/*}
-          if [[ ${base_branch_category} == "master" ]]
-          then
-            if [[ "${head_branch_category}" == "feature" || "${head_branch_category}" == "hotfix" ]]
-            then
-              echo "Merging a ${head_branch_category} branch into ${base_branch_category} is allowed"
-              if [[ "${head_branch_category}" == "hotfix" ]]
-              then
-                num_open_pr=$(gh api /repos/$GITHUB_REPOSITORY/pulls?state=open\&base=$GITHUB_BASE_REF | jq "keys | length")
-                echo "Number of open PRs against master: ${num_open_pr}"
-                if [[ "${num_open_pr}" -gt 1 ]];
-                then
-                  echo "Only 1 PR is allowed to be open at a time for hotfix branches"
-                  exit 1
-                fi
-              fi
+Cloning Repositories: Based on the deployment environment (qa, dev, prod, etc.), the workflow clones the specific branch of the repository that needs to be built and deployed. This is crucial for ensuring that the correct version of the application is being processed.
 
-              exit 0
-            else
-              echo "Merging a non-feature/hotfix branch into $GITHUB_BASE_REF is not allowed"
-              exit 1
-            fi
-          fi
+JDK Setup and Build Preparation: The workflow sets up the Java Development Kit (JDK) environment to compile the Java application. It then proceeds to install dependencies and build the application using Maven.
 
-          echo "Merging into master is only allowed from feature or hotfix branches"
-          exit 1
+Reading Bucket Properties:
+
+The workflow reads a bucket.properties file located within the cloned repository. This file contains mappings of deployment environments to their respective AWS S3 bucket names and paths where the artifacts should be uploaded.
+It uses shell scripting to parse the bucket.properties file and extract the bucket and path values for the current deployment environment (dev, qa, prod, etc.). These values are then exported as environment variables for use in subsequent steps.
+Uploading Artifacts to S3:
+
+After the build process, the workflow iterates over the build artifacts (e.g., JAR files) located in the target directory of the application.
+Using the AWS CLI, it uploads these artifacts to the specified AWS S3 bucket and path, leveraging the environment variables set from the bucket.properties file. This step is crucial for storing the build outputs in a centralized location, accessible for deployment or further processing.
