@@ -1,25 +1,110 @@
-def get_failure_details(self, pipeline_name):
-    """Fetch details on why a pipeline execution failed."""
-    try:
-        response = self.codepipeline.get_pipeline_execution(pipelineName=pipeline_name, pipelineExecutionId=self.latest_execution_id)
-        details = []
+# DO NOT MODIFY OR DELETE THIS WORKFLOW!!
 
-        # Adjusting to correctly access stages from the pipeline execution details
-        # The correct key is 'stages' based on the documentation and typical API response structure
-        if 'pipelineExecution' in response and 'stages' in response['pipelineExecution']:
-            stages = response['pipelineExecution']['stages']
-            for stage in stages:
-                stage_name = stage['name']
-                actions = stage.get('actionStates', [])
-                for action in actions:
-                    if 'latestExecution' in action and 'status' in action['latestExecution'] and action['latestExecution']['status'] == 'Failed':
-                        error_details = action['latestExecution'].get('errorDetails', {})
-                        message = error_details.get('message', 'No error message provided.')
-                        details.append("Stage '{0}' failed: {1}".format(stage_name, message))
-        else:
-            return ["Failed to retrieve pipeline execution stages or stages key not found in response."]
-        
-        return details if details else ["No detailed error message found."]
-    except Exception as e:
-        self.logger.error("Failed to fetch pipeline failure details: {0}".format(e))
-        return []
+name: ADL CICD Java Build & Deployment Pipeline
+
+on:
+  pull_request:
+    branches: [ master ]
+    types: [opened, reopened, edited]
+  push:
+    branches: [master, feature/*, hotfix/* ]
+    paths-ignore:
+      - '.version'
+      - '.github/**'
+      - 'Explore/**'
+      - 'README.md'
+      - 'CODEOWNERS'
+      - '.group'
+  workflow_dispatch:
+    inputs:
+      deploy_env:
+        description: 'qa deployment'
+        required: true
+        type: choice
+        options:
+          - 'qa'
+      feature_branch_name:
+        description: 'Enter the branch (e.g., feature/your-branch-name)'
+        required: true
+        default: 'feature/your-branch-name'  
+jobs:
+  adl-cicd-check-pull-request:
+    if: github.event_name == 'pull_request'
+    uses: AlightEngineering/adl-deploy-cicd/.github/workflows/adl-cicd-check-pull-request.yml@master
+    secrets: inherit
+
+  adl-cicd-prod-approval:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    environment: prod
+    steps:
+      - name: Await Prod Deployment Approval
+        run: echo "Awaiting approval for Prod deployment . . ." 
+
+  adl-cicd-hotfix-approval:
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/heads/hotfix/')
+    runs-on: ubuntu-latest
+    environment: hotfix
+    steps:
+      - name: Await Hotfix Deployment Approval
+        run: echo "Awaiting approval for hotfix deployment . . ." 
+
+  adl-cicd-dev-deploy-phase:
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/heads/feature/')
+    uses: AlightEngineering/adl-deploy-cicd/.github/workflows/adl-java-build-and-deploy-phase.yml@feature/ADLCICD-451
+    secrets: inherit
+    with:
+      event_repo_name: ${{ github.repository }}
+      event_repo_branch: ${{ github.ref_name }}
+      deploy_env: dev
+
+  adl-cicd-qa-deploy-phase:
+    if: github.event_name == 'workflow_dispatch' && startsWith(github.event.inputs.feature_branch_name, 'feature/') && github.event.inputs.deploy_env == 'qa'
+    uses: AlightEngineering/adl-deploy-cicd/.github/workflows/adl-java-build-and-deploy-phase.yml@feature/ADLCICD-451
+    secrets: inherit
+    with:
+      event_repo_name: ${{ github.repository }}
+      event_repo_branch: ${{ github.ref_name }}
+      deploy_env: qa
+      
+  adl-cicd-qc-deploy-phase:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    uses: AlightEngineering/adl-deploy-cicd/.github/workflows/adl-java-build-and-deploy-phase.yml@feature/ADLCICD-451
+    secrets: inherit
+    with:
+      event_repo_name: ${{ github.repository }}
+      event_repo_branch: ${{ github.ref_name }}
+      deploy_env: qc
+      
+  adl-cicd-prod-deploy-phase:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    uses: AlightEngineering/adl-deploy-cicd/.github/workflows/adl-java-build-and-deploy-phase.yml@feature/ADLCICD-451
+    secrets: inherit
+    needs: [adl-cicd-prod-approval, adl-cicd-qc-deploy-phase ]
+    with:
+      event_repo_name: ${{ github.repository }}
+      event_repo_branch: ${{ github.ref_name }}
+      deploy_env: prod
+
+  adl-cicd-hotfix-phase:
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/heads/hotfix/')
+    needs: adl-cicd-hotfix-approval
+    uses: AlightEngineering/adl-deploy-cicd/.github/workflows/adl-java-build-and-deploy-phase.yml@feature/ADLCICD-451
+    secrets: inherit
+    with:
+      event_repo_name: ${{ github.repository }}
+      event_repo_branch: ${{ github.ref_name }}
+      deploy_env: prod
+
+  adl-log-event:
+    runs-on: ubuntu-latest
+    steps:
+      - name: GitHub Event Name
+        run: echo ${{ github.event_name }}
+      - name: Check Feature Branch 
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          if [[ "${{ github.event.inputs.feature_branch_name }}" != feature/* ]]; then
+            echo "Error: The feature_branch_name is an invalid branch and must start with 'feature/'."
+            exit 1
+          fi
