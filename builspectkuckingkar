@@ -1,40 +1,45 @@
-ADL CICD Java Build & Deployment Pipeline Documentation
-Overview
-This documentation outlines the ADL CICD Java Build & Deployment Pipeline, designed to automate the build and deployment process for Java applications within the client repositories, leveraging workflows from the centralized CICD repository. The workflow is triggered by specific GitHub events such as pull_request and push actions on branches, and manual triggers through workflow_dispatch.
+name: Check Pull Request Branches
 
-Workflow Triggers
-The pipeline is configured to activate under the following conditions:
+on:
+  pull_request:
+    branches: [ master ]
+    types: [opened, reopened, edited]
+    
+  workflow_call:
 
-Pull Request Events: On opened, reopened, and edited pull requests targeting the master branch.
-Push Events: On commits pushed to master, feature/*, and hotfix/* branches, excluding changes to specific paths such as .version, .github/**, Explore/**, README.md, CODEOWNERS, and .group.
-Manual Dispatch (workflow_dispatch): Allows manual triggering of the workflow, specifying the deployment environment (qa) and the feature branch name.
-Jobs and Conditions
-Check Pull Request
-Trigger: Pull request events.
-Action: Utilizes a predefined workflow from the CICD repository to check the pull request.
-Production and Hotfix Approval
-Trigger: Push events to master or hotfix/* branches.
-Action: Awaits manual approval before proceeding with the deployment to production or hotfix environments.
-Development, QA, and QC Deployment Phases
-Trigger: Push events to feature/* branches, manual dispatch for QA, and push to master for QC.
-Action: Utilizes a predefined workflow from the CICD repository for building and deploying to the respective environments.
-Production Deployment
-Trigger: Following QC deployment and production approval.
-Action: Proceeds with the production deployment phase using the specified workflow from the CICD repository.
-External Workflow: ADL CICD Java Build and Deploy
-The external workflow, referenced in various job steps, performs the actual build and deployment tasks. It is triggered via workflow_call and accepts several inputs such as the repository name, branch, and deployment environment.
+jobs:
+  adl-cicd-check-pull-request:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check Branches
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "Pull Request on $GITHUB_REPOSITORY $GITHUB_HEAD_REF into $GITHUB_BASE_REF"
+          base_branch_category=${GITHUB_BASE_REF%%/*}
+          head_branch_category=${GITHUB_HEAD_REF%%/*}
+          if [[ ${base_branch_category} == "master" ]]
+          then
+            if [[ "${head_branch_category}" == "feature" || "${head_branch_category}" == "hotfix" ]]
+            then
+              echo "Merging a ${head_branch_category} branch into ${base_branch_category} is allowed"
+              if [[ "${head_branch_category}" == "hotfix" ]]
+              then
+                num_open_pr=$(gh api /repos/$GITHUB_REPOSITORY/pulls?state=open\&base=$GITHUB_BASE_REF | jq "keys | length")
+                echo "Number of open PRs against master: ${num_open_pr}"
+                if [[ "${num_open_pr}" -gt 1 ]];
+                then
+                  echo "Only 1 PR is allowed to be open at a time for hotfix branches"
+                  exit 1
+                fi
+              fi
 
-Key Steps:
-Repository Cloning: Depending on the deployment environment, it clones the relevant branch of the specified repository for the build process.
-JDK Setup: Sets up Java Development Kit (JDK) version 1.8 for building the Java application.
-Version Incrementation: For QC deployments, increments the application version and tags the repository accordingly.
-AWS Credential Configuration: Configures AWS credentials for accessing AWS services.
-Dependency Installation and Build Process: Installs required dependencies and builds the Java application using Maven.
-Artifact Upload: Uploads the build artifacts (JAR files) to an AWS S3 bucket based on environment-specific configurations.
-Important Notes
-DO NOT MODIFY OR DELETE this workflow file to ensure the integrity and functionality of the build and deployment process.
-Confidential and sensitive information (e.g., AWS credentials) is handled securely via GitHub secrets and environment variables.
-Conclusion
-This ADL CICD Java Build & Deployment Pipeline facilitates a streamlined and automated process for building and deploying Java applications. By leveraging external workflows from a centralized CICD repository, it ensures consistency, efficiency, and security across the deployment pipeline.
+              exit 0
+            else
+              echo "Merging a non-feature/hotfix branch into $GITHUB_BASE_REF is not allowed"
+              exit 1
+            fi
+          fi
 
-This template provides a structured overview of the workflow, its triggers, the jobs it performs, and the steps involved in external workflows. It aims to clarify the process for users and contributors, ensuring they understand how to interact with and benefit from the pipeline.
+          echo "Merging into master is only allowed from feature or hotfix branches"
+          exit 1
