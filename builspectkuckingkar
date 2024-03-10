@@ -1,22 +1,26 @@
-resource "aws_cloudwatch_metric_alarm" "search_request_latency_alarm" {
-  alarm_name          = "SearchRequestLatencyAlarm"
-  comparison_operator = "GreaterThanOrEqualToThreshold"
-  evaluation_periods  = 3
-  metric_name         = "SearchRequestLatency"
-  namespace           = "AWS/ES"
-  period              = 300 # 5 minutes
-  statistic           = "Average"
-  threshold           = 500 # milliseconds
-
-  dimensions = {
-    DomainName = "your-opensearch-domain-name"
-  }
-
-  alarm_description = "Alarm for high search request latency"
-  alarm_actions     = ["arn:aws:sns:us-west-2:123456789012:example-topic"]
-
-  tags = {
-    Name        = "SearchRequestLatencyAlarm"
-    Environment = "production"
-  }
+resource "aws_opensearchserverless_security_policy" "oss_security_network_policy_vpc_access" {
+  name        = var.oss_security_network_policy_vpc_access_name
+  type        = "network"
+  description = "VPC access"
+  policy = jsonencode([
+    {
+      Description = "VPC access to collection and Dashboards endpoint for ${var.oss_collection_name} collection",
+      Rules = [
+        {
+          ResourceType = "collection",
+          Resource = [
+            "collection/${var.oss_collection_name}"
+          ]
+        },
+        {
+          ResourceType = "dashboard"
+          Resource = [
+            "collection/${var.oss_collection_name}"
+          ]
+        }
+      ],
+      AllowFromPublic = false,
+      SourceVPCEs = var.source_vpc_list
+    }
+  ])
 }
