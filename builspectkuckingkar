@@ -1,19 +1,22 @@
- for version_item in "${version_array[@]}"
-  do
-    # Do a little error handling
-    is_matched_comment_pattern=$([[ $version_item =~ ^# ]] && echo 0 || echo 1)
-    if [ $is_matched_comment_pattern -eq 0 ]
-    then
-      echo $version_item >> ${version_path}/.tmp_version
-      continue
-    fi
-    is_matched_pattern=$([[ $version_item =~ ^version=[0-9]*\.[0-9]*\.[0-9]* ]] && echo 0 || echo 1)
-    if [ $is_matched_pattern -ne 0 ]
-    then
-      log_error "The semantic version in the file does not match the proper pattern" >&2
-      return 1
-    fi
-WHy I am getting the below error?
+resource "aws_cloudwatch_metric_alarm" "search_request_latency_alarm" {
+  alarm_name          = "SearchRequestLatencyAlarm"
+  comparison_operator = "GreaterThanOrEqualToThreshold"
+  evaluation_periods  = 3
+  metric_name         = "SearchRequestLatency"
+  namespace           = "AWS/ES"
+  period              = 300 # 5 minutes
+  statistic           = "Average"
+  threshold           = 500 # milliseconds
 
-$ bump_version patch adl-interactns-web-etl/
-[2024-03-08::17:34:11:IST)] [ERROR] The semantic version in the file does not match the proper pattern
+  dimensions = {
+    DomainName = "your-opensearch-domain-name"
+  }
+
+  alarm_description = "Alarm for high search request latency"
+  alarm_actions     = ["arn:aws:sns:us-west-2:123456789012:example-topic"]
+
+  tags = {
+    Name        = "SearchRequestLatencyAlarm"
+    Environment = "production"
+  }
+}
