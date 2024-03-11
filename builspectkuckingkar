@@ -1,39 +1,22 @@
-locals {
-  base_rules = [
-    {
-      ResourceType = "collection",
-      Resource = [
-        "collection/${var.oss_collection_name}"
-      ]
-    }
-  ]
+resource "aws_cloudwatch_metric_alarm" "search_request_latency" {
+  alarm_name          = "search-request-latency-high"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = "1"
+  metric_name         = "SearchRequestLatency"  # Assuming this metric is available
+  namespace           = "AWS/OpenSearchServerless"  # Hypothetical namespace
+  period              = "60"
+  statistic           = "Average"
+  threshold           = "1.0"
 
-  dashboard_rules = var.enable_dashboard_access ? [
-    {
-      ResourceType = "dashboard",
-      Resource = [
-        "collection/${var.oss_collection_name}"
-      ]
-    }
-  ] : []
+  # Assuming dimensions or identifiers for serverless resources are available
+  # dimensions = {
+  #   ResourceId = aws_opensearch_serverless_resource.example.id  # Hypothetical reference
+  # }
 
-  combined_rules = concat(local.base_rules, local.dashboard_rules)
+  alarm_description = "This metric monitors high search request latency"
+  actions_enabled   = true
+
+  # Specify any actions
 }
 
-resource "aws_opensearchserverless_security_policy" "oss_security_network_policy_vpc_access" {
-  name        = var.oss_security_network_policy_vpc_access_name
-  type        = "network"
-  description = "VPC access"
-  policy = jsonencode([{
-    Description      = "VPC access to collection and Dashboards endpoint for ${var.oss_collection_name} collection",
-    AllowFromPublic = false,
-    SourceVPCEs     = var.source_vpc_list,
-    Rules           = local.combined_rules
-  }])
-}
-
-variable "enable_dashboard_access" {
-  description = "A boolean flag to enable or disable dashboard access"
-  type        = bool
-  default     = false # or true, depending on what you want the default to be
-}
+# Similarly define alarms for SearchOCU and SearchRequestRate if available
