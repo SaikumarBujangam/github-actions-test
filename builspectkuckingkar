@@ -1,26 +1,32 @@
-    resource "aws_opensearchserverless_security_policy" "oss_security_network_policy_vpc_access" {
+resource "aws_opensearchserverless_security_policy" "oss_security_network_policy_vpc_access" {
   name        = var.oss_security_network_policy_vpc_access_name
   type        = "network"
   description = "VPC access"
-  policy = jsonencode([
-    {
-      Description = "VPC access to collection and Dashboards endpoint for ${var.oss_collection_name} collection",
-      Rules = [
-        {
-          ResourceType = "collection",
-          Resource = [
-            "collection/${var.oss_collection_name}"
-          ]
-        },
-        {
+  policy = jsonencode([{
+    Description      = "VPC access to collection and Dashboards endpoint for ${var.oss_collection_name} collection",
+    AllowFromPublic = false,
+    SourceVPCEs     = var.source_vpc_list
+    Rules = [
+      {
+        ResourceType = "collection",
+        Resource = [
+          "collection/${var.oss_collection_name}"
+        ]
+      },
+      dynamic "rule" {
+        for_each = var.enable_dashboard_access ? [1] : []
+        content {
           ResourceType = "dashboard"
           Resource = [
             "collection/${var.oss_collection_name}"
           ]
         }
-      ],
-      AllowFromPublic = false,
-      SourceVPCEs = var.source_vpc_list
-    }
-  ])
+      }
+    ]
+  }])
+}
+
+variable "enable_dashboard_access" {
+  description = "A boolean flag to enable or disable dashboard access"
+  type        = bool
 }
