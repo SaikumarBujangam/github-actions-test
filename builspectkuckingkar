@@ -1,11 +1,29 @@
-  on ..\infra-scripts\user-infra-services\opensearch-serverless\oss_policies.tf line 63, in resource "aws_opensearchserverless_security_policy" "oss_security_network_policy_vpc_access":
-│   56:     Rules = [
-│   57:       {
-│   58:         ResourceType = "collection",
-│   59:         Resource = [
-│   60:           "collection/${var.oss_collection_name}"
-│   61:         ]
-│   62:       },
-│   63:       dynamic "rule" {
-│
-│ Expected a comma to mark the beginning of the next item.
+resource "aws_opensearchserverless_security_policy" "oss_security_network_policy_vpc_access" {
+  name        = var.oss_security_network_policy_vpc_access_name
+  type        = "network"
+  description = "VPC access"
+  policy = jsonencode([{
+    Description      = "VPC access to collection and Dashboards endpoint for ${var.oss_collection_name} collection",
+    AllowFromPublic = false,
+    SourceVPCEs     = var.source_vpc_list,
+    Rules = [
+      {
+        ResourceType = "collection",
+        Resource = [
+          "collection/${var.oss_collection_name}"
+        ]
+      }
+      # No comma needed here before dynamic block
+    ] + (var.enable_dashboard_access ? [{
+      ResourceType = "dashboard",
+      Resource = [
+        "collection/${var.oss_collection_name}"
+      ]
+    }] : [])
+  }])
+}
+
+variable "enable_dashboard_access" {
+  description = "A boolean flag to enable or disable dashboard access"
+  type        = bool
+}
