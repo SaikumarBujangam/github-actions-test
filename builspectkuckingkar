@@ -1,22 +1,24 @@
-resource "aws_cloudwatch_metric_alarm" "search_request_latency" {
-  alarm_name          = "search-request-latency-high"
+resource "aws_cloudwatch_metric_alarm" "search_ocu_high" {
+  alarm_name          = "HighSearchOCU"
   comparison_operator = "GreaterThanThreshold"
   evaluation_periods  = "1"
-  metric_name         = "SearchRequestLatency"  # Assuming this metric is available
-  namespace           = "AWS/OpenSearchServerless"  # Hypothetical namespace
-  period              = "60"
-  statistic           = "Average"
-  threshold           = "1.0"
+  metric_name         = "SearchOCU"
+  namespace           = "AWS/OpenSearch"  # Adjust if AWS uses a different namespace for Serverless
+  period              = "300"  # 5 minutes, adjust based on your needs
+  statistic           = "Sum"
+  threshold           = 1000  # Example threshold, adjust based on your operational needs
 
-  # Assuming dimensions or identifiers for serverless resources are available
-  # dimensions = {
-  #   ResourceId = aws_opensearch_serverless_resource.example.id  # Hypothetical reference
-  # }
+  # Adjust dimensions according to how AWS exposes OpenSearch Serverless metrics
+  dimensions = {
+    # For OpenSearch Serverless, the dimension would likely differ from DomainName
+    # DomainName = "YourDomainName"  # This is for traditional OpenSearch domains
+  }
 
-  alarm_description = "This metric monitors high search request latency"
+  alarm_description = "This alarm monitors high search operation count units (OCU)."
   actions_enabled   = true
 
-  # Specify any actions
+  # Specify actions such as SNS topics for notifications
+  # alarm_actions = ["arn:aws:sns:region:account-id:sns-topic-name"]
+  # ok_actions    = ["arn:aws:sns:region:account-id:sns-topic-name"]
+  # insufficient_data_actions = ["arn:aws:sns:region:account-id:sns-topic-name"]
 }
-
-# Similarly define alarms for SearchOCU and SearchRequestRate if available
