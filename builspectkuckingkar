@@ -1,19 +1,39 @@
-  on ..\infra-scripts\user-infra-services\opensearch-serverless\oss_policies.tf line 63, in resource "aws_opensearchserverless_security_policy" "oss_security_network_policy_vpc_access":
-│   56:     Rules = [
-│   57:       {
-│   58:         ResourceType = "collection",
-│   59:         Resource = [
-│   60:           "collection/${var.oss_collection_name}"
-│   61:         ]
-│   62:       }
-│   63:     ] + (var.enable_dashboard_access ? [{
-│   64:       ResourceType = "dashboard",
-│   65:       Resource = [
-│   66:         "collection/${var.oss_collection_name}"
-│   67:       ]
-│   68:     }] : [])
-│     ├────────────────
-│     │ var.enable_dashboard_access is a bool, known only after apply
-│     │ var.oss_collection_name is a string, known only after apply
-│
-│ Unsuitable value for right operand: number required.
+locals {
+  base_rules = [
+    {
+      ResourceType = "collection",
+      Resource = [
+        "collection/${var.oss_collection_name}"
+      ]
+    }
+  ]
+
+  dashboard_rules = var.enable_dashboard_access ? [
+    {
+      ResourceType = "dashboard",
+      Resource = [
+        "collection/${var.oss_collection_name}"
+      ]
+    }
+  ] : []
+
+  combined_rules = concat(local.base_rules, local.dashboard_rules)
+}
+
+resource "aws_opensearchserverless_security_policy" "oss_security_network_policy_vpc_access" {
+  name        = var.oss_security_network_policy_vpc_access_name
+  type        = "network"
+  description = "VPC access"
+  policy = jsonencode([{
+    Description      = "VPC access to collection and Dashboards endpoint for ${var.oss_collection_name} collection",
+    AllowFromPublic = false,
+    SourceVPCEs     = var.source_vpc_list,
+    Rules           = local.combined_rules
+  }])
+}
+
+variable "enable_dashboard_access" {
+  description = "A boolean flag to enable or disable dashboard access"
+  type        = bool
+  default     = false # or true, depending on what you want the default to be
+}
