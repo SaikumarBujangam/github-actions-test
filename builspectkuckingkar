@@ -1,25 +1,4 @@
-resource "aws_cloudwatch_dashboard" "opensearch_metrics_dashboard" {
-  dashboard_name = "OpenSearchMetricsDashboard"
-  dashboard_body = jsonencode({
-    widgets = [
-      {
-        type = "metric",
-        x    = 0,
-        y    = 0,
-        width  = 12,
-        height = 6,
-        properties = {
-          metrics = [
-            ["AWS/OpenSearch", "SearchRequestRate", "DomainName", "${aws_opensearch_domain.example.domain_name}"],
-            ["AWS/OpenSearch", "SearchRequestLatency", "DomainName", "${aws_opensearch_domain.example.domain_name}"],
-            ["AWS/OpenSearch", "SearchOCU", "DomainName", "${aws_opensearch_domain.example.domain_name}"]
-          ],
-          title = "OpenSearch Metrics",
-          view = "timeSeries",
-          stacked = false,
-          region = "us-east-1"  # Specify your region here
-        }
-      }
-    ]
-  })
-}
+python /d/Users/A1086139/git_repo/adl-awsdeploy-cicd/src/alight/foundation/app/deploy/lambdaupdate.py --base-arg-
+parser-config-file-location /d/Users/A1086139/git_repo/adl-awsdeploy-cicd/config --base-arg-parser-config-file-name serverless-build-args.json --base-re
+po-dir adl-foundation-etl --env-name d1 --data-product-name foundation --region us-east-1 --deployment-bucket adl-com-d1-all-codebase-us-east-1-wlxartd 
+--base-deploy-path lib --serverless-definition-file /d/Users/A1086139/git_repo/local/foundation/adl-foundation-etl/1.0.87/config/lambda_definition.json
