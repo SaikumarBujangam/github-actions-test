@@ -2,3 +2,31 @@ python /d/Users/A1086139/git_repo/adl-awsdeploy-cicd/src/alight/foundation/app/d
 parser-config-file-location /d/Users/A1086139/git_repo/adl-awsdeploy-cicd/config --base-arg-parser-config-file-name serverless-build-args.json --base-re
 po-dir adl-foundation-etl --env-name d1 --data-product-name foundation --region us-east-1 --deployment-bucket adl-com-d1-all-codebase-us-east-1-wlxartd 
 --base-deploy-path lib --serverless-definition-file /d/Users/A1086139/git_repo/local/foundation/adl-foundation-etl/1.0.87/config/lambda_definition.json
+
+{
+  "environment": "dev",
+  "data_group_name": "foundation",
+  "default_region": "us-east-1",
+  "deployment_group_type": [
+    {
+      "name": "Lambda Function",
+      "type": "lambda",
+      "lambda_list": [
+        {
+          "name": "pipelinetest",
+          "key": "trigger-pipelinetest",
+          "function_root_path": "src/alight/foundation/lambda/pipelinetest",
+          "update": true,
+          "createzip": true
+        },
+        {
+          "name": "pipelinetest1",
+          "key": "trigger-pipelinetest1",
+          "function_root_path": "src/alight/foundation/lambda/pipelinetest1",
+          "update": true,
+          "createzip": true
+        }
+      ]
+    }
+  ]
+}
