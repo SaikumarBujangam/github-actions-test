@@ -1,35 +1,35 @@
-python /d/Users/A1086139/git_repo/adl-awsdeploy-cicd/src/alight/foundation/app/deploy/lambdaupdate.py --base-arg-
-parser-config-file-location /d/Users/A1086139/git_repo/adl-awsdeploy-cicd/config --base-arg-parser-config-file-name serverless-build-args.json --base-re
-po-dir adl-foundation-etl --env-name d1 --data-product-name foundation --region us-east-1 --deployment-bucket adl-com-d1-all-codebase-us-east-1-wlxartd 
---base-deploy-path lib --serverless-definition-file /d/Users/A1086139/git_repo/local/foundation/adl-foundation-etl/1.0.87/config/lambda_definition.json
+import os
+import boto3
+import time
+from alight.foundation.util.logging.standardlogger import StandardLogger
 
-{
-  "environment": "dev",
-  "data_group_name": "foundation",
-  "default_region": "us-east-1",
-  "deployment_group_type": [
-    {
-      "name": "Lambda Function",
-      "type": "lambda",
-      "lambda_list": [
-        {
-          "name": "pipelinetest",
-          "key": "trigger-pipelinetest",
-          "function_root_path": "src/alight/foundation/lambda/pipelinetest",
-          "update": true,
-          "createzip": true
-        },
-        {
-          "name": "pipelinetest1",
-          "key": "trigger-pipelinetest1",
-          "function_root_path": "src/alight/foundation/lambda/pipelinetest1",
-          "update": true,
-          "createzip": true
-        }
-      ]
-    }
-  ]
-}
+class PipelineCheck:
+    def __init__(self):
+        self.logger = StandardLogger().getDefaultLogger()
+        self.codepipeline = boto3.client('codepipeline')
+        self.app_subject_area = os.environ.get('APP_SUBJECT_AREA')
+        self.lifecycle_env = os.environ.get('lifecycle_env')
 
+    def check_pipeline_status(self, wait_time=30, max_attempts=120):
+        pipeline_name_prefix = "adl-com-{}".format(self.lifecycle_env)
+        pipeline_suffix = "codepipeline"
+        adjusted_app_subject_area = self.app_subject_area.replace("adl-", "")
+        pipeline_name = "{}-{}-{}".format(pipeline_name_prefix, adjusted_app_subject_area, pipeline_suffix)
+        attempt = 0
+        while attempt < max_attempts:
+            response = self.codepipeline.list_pipeline_executions(pipelineName=pipeline_name, maxResults=1)
+            if not response['pipelineExecutionSummaries']:
+                raise Exception("No executions found for the pipeline.")
+            latest_execution = response['pipelineExecutionSummaries'][0]
+            execution_id = latest_execution['pipelineExecutionId']
 
-Now I need a helper python, that will monitor the lambda functon after the zip file has been deployed in s3 bucket. This should return back if it is success or failure.
+            execution_details = self.codepipeline.get_pipeline_execution(pipelineName=pipeline_name, pipelineExecutionId=execution_id)
+            status = execution_details['pipelineExecution']['status']
+
+            if status in ['Succeeded', 'Failed', 'Stopped']:
+                return status
+            else:
+                time.sleep(wait_time)
+                attempt += 1
+
+        raise TimeoutError("Max attempts reached while waiting for pipeline to complete.")
