@@ -30,3 +30,6 @@ po-dir adl-foundation-etl --env-name d1 --data-product-name foundation --region 
     }
   ]
 }
+
+
+Now I need a helper python, that will monitor the lambda functon after the zip file has been deployed in s3 bucket. This should return back if it is success or failure.
