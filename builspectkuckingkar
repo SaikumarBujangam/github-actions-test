@@ -3,7 +3,7 @@ name: Check Pull Request Branches
 on:
   pull_request:
     branches: [ master ]
-    types: [opened, reopened, edited]
+    types: [opened, reopened, edited, synchronize]
     
   workflow_call:
 
