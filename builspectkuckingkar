@@ -1,108 +1,45 @@
-python /d/Users/A1086139/git_repo/adl-awsdeploy-cicd/src/alight/foundation/app/deploy/lambdaupdate.py --base-arg-
-parser-config-file-location /d/Users/A1086139/git_repo/adl-awsdeploy-cicd/config --base-arg-parser-config-file-name serverless-build-args.json --base-re
-po-dir adl-foundation-etl --env-name d1 --data-product-name foundation --region us-east-1 --deployment-bucket adl-com-d1-all-codebase-us-east-1-wlxartd 
---base-deploy-path lib --serverless-definition-file /d/Users/A1086139/git_repo/local/foundation/adl-foundation-etl/1.0.87/config/lambda_definition.json
+name: Check Pull Request Branches
 
-[2024-03-11 12:50:13,677] [lambdautil] [consolelogger] [upload:49] [INFO]: "Uploaded lambda archive: .\adl-com-d1-foundation-pipelinetest1.zip to bucket
- adl-com-d1-all-codebase-us-east-1-wlxartd: to path: lib/foundation/adl-com-d1-foundation-pipelinetest1/deploy.zip"
+on:
+  pull_request:
+    branches: [ master ]
+    types: [opened, reopened, edited]
+    
+  workflow_call:
 
-import sys
-import os
-import json
+jobs:
+  adl-cicd-check-pull-request:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check Branches
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "Pull Request on $GITHUB_REPOSITORY $GITHUB_HEAD_REF into $GITHUB_BASE_REF"
+          base_branch_category=${GITHUB_BASE_REF%%/*}
+          head_branch_category=${GITHUB_HEAD_REF%%/*}
+          if [[ ${base_branch_category} == "master" ]]
+          then
+            if [[ "${head_branch_category}" == "feature" || "${head_branch_category}" == "hotfix" ]]
+            then
+              echo "Merging a ${head_branch_category} branch into ${base_branch_category} is allowed"
+              if [[ "${head_branch_category}" == "hotfix" ]]
+              then
+                num_open_pr=$(gh api /repos/$GITHUB_REPOSITORY/pulls?state=open\&base=$GITHUB_BASE_REF | jq "keys | length")
+                echo "Number of open PRs against master: ${num_open_pr}"
+                if [[ "${num_open_pr}" -gt 1 ]];
+                then
+                  echo "Only 1 PR is allowed to be open at a time for hotfix branches"
+                  exit 1
+                fi
+              fi
 
-from alight.foundation.aws.lambdautil import LambdaUtil
-from alight.foundation.util.argparsebuilder import GenerateParser
-from alight.foundation.util.deployment import DeploymentGroup
-from alight.foundation.util.logging.standardlogger import StandardLogger
+              exit 0
+            else
+              echo "Merging a non-feature/hotfix branch into $GITHUB_BASE_REF is not allowed"
+              exit 1
+            fi
+          fi
 
-if __name__ == "__main__":
-    logger = StandardLogger().getDefaultLogger()
-    try:
-        command_args = GenerateParser().build()
-        commandFile =  os.path.join(command_args.baseRepoDir,command_args.serverlessDefinitionFile)
-        with open(commandFile) as deployment_group_file:
-            deployment_dict = json.load(deployment_group_file)
-
-        baseRepoName=command_args.baseRepoDir
-        dataProductName=command_args.dataProductName
-        environment=command_args.envName
-        bucketName = command_args.deploymentBucket
-        deployment_group = DeploymentGroup(config_dict=deployment_dict, deployment_type="lambda", deployment_list_name="lambda_list")
-        lambda_config_list = deployment_group.get_deployment_list()
-
-        for lambda_config in lambda_config_list:
-            try:
-                lambda_name = lambda_config['name']
-                lambda_update = lambda_config['update']
-                zip_creation = lambda_config['createzip']
-                deploy_pkg_name = lambda_config.get("pkg_name", "deploy.zip")
-                lambda_root_path = os.path.join(baseRepoName, lambda_config['function_root_path'])
-                lambda_function_name = "adl-com-{}-{}-{}".format(environment,dataProductName,lambda_name)
-                serverlessCompute = LambdaUtil(region=command_args.region, function_name=lambda_function_name,
-                                               function_root_path=lambda_root_path,
-                                               destination_path="{}/{}/{}".format(command_args.baseDeployPath, dataProductName, lambda_function_name),
-                                               deploy_pkg_name=deploy_pkg_name, local_bundle_build_location=".",
-                                               deployment_bucket=bucketName,
-                                               generate_pkg_flag=zip_creation)
-                serverlessCompute.update_function()
-                serverlessCompute.upload()
-            except Exception as e:
-                logger.error(e)
-    except Exception as e:
-        logger.error(e)
-        sys.exit(1)
-
-
-import boto3
-import os
-from alight.foundation.util.logging.standardlogger import StandardLogger
-from alight.foundation.util.bundle import ZipBundler
-
-
-class LambdaUtil:
-    logger = StandardLogger().getDefaultLogger()
-    def __init__(self, region='us-east-1', function_name=None, function_root_path=None, deploy_pkg_name="deploy.zip", local_bundle_build_location=".", deployment_bucket=None, destination_path=None, generate_pkg_flag=True):
-         self.region = region
-         self._s3_client = boto3.client('s3', region_name=region)
-         self._lambda_client = boto3.client('lambda', region_name=region)
-         self._generate_pkg_flag = generate_pkg_flag
-         if (self._generate_pkg_flag):
-            self._zipFile = ZipBundler(bundle_name="{}.zip".format(function_name), bundle_location=local_bundle_build_location)
-         else:
-             self._zipFile = ZipBundler(bundle_name="{}".format(deploy_pkg_name), bundle_location=function_root_path, mode="r")
-         self.lambda_function_name = function_name
-         self.lambda_function_code_path = function_root_path
-         self.bucket_name = deployment_bucket
-         self._s3_target_path = "{}/{}".format(destination_path, deploy_pkg_name)
-
-    def _generate_pkg(self):
-        listOfFiles=[]
-        for (dirpath, dirnames, filenames) in os.walk(self.lambda_function_code_path):
-            listOfFiles += [os.path.join(dirpath, file) for file in filenames]
-
-        for file_path in listOfFiles:
-            file_name_parts = file_path.split(self.lambda_function_code_path)
-            self._zipFile.add_to_bundle(file=file_path, starting_path=file_name_parts[1])
-        self._zipFile.create()
-
-    def update_function(self):
-        if (self._generate_pkg_flag):
-            self._generate_pkg()
-        try:
-            response = self._lambda_client.update_function_code (
-                FunctionName=self.lambda_function_name,
-                ZipFile=self._zipFile.get_contents()
-            )
-            LambdaUtil.logger.info(response)
-        except Exception as e:
-            LambdaUtil.logger.error("Lambda update_function for {} failed".format(self.lambda_function_name))
-            raise e
-
-    def upload(self):
-        try:
-            self._s3_client.upload_file(self._zipFile.get_bundle_location(), self.bucket_name, self._s3_target_path)
-            LambdaUtil.logger.info("Uploaded lambda archive: {} to bucket {}: to path: {}".format(self._zipFile.get_bundle_location(), self.bucket_name, self._s3_target_path))
-            return True
-        except FileNotFoundError:
-            LambdaUtil.logger.error("Could not upload lambda archive: {} to bucket {}: to path: {}".format(self._zipFile.get_bundle_location(), self.bucket_name, self._s3_target_path))
-            return False
+          echo "Merging into master is only allowed from feature or hotfix branches"
+          exit 1
