@@ -1,1 +1,16 @@
-Write a program using re module that loops through the lines of a file or standard input (where each line contains a single word) and prints all words containing two adjacent vowels
+import re
+
+# This regex pattern matches words with at least two adjacent vowels
+vowel_pattern = re.compile(r'[aeiou]{2}', re.IGNORECASE)
+
+# Let's define a test function that will take a list of words and print those with adjacent vowels
+def test_adjacent_vowels(words):
+    for word in words:
+        if vowel_pattern.search(word):  # Check if the current word matches the pattern
+            print(word)
+
+# Sample data to test
+sample_words = ["loop", "pool", "peek", "book", "frown"]
+
+# Call the test function with the sample data
+test_adjacent_vowels(sample_words)
