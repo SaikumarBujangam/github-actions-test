@@ -2,10 +2,10 @@ import time
 
 def time_decorator(func):
     def wrapper(*args, **kwargs):
-        start_time = time.time()  # Record the start time
-        result = func(*args, **kwargs)  # Call the decorated function
-        end_time = time.time()  # Record the end time
-        execution_time = end_time - start_time  # Calculate execution time
+        start_time = time.time()
+        result = func(*args, **kwargs)
+        end_time = time.time()
+        execution_time = end_time - start_time 
         print(f"Executing {func.__name__} took {execution_time:.4f} seconds.")
         return result
     return wrapper
@@ -17,6 +17,4 @@ def example_function(n):
     for i in range(n):
         sum += i
     return sum
-
-# Call the decorated function
 print(example_function(1000000))
