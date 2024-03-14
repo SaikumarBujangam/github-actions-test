@@ -1,19 +1,4 @@
-try:
-    # This may cause a KeyboardInterrupt if the user presses Ctrl+C
-    input_value = input("Enter a number to divide 100 by: ")
-    result = 100 / int(input_value)  # This may cause an ArithmeticError if input_value is 0
-    print(f"100 divided by {input_value} is {result}")
-
-    # Trying to print a variable that has not been defined yet
-    print(f"The undefined variable's value is: {undefined_variable}")
-
-except KeyboardInterrupt:
-    print("Caught a KeyboardInterrupt!")
-except NameError as e:
-    print(f"Caught a NameError: {e}")
-except ArithmeticError as e:
-    print(f"Caught an ArithmeticError: {e}")
-else:
-    print("No exceptions were thrown.")
-finally:
-    print("This block is executed no matter what!")
+Translate each of the following English statements into a regular expression:
+a. Digit at the beginning of the string and a digit at the end of the string
+b. A string that contains only whitespace characters or word characters
+c. A string containing no whitespace characters
