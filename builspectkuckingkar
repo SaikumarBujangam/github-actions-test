@@ -1,23 +1,2 @@
-class FirstClass:
-    def testMethod(self):
-        print("FirstClass method called")
-
-class SecondClass(FirstClass):
-    def testMethod(self):
-        print("SecondClass method called")
-
-class ThirdClass(FirstClass):
-    def testMethod(self):
-        print("ThirdClass method called")
-
-class FourthClass(SecondClass, ThirdClass):
-    def testMethod(self):
-        super().testMethod()
-        print("FourthClass method called")
-
-# Create an instance of FourthClass
-obj = FourthClass()
-obj.testMethod()
-
-# Print the Method Resolution Order (MRO)
-print([cls.__name__ for cls in FourthClass.mro()])
+[7:24 PM] Saikumar Bujangam
+Implement a simple generator for Fibonacci series
