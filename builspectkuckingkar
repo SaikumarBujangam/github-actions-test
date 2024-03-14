@@ -1,1 +1,21 @@
-Write an iterator class that iterators over a sequence of values in the reverse direction
+class ReverseIterator:
+    def __init__(self, sequence):
+        self.sequence = sequence
+        self.index = len(sequence)
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        if self.index == 0:
+            raise StopIteration
+        self.index -= 1
+        return self.sequence[self.index]
+
+# Example usage:
+# Create an instance of the iterator with a list
+rev_iter = ReverseIterator([1, 2, 3, 4, 5])
+
+# Iterate over the sequence in reverse
+for item in rev_iter:
+    print(item)
