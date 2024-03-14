@@ -4,8 +4,5 @@ def fibonacci():
     for _ in range(count):
         yield a
         a, b = b, a + b
-
-# Example usage:
-# Call the generator and print the Fibonacci numbers
 for num in fibonacci():
     print(num)
