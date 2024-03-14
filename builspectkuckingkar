@@ -1,1 +1,23 @@
-Create a class named FirstClass and two classes named SecondClass and ThirdClass that inherits from FirstClass. Create class named FourthClass that inherits from Second and Third. Create a common method called testMethod in all the classes and provide the Method Resolution Order for the given hierarchy
+class FirstClass:
+    def testMethod(self):
+        print("FirstClass method called")
+
+class SecondClass(FirstClass):
+    def testMethod(self):
+        print("SecondClass method called")
+
+class ThirdClass(FirstClass):
+    def testMethod(self):
+        print("ThirdClass method called")
+
+class FourthClass(SecondClass, ThirdClass):
+    def testMethod(self):
+        super().testMethod()
+        print("FourthClass method called")
+
+# Create an instance of FourthClass
+obj = FourthClass()
+obj.testMethod()
+
+# Print the Method Resolution Order (MRO)
+print([cls.__name__ for cls in FourthClass.mro()])
