@@ -1,10 +1,11 @@
-def fibonacci_generator(n):
+def fibonacci():
+    count = int(input("Enter the number of Fibonacci terms you want: "))
     a, b = 0, 1
-    for _ in range(n):
+    for _ in range(count):
         yield a
         a, b = b, a + b
 
 # Example usage:
-# Generate first 10 Fibonacci numbers
-for fib_number in fibonacci_generator(10):
-    print(fib_number)
+# Call the generator and print the Fibonacci numbers
+for num in fibonacci():
+    print(num)
