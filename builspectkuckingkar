@@ -1,8 +1,2 @@
-def fibonacci():
-    count = int(input("Enter the number of Fibonacci terms you want: "))
-    a, b = 0, 1
-    for _ in range(count):
-        yield a
-        a, b = b, a + b
-for num in fibonacci():
-    print(num)
+[7:30 PM] Saikumar Bujangam
+In Python the comparison operator > when used with string operands compares the string character by character. Write a snippet to compare two string operands based on their length; hint: Implement __gt__ method
