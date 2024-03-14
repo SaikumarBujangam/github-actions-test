@@ -1,45 +1,19 @@
-name: Check Pull Request Branches
+try:
+    # This may cause a KeyboardInterrupt if the user presses Ctrl+C
+    input_value = input("Enter a number to divide 100 by: ")
+    result = 100 / int(input_value)  # This may cause an ArithmeticError if input_value is 0
+    print(f"100 divided by {input_value} is {result}")
 
-on:
-  pull_request:
-    branches: [ master ]
-    types: [opened, reopened, edited, synchronize]
-    
-  workflow_call:
+    # Trying to print a variable that has not been defined yet
+    print(f"The undefined variable's value is: {undefined_variable}")
 
-jobs:
-  adl-cicd-check-pull-request:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check Branches
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          echo "Pull Request on $GITHUB_REPOSITORY $GITHUB_HEAD_REF into $GITHUB_BASE_REF"
-          base_branch_category=${GITHUB_BASE_REF%%/*}
-          head_branch_category=${GITHUB_HEAD_REF%%/*}
-          if [[ ${base_branch_category} == "master" ]]
-          then
-            if [[ "${head_branch_category}" == "feature" || "${head_branch_category}" == "hotfix" ]]
-            then
-              echo "Merging a ${head_branch_category} branch into ${base_branch_category} is allowed"
-              if [[ "${head_branch_category}" == "hotfix" ]]
-              then
-                num_open_pr=$(gh api /repos/$GITHUB_REPOSITORY/pulls?state=open\&base=$GITHUB_BASE_REF | jq "keys | length")
-                echo "Number of open PRs against master: ${num_open_pr}"
-                if [[ "${num_open_pr}" -gt 1 ]];
-                then
-                  echo "Only 1 PR is allowed to be open at a time for hotfix branches"
-                  exit 1
-                fi
-              fi
-
-              exit 0
-            else
-              echo "Merging a non-feature/hotfix branch into $GITHUB_BASE_REF is not allowed"
-              exit 1
-            fi
-          fi
-
-          echo "Merging into master is only allowed from feature or hotfix branches"
-          exit 1
+except KeyboardInterrupt:
+    print("Caught a KeyboardInterrupt!")
+except NameError as e:
+    print(f"Caught a NameError: {e}")
+except ArithmeticError as e:
+    print(f"Caught an ArithmeticError: {e}")
+else:
+    print("No exceptions were thrown.")
+finally:
+    print("This block is executed no matter what!")
