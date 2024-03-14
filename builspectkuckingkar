@@ -1,18 +1,1 @@
-import re
-
-# Compile a regular expression pattern for two adjacent vowels
-vowel_pattern = re.compile(r'[aeiouAEIOU]{2}')
-
-print("Enter words to check for two adjacent vowels. Type 'exit' to stop.")
-
-while True:
-    # Read a single line of input
-    word = input("Enter a word: ")
-    if word.lower() == 'exit':  # Type 'exit' to stop the loop
-        break
-    
-    # Search for two adjacent vowels in the word
-    if vowel_pattern.search(word):
-        print(f"The word '{word}' contains two adjacent vowels.")
-    else:
-        print(f"The word '{word}' does not contain two adjacent vowels.")
+Implement a child class called mathnew and parent classes as sqroot, addition, subtraction, multiplication and division. Use the super () function to inherit the parent methods.
