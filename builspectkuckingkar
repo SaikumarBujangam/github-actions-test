@@ -1,4 +1,11 @@
 Translate each of the following English statements into a regular expression:
+
 a. Digit at the beginning of the string and a digit at the end of the string
+^\d.*\d$
+
 b. A string that contains only whitespace characters or word characters
+^[\w\s]*$
+
 c. A string containing no whitespace characters
+^\S*$
+
