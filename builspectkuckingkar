@@ -1,20 +1,26 @@
-import time
-
-def time_decorator(func):
-    def wrapper(*args, **kwargs):
-        start_time = time.time()
-        result = func(*args, **kwargs)
-        end_time = time.time()
-        execution_time = end_time - start_time 
-        print(f"Executing {func.__name__} took {execution_time:.4f} seconds.")
-        return result
-    return wrapper
-
-# Example usage:
-@time_decorator
-def example_function(n):
-    sum = 0
-    for i in range(n):
-        sum += i
-    return sum
-print(example_function(1000000))
+resource "aws_sagemaker_user_profile" "sagemaker_user_profile" {
+  
+  user_profile_name         = "${var.project_key}-${var.rstudio_user_name}"
+  domain_id                 = var.sagemaker_domain_id
+  user_settings {
+    execution_role = data.aws_iam_role.rstudio_user_role.arn
+    r_studio_server_pro_app_settings ={
+      user_group = "R_STUDIO_USER"
+    }
+    canvas_app_settings {
+      time_series_forecasting_settings {
+        status = "ENABLED"
+      }
+    }
+  tags = merge(
+    {
+      "project" = "${var.project_key}"
+    }, 
+    {
+      "platform" = "${var.platform}"
+    }, 
+    {
+      "organization" = "${var.org_key}"
+    }, 
+  )
+}
