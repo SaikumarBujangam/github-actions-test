@@ -1,437 +1,85 @@
-resource "aws_ecs_cluster" "ecs-cluster" {
-  name = "${var.org_key}-ecs-cluster"
-
-  setting {
-    name  = "containerInsights"
-    value = "enabled"
-  }
-  tags = local.tags
-}
-
-resource "aws_cloudwatch_log_group" "rs_connect_group" {
-  name = "${var.org_key}-connect-cont-log-group"
-  tags = local.tags
-}
-
-resource "aws_ecs_task_definition" "rstudio_connect_task_definition" {
-  
-  family                   = "${var.org_key}-rstudio-connect-task"
-  network_mode             = "bridge"
-  requires_compatibilities = ["EC2"]
-  task_role_arn = aws_iam_role.ecs_connect_task_role.arn
-  execution_role_arn = aws_iam_role.ecs_connect_execution_role.arn
-
-  volume {
-    name = "${var.org_key}-efs-volume-connect-posit"
-
-     efs_volume_configuration {
-      file_system_id          = aws_efs_file_system.efs_rs_connect.id
-      root_directory          = "/"
-      transit_encryption      = "ENABLED"
-      authorization_config {
-        access_point_id = aws_efs_access_point.access_points_connect.id
-      }
-    }
-  }
-
-  container_definitions = jsonencode([{
-
-    name = "${var.org_key}-rstudio-connect-container"
-    image = "${var.rstudio_connect_image_id}"
-    memoryReservation = 2048
-    essential = true
-    entryPoint = []
-    privileged = true
-    revision = 1
-
-    portMappings = [{
-        containerPort = 3939
-        hostPort = 0
-	      protocol = "tcp"
-      }]
-
-    linuxParameters = {
-        initProcessEnabled = true
-    }  
-
-    mountPoints = [
-                {
-                    sourceVolume = "${var.org_key}-efs-volume-connect-posit"
-                    containerPath = "/data"
-                    readOnly = false
-                }
-            ]  
-
-       environment = [
-                {
-                    name = "DB_DOMAIN_SUFFIX"
-                    value = local.rs_connect_db_domain_suffix
-                }
-            ]       
-
-     secrets = [
-         {
-              name = "CONNECT_DB_SECRET"
-              valueFrom = "${aws_secretsmanager_secret.rstudio_connect_rds_secrets.arn}:password::"
-         },
-         {
-              name = "CONNECT_DB_HOST"
-              valueFrom = "${aws_secretsmanager_secret.rstudio_connect_rds_secrets.arn}:host::"
-         },
-         {
-              name = "CONNECT_DB_USER"
-              valueFrom = "${aws_secretsmanager_secret.rstudio_connect_rds_secrets.arn}:username::"
-         },
-         {
-              name = "CONNECT_DB_NAME"
-              valueFrom = "${aws_secretsmanager_secret.rstudio_connect_rds_secrets.arn}:dbname::"
-         },
-         {
-              name = "RSC_LICENSE"
-              valueFrom = "arn:aws:secretsmanager:eu-central-1:195227247767:secret:RSCLicenseKey-V4jMH3"
-         },
-         {
-              name = "CLIENT_ID"
-              valueFrom = "arn:aws:secretsmanager:eu-central-1:195227247767:secret:${var.environment_name}-oidc:ClientId::"
-         },
-         {
-              name = "CLIENT_SECRET"
-              valueFrom = "arn:aws:secretsmanager:eu-central-1:195227247767:secret:${var.environment_name}-oidc:ClientSecret::"
-         },
-         {
-              name = "OPENID_CONNECT_ISSUER"
-              valueFrom = "arn:aws:secretsmanager:eu-central-1:195227247767:secret:${var.environment_name}-oidc:OpenIDConnectIssuer::"
-         }
-     ]
-
-     logConfiguration = {
-            logDriver = "awslogs"
-            options = {
-                awslogs-group = "${var.org_key}-connect-cont-log-group"
-                awslogs-region = var.region
-                awslogs-stream-prefix = "${var.org_key}-connect-stream"
-            }
-     }
-	
-  }])
-  tags = local.tags
-}
-
-resource "aws_appautoscaling_target" "ecs_target_connect" {
-  max_capacity       = 40
-  min_capacity       = 2
-  resource_id        = "service/${aws_ecs_cluster.ecs-cluster.name}/${aws_ecs_service.aws_ecs_service_rs_connect.name}"
-  scalable_dimension = "ecs:service:DesiredCount"
-  service_namespace  = "ecs"
-}
-
-resource "aws_appautoscaling_policy" "req_count_target_policy_connect" {
-  name               = "${var.org_key}-ALB-Request-Count-Per-Target-Connect"
-  policy_type        = "TargetTrackingScaling"
-  resource_id        = aws_appautoscaling_target.ecs_target_connect.resource_id
-  scalable_dimension = aws_appautoscaling_target.ecs_target_connect.scalable_dimension
-  service_namespace  = aws_appautoscaling_target.ecs_target_connect.service_namespace
-
-  target_tracking_scaling_policy_configuration {
-    predefined_metric_specification {
-      predefined_metric_type = "ALBRequestCountPerTarget"
-      resource_label = format("%s/%s", split("loadbalancer/", aws_lb.Rstudio-Connect_lb.id)[1], split(":", aws_lb_target_group.RS-Connect_tg.id)[5])
-      # resource_label = "app/${var.project_name}-${var.rs_connect_alb_name}/${aws_lb.Rstudio-Connect_lb.id}/targetgroup/${var.project_name}-${var.rs_connect_alb_tg_name}/${aws_lb_target_group.RS-Connect_tg.id}"
-    }
-
-    target_value       = 50
-    scale_in_cooldown  = 60
-    scale_out_cooldown = 30
-  }
-
-}
-
-resource "aws_appautoscaling_policy" "memory_utilization_policy_connect" {
-  name               = "${var.org_key}-Memory-Utilization-Connect"
-  policy_type        = "TargetTrackingScaling"
-  resource_id        = aws_appautoscaling_target.ecs_target_connect.resource_id
-  scalable_dimension = aws_appautoscaling_target.ecs_target_connect.scalable_dimension
-  service_namespace  = aws_appautoscaling_target.ecs_target_connect.service_namespace
-
-  target_tracking_scaling_policy_configuration {
-    predefined_metric_specification {
-      predefined_metric_type = "ECSServiceAverageMemoryUtilization"
-    }
-
-    target_value       = 70
-    scale_in_cooldown  = 60
-    scale_out_cooldown = 30
-  }
-
-}
-
-resource "aws_appautoscaling_policy" "cpu_utilization_policy_connect" {
-  name               = "${var.org_key}-CPU-Utilization-Connect"
-  policy_type        = "TargetTrackingScaling"
-  resource_id        = aws_appautoscaling_target.ecs_target_connect.resource_id
-  scalable_dimension = aws_appautoscaling_target.ecs_target_connect.scalable_dimension
-  service_namespace  = aws_appautoscaling_target.ecs_target_connect.service_namespace
-
-  target_tracking_scaling_policy_configuration {
-    predefined_metric_specification {
-      predefined_metric_type = "ECSServiceAverageCPUUtilization"
-    }
-
-    target_value       = 70
-    scale_in_cooldown  = 60
-    scale_out_cooldown = 30
-  }
-
-}
-
-resource "aws_ecs_service" "aws_ecs_service_rs_connect" {
-    name = "${var.org_key}_ecs_service_rs_connect"
-    cluster = aws_ecs_cluster.ecs-cluster.id
-
-    deployment_maximum_percent = 200
-    deployment_minimum_healthy_percent = 50
-    desired_count = 2
-    health_check_grace_period_seconds = 900
-    #launch_type = "EC2"
-    enable_execute_command = true
-
-    #force_new_deployment = true
-
-    triggers = {
-      redeployment = timestamp()
-    }
-
-    capacity_provider_strategy {
-        capacity_provider = aws_ecs_capacity_provider.capacity_provider.name
-        weight            = 100
-    }
-
-    task_definition = aws_ecs_task_definition.rstudio_connect_task_definition.arn
-
-    load_balancer {
-        container_name = "${var.org_key}-rstudio-connect-container"
-        container_port = 3939
-        target_group_arn = aws_lb_target_group.RS-Connect_tg.arn
-    }
-
-    depends_on = [aws_autoscaling_group.ecs_asg1]
-    tags = local.tags
-}
-
-resource "aws_cloudwatch_log_group" "rspm_connect_group" {
-  name = "${var.org_key}-pm-cont-log-group"
-  tags = local.tags
-}
-
-resource "aws_ecs_task_definition" "rstudio_package_manager_task_definition" { 
-
-  family                   = "${var.org_key}-rstudio-package-manager-task"
-  network_mode             = "bridge"
-  requires_compatibilities = ["EC2"]
-  task_role_arn = aws_iam_role.ecs_pm_task_role.arn 
-  execution_role_arn = aws_iam_role.ecs_pm_execution_role.arn 
-
-volume {
-    name = "${var.org_key}-efs-volume-pm-posit"
-
-     efs_volume_configuration {
-      file_system_id          = aws_efs_file_system.efs_rs_pm.id
-      root_directory          = "/"
-      transit_encryption      = "ENABLED"
-      authorization_config {
-        access_point_id = aws_efs_access_point.access_points_pm.id
-      }
-    }
+# Create EFS Backup Policy
+resource "aws_efs_backup_policy" "efs_rs_connect_policy" {
+  file_system_id = aws_efs_file_system.efs_rs_connect.id
+ 
+  backup_policy {
+    status = "ENABLED"
   }
   
-  container_definitions    = jsonencode([{
+}
 
-    name = "${var.org_key}-rstudio-package-manager-container"
-    image = "${var.rstudio_pm_image_id}"
-    memoryReservation = 2048
-    essential = true
-    entryPoint = []
-    privileged = true
-    revision = 1
+#RSC
+resource "aws_efs_file_system" "efs_rs_connect" {
+  creation_token = "${var.org_key}-efs-rs-connect-creation-token"
+  kms_key_id = aws_kms_key.posit_kms_key.arn
+  encrypted = true
+  tags = local.tags
 
-    portMappings = [
-      {
-        containerPort = 4242
-        hostPort = 0
-        protocol = "tcp"
-      }
-    ]
+}
 
-    logConfiguration = {
-            logDriver = "awslogs"
-            options = {
-                "awslogs-group" = "${var.org_key}-pm-cont-log-group"
-                "awslogs-region" = var.region
-                "awslogs-stream-prefix" = "${var.org_key}-pm-cont-log-group_stream_prefix"
-            }
+resource "aws_efs_access_point" "access_points_connect" {
+  file_system_id = aws_efs_file_system.efs_rs_connect.id
+  root_directory {
+    path = "/connect-ec2"
+    creation_info {
+      owner_gid   = 999
+      owner_uid   = 999
+      permissions = 755
     }
-
-      linuxParameters = {
-        initProcessEnabled = true
-      } 
-
-          mountPoints = [
-                {
-                    sourceVolume = "${var.org_key}-efs-volume-pm-posit"
-                    containerPath = "/efs"
-                    readOnly = false
-                }
-            ] 
-
-    environment = [
-                {
-                    name = "DB_DOMAIN_SUFFIX"
-                    value = local.rs_pm_db_domain_suffix
-                }
-            ]
-
-    secrets = [
-                {
-                    name = "PM_DB_SECRET"
-                    valueFrom = "${aws_secretsmanager_secret.rstudio_pm_rds_secrets.arn}:password::"
-                },
-                {
-                    name = "PM_DB_HOST" 
-                    valueFrom = "${aws_secretsmanager_secret.rstudio_pm_rds_secrets.arn}:host::"
-                },
-                {
-                    name = "PM_DB_USER"
-                    valueFrom = "${aws_secretsmanager_secret.rstudio_pm_rds_secrets.arn}:username::"
-                },
-                {
-                    name = "PM_DB_NAME"
-                    valueFrom = "${aws_secretsmanager_secret.rstudio_pm_rds_secrets.arn}:dbname::"
-                },
-                {
-                    "name": "PM_USAGE_DB_SECRET",
-                    "valueFrom": "${aws_secretsmanager_secret.rstudio_pm_usage_rds_secrets.arn}:password::"
-                },
-                {
-                    "name": "PM_USAGE_DB_HOST",
-                    "valueFrom": "${aws_secretsmanager_secret.rstudio_pm_usage_rds_secrets.arn}:host::"
-                },
-                {
-                    "name": "PM_USAGE_DB_USER",
-                    "valueFrom": "${aws_secretsmanager_secret.rstudio_pm_usage_rds_secrets.arn}:username::"
-                },
-                {
-                    "name": "PM_USAGE_DB_NAME",
-                    "valueFrom": "${aws_secretsmanager_secret.rstudio_pm_usage_rds_secrets.arn}:dbname::"
-                },
-                {
-                  
-                  name = "RSPM_LICENSE"
-                  valueFrom = "arn:aws:secretsmanager:eu-central-1:195227247767:secret:RSPMLicenseKey-Bcd9Ot"
-                }
-                
-            ]
-
-  }])
+  }
   tags = local.tags
 }
 
-resource "aws_appautoscaling_target" "ecs_target_pm" {
-  max_capacity       = 40
-  min_capacity       = 2
-  resource_id        = "service/${aws_ecs_cluster.ecs-cluster.name}/${aws_ecs_service.aws_ecs_service_rs_pm_connect.name}"
-  scalable_dimension = "ecs:service:DesiredCount"
-  service_namespace  = "ecs"
+resource "aws_efs_mount_target" "mount_connect_1" {
+  file_system_id = aws_efs_file_system.efs_rs_connect.id
+  subnet_id      = data.aws_subnets.org_private_subnets.ids[0]
+  security_groups = [aws_security_group.rstudio_connect_efs_sg.id]
 }
 
-resource "aws_appautoscaling_policy" "req_count_target_policy_pm" {
-  name               = "${var.org_key}-ALB-Request-Count-Per-Target-PM"
-  policy_type        = "TargetTrackingScaling"
-  resource_id        = aws_appautoscaling_target.ecs_target_pm.resource_id
-  scalable_dimension = aws_appautoscaling_target.ecs_target_pm.scalable_dimension
-  service_namespace  = aws_appautoscaling_target.ecs_target_pm.service_namespace
+resource "aws_efs_mount_target" "mount_connect_2" {
+  file_system_id = aws_efs_file_system.efs_rs_connect.id
+  subnet_id      = data.aws_subnets.org_private_subnets.ids[1]
+  security_groups = [aws_security_group.rstudio_connect_efs_sg.id]
+}
 
-  target_tracking_scaling_policy_configuration {
-    predefined_metric_specification {
-      predefined_metric_type = "ALBRequestCountPerTarget"
-      resource_label = format("%s/%s", split("loadbalancer/", aws_lb.Rstudio-pm_lb.id)[1], split(":", aws_lb_target_group.RS-pm_tg.id)[5])
-      # resource_label = "app/${var.project_name}-${var.rs_connect_alb_name}/${aws_lb.Rstudio-Connect_lb.id}/targetgroup/${var.project_name}-${var.rs_connect_alb_tg_name}/${aws_lb_target_group.RS-Connect_tg.id}"
-    }
-
-    target_value       = 50
-    scale_in_cooldown  = 60
-    scale_out_cooldown = 30
+# Create EFS Package manager Policy
+resource "aws_efs_backup_policy" "efs_rs_pm_policy" {
+  file_system_id = aws_efs_file_system.efs_rs_pm.id
+ 
+  backup_policy {
+    status = "ENABLED"
   }
-
 }
 
-resource "aws_appautoscaling_policy" "memory_utilization_policy_pm" {
-  name               = "${var.org_key}-Memory-Utilization-PM"
-  policy_type        = "TargetTrackingScaling"
-  resource_id        = aws_appautoscaling_target.ecs_target_pm.resource_id
-  scalable_dimension = aws_appautoscaling_target.ecs_target_pm.scalable_dimension
-  service_namespace  = aws_appautoscaling_target.ecs_target_pm.service_namespace
+# RSPM
+resource "aws_efs_file_system" "efs_rs_pm" {
+  creation_token = "${var.org_key}-efs-rs-pm-creation-token"
+  kms_key_id = aws_kms_key.posit_kms_key.arn
+  encrypted = true
+  tags = local.tags
+}
 
-  target_tracking_scaling_policy_configuration {
-    predefined_metric_specification {
-      predefined_metric_type = "ECSServiceAverageMemoryUtilization"
+resource "aws_efs_access_point" "access_points_pm" {
+  file_system_id = aws_efs_file_system.efs_rs_pm.id
+  root_directory {
+    path = "/package-ec2"
+    creation_info {
+      owner_gid   = 0
+      owner_uid   = 0
+      permissions = 755
     }
-
-    target_value       = 70
-    scale_in_cooldown  = 60
-    scale_out_cooldown = 30
   }
-
+  tags = local.tags
 }
 
-resource "aws_appautoscaling_policy" "cpu_utilization_policy_pm" {
-  name               = "${var.org_key}-CPU-Utilization-PM"
-  policy_type        = "TargetTrackingScaling"
-  resource_id        = aws_appautoscaling_target.ecs_target_pm.resource_id
-  scalable_dimension = aws_appautoscaling_target.ecs_target_pm.scalable_dimension
-  service_namespace  = aws_appautoscaling_target.ecs_target_pm.service_namespace
-
-  target_tracking_scaling_policy_configuration {
-    predefined_metric_specification {
-      predefined_metric_type = "ECSServiceAverageCPUUtilization"
-    }
-
-    target_value       = 70
-    scale_in_cooldown  = 60
-    scale_out_cooldown = 30
-  }
-
+resource "aws_efs_mount_target" "mount_pm_1" {
+  file_system_id = aws_efs_file_system.efs_rs_pm.id
+  subnet_id      = data.aws_subnets.org_private_subnets.ids[0]
+  security_groups = [aws_security_group.rstudio_pm_efs_sg.id]
 }
 
-resource "aws_ecs_service" "aws_ecs_service_rs_pm_connect" {
-    name = "${var.org_key}_ecs_service_rs_pm"
-    cluster = aws_ecs_cluster.ecs-cluster.id
-
-    deployment_maximum_percent = 200
-    deployment_minimum_healthy_percent = 50
-    desired_count = 2
-    health_check_grace_period_seconds = 900
-    #launch_type = "EC2"
-    enable_execute_command = true
-
-    #force_new_deployment = true
-
-    triggers = {
-      redeployment = timestamp()
-    }
-
-    capacity_provider_strategy {
-        capacity_provider = aws_ecs_capacity_provider.capacity_provider.name
-        weight            = 100
-    }
-
-    task_definition = aws_ecs_task_definition.rstudio_package_manager_task_definition.arn
-
-    load_balancer {
-        container_name = "${var.org_key}-rstudio-package-manager-container"
-        container_port = 4242
-        target_group_arn = aws_lb_target_group.RS-pm_tg.arn
-    }
-
-    depends_on = [aws_autoscaling_group.ecs_asg1]
-    tags = local.tags
+resource "aws_efs_mount_target" "mount_pm_2" {
+  file_system_id = aws_efs_file_system.efs_rs_pm.id
+  subnet_id      = data.aws_subnets.org_private_subnets.ids[1]
+  security_groups = [aws_security_group.rstudio_pm_efs_sg.id]
 }
