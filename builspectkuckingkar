@@ -1,85 +1,115 @@
-# Create EFS Backup Policy
-resource "aws_efs_backup_policy" "efs_rs_connect_policy" {
-  file_system_id = aws_efs_file_system.efs_rs_connect.id
+# Create Aurora PostgreSQL Subnet Group
+resource "aws_db_subnet_group" "rstudio_sbng" {
+  name       = lower("${var.org_key}-rstudio-db-subnet-group")
+  subnet_ids = data.aws_subnets.org_private_subnets.ids
+}
  
-  backup_policy {
-    status = "ENABLED"
+# Create Aurora PostgreSQL Cluster
+resource "aws_rds_cluster" "rstudio_connect_db" {
+  cluster_identifier      = lower("${var.org_key}-rstudio-connect-db-cluster")
+  engine                  = "aurora-postgresql"
+  engine_mode             = "serverless"
+  engine_version          = "13.12"
+  availability_zones      = var.azs
+  db_subnet_group_name    = aws_db_subnet_group.rstudio_sbng.name
+  master_username         = "postgres"
+  master_password         = "${random_password.password.result}"
+  database_name           = "rds_rs_connect_database"
+  port                    = 5432
+  backup_retention_period = 1
+  #preferred_backup_window = "22:00-23:00"
+  skip_final_snapshot     = true
+  vpc_security_group_ids  = [aws_security_group.rstudio_connect_rds_sg.id]
+ 
+  scaling_configuration {
+    auto_pause               = true
+    max_capacity             = 32
+    min_capacity             = 4
+    seconds_until_auto_pause = 300
   }
+
+  lifecycle {
+    ignore_changes = [ availability_zones ]
+  }
+
+  tags = merge(
+    {
+    Name = "rstudio connect db cluster"
+    },
+    local.tags
+  )
   
 }
 
-#RSC
-resource "aws_efs_file_system" "efs_rs_connect" {
-  creation_token = "${var.org_key}-efs-rs-connect-creation-token"
-  kms_key_id = aws_kms_key.posit_kms_key.arn
-  encrypted = true
-  tags = local.tags
-
-}
-
-resource "aws_efs_access_point" "access_points_connect" {
-  file_system_id = aws_efs_file_system.efs_rs_connect.id
-  root_directory {
-    path = "/connect-ec2"
-    creation_info {
-      owner_gid   = 999
-      owner_uid   = 999
-      permissions = 755
-    }
-  }
-  tags = local.tags
-}
-
-resource "aws_efs_mount_target" "mount_connect_1" {
-  file_system_id = aws_efs_file_system.efs_rs_connect.id
-  subnet_id      = data.aws_subnets.org_private_subnets.ids[0]
-  security_groups = [aws_security_group.rstudio_connect_efs_sg.id]
-}
-
-resource "aws_efs_mount_target" "mount_connect_2" {
-  file_system_id = aws_efs_file_system.efs_rs_connect.id
-  subnet_id      = data.aws_subnets.org_private_subnets.ids[1]
-  security_groups = [aws_security_group.rstudio_connect_efs_sg.id]
-}
-
-# Create EFS Package manager Policy
-resource "aws_efs_backup_policy" "efs_rs_pm_policy" {
-  file_system_id = aws_efs_file_system.efs_rs_pm.id
+resource "aws_rds_cluster" "rstudio_pm_db" {
+  cluster_identifier      = lower("${var.org_key}-rstudio-pm-db-cluster")
+  engine                  = "aurora-postgresql"
+  engine_mode             = "serverless"
+  engine_version          = "13.12"
+  availability_zones      = var.azs
+  db_subnet_group_name    = aws_db_subnet_group.rstudio_sbng.name
+  master_username         = "postgres"
+  master_password         = "${random_password.password.result}"
+  database_name           = "rds_rs_pm_database"
+  port                    = 5432
+  backup_retention_period = 1
+  #preferred_backup_window = "22:00-23:00"
+  skip_final_snapshot     = true
+  vpc_security_group_ids  = [aws_security_group.rstudio_pm_rds_sg.id]
  
-  backup_policy {
-    status = "ENABLED"
+  scaling_configuration {
+    auto_pause               = true
+    max_capacity             = 32
+    min_capacity             = 4
+    seconds_until_auto_pause = 300
   }
-}
+  
+  # based on terraform recommendation we have added lifecycle 
+  # https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/rds_cluster#availability_zones 
 
-# RSPM
-resource "aws_efs_file_system" "efs_rs_pm" {
-  creation_token = "${var.org_key}-efs-rs-pm-creation-token"
-  kms_key_id = aws_kms_key.posit_kms_key.arn
-  encrypted = true
-  tags = local.tags
-}
-
-resource "aws_efs_access_point" "access_points_pm" {
-  file_system_id = aws_efs_file_system.efs_rs_pm.id
-  root_directory {
-    path = "/package-ec2"
-    creation_info {
-      owner_gid   = 0
-      owner_uid   = 0
-      permissions = 755
-    }
+  lifecycle {
+    ignore_changes = [ availability_zones ]  
   }
-  tags = local.tags
+
+  tags = merge(
+    {
+    Name = "rstudio package manager db cluster"
+    },
+    local.tags
+  )  
 }
 
-resource "aws_efs_mount_target" "mount_pm_1" {
-  file_system_id = aws_efs_file_system.efs_rs_pm.id
-  subnet_id      = data.aws_subnets.org_private_subnets.ids[0]
-  security_groups = [aws_security_group.rstudio_pm_efs_sg.id]
-}
+resource "aws_rds_cluster" "rstudio_pm_usage_db" {
+  cluster_identifier      = lower ("${var.org_key}-rstudio-pm-usage-db-cluster")
+  engine                  = "aurora-postgresql"
+  engine_mode             = "serverless"
+  engine_version          = "13.12"
+  availability_zones      = var.azs
+  db_subnet_group_name    = aws_db_subnet_group.rstudio_sbng.name
+  master_username         = "postgres"
+  master_password         = "${random_password.password.result}"
+  database_name           = "rds_rs_pm_usage_database"
+  port                    = 5432
+  backup_retention_period = 1
+  #preferred_backup_window = "22:00-23:00"
+  skip_final_snapshot     = true
+  vpc_security_group_ids  = [aws_security_group.rstudio_pm_rds_sg.id]
+ 
+  scaling_configuration {
+    auto_pause               = true
+    max_capacity             = 32
+    min_capacity             = 4
+    seconds_until_auto_pause = 300
+  }
+  
+  lifecycle {
+    ignore_changes = [ availability_zones ]
+  }
 
-resource "aws_efs_mount_target" "mount_pm_2" {
-  file_system_id = aws_efs_file_system.efs_rs_pm.id
-  subnet_id      = data.aws_subnets.org_private_subnets.ids[1]
-  security_groups = [aws_security_group.rstudio_pm_efs_sg.id]
+  tags = merge(
+    {
+    Name = "rstudio package manager usage db cluster"
+    },
+    local.tags
+  )
 }
