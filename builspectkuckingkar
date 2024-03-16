@@ -1,123 +1,94 @@
-# Create RSC Application Load Balancer
-resource "aws_lb" "Rstudio-Connect_lb" {
-  name               = "${var.org_key}-Rstudio-Connect-lb"
-  internal           = false
-  load_balancer_type = "application"
-  security_groups    = [aws_security_group.Rstudio-Connect-Alb-sg.id]
-  #subnets            = data.aws_subnets.org_public_subnets.ids
-  tags = local.tags
-  enable_cross_zone_load_balancing = true
-  idle_timeout = 60
-  enable_deletion_protection = false
-  subnet_mapping {
-     subnet_id = data.aws_subnets.org_public_subnets.ids[0]
+data "aws_ami" "ebs_ami" {
+  most_recent = true
+
+  filter {
+    name   = "name"
+    values = ["amzn2-ami-ecs-*-x86_64-ebs"]
   }
 
-  subnet_mapping {
-     subnet_id = data.aws_subnets.org_public_subnets.ids[1]
+  filter {
+    name   = "architecture"
+    values = ["x86_64"]
   }
-}
- 
-# Create Target Group
-resource "aws_lb_target_group" "RS-Connect_tg" {
-  name     = "${var.org_key}-RS-Connect-tg"
-  port     = 80
-  target_type = "instance"
-  protocol = "HTTP"
-  vpc_id   = data.aws_vpc.org_vpc.id
-  health_check {
-    path = "/__ping__"
-    healthy_threshold   = 5   
-    unhealthy_threshold = 2
-    matcher = "200"
+
+  filter {
+    name   = "root-device-type"
+    values = ["ebs"]
   }
-  stickiness {
-    type = "lb_cookie"
-    cookie_duration = 86400  # Stickiness duration in seconds
+
+  filter {
+    name   = "virtualization-type"
+    values = ["hvm"]
   }
-  tags = local.tags
+
+  owners = ["amazon"] 
 }
 
-resource "aws_lb_listener" "RS-Connect_lb" {
-  load_balancer_arn = aws_lb.Rstudio-Connect_lb.arn
-  port              = "443"
-  protocol          = "HTTPS"
-  ssl_policy        = "ELBSecurityPolicy-TLS13-1-2-2021-06"
-  certificate_arn   = aws_acm_certificate.ecs_ssl_cert.arn
- 
-  default_action {
-    type             = "forward"
-    target_group_arn = aws_lb_target_group.RS-Connect_tg.arn
-  }
-  tags = local.tags
-}
-
-resource "aws_lb_listener_rule" "host_based_weighted_routing_connect" {
-  listener_arn = aws_lb_listener.RS-Connect_lb.arn
-  priority     = 01
- 
-  action {
-    type             = "forward"
-    target_group_arn = aws_lb_target_group.RS-Connect_tg.arn
-  }
- 
-  condition {
-    host_header {
-      values = [local.ssl_acm_certificate_name]
+resource "aws_launch_template" "ecs_launch_template" {
+    name_prefix = "${var.org_key}_launch_template"
+    image_id             = data.aws_ami.ebs_ami.id
+    iam_instance_profile {
+      name = aws_iam_instance_profile.ecs_agent_pro.name
     }
-  }
-   
-  }
-
-# Create RSPM Application Load Balancer
-resource "aws_lb" "Rstudio-pm_lb" {
-  name               = "${var.org_key}-Rstudio-pm-lb"
-  internal           = true
-  load_balancer_type = "application"
-  security_groups    = [aws_security_group.Rstudio-pm-Alb-sg.id]
-  subnets            = data.aws_subnets.org_public_subnets.ids
-  tags = local.tags
-}
- 
-# Create Target Group
-resource "aws_lb_target_group" "RS-pm_tg" {
-  name     = "${var.org_key}-RS-pm-tg"
-  port     = 80
-  target_type = "instance"
-  protocol = "HTTP"
-  vpc_id   = data.aws_vpc.org_vpc.id
-  health_check {
-    path = "/__ping__"
-  }
-  tags = local.tags
-}
-
-resource "aws_lb_listener" "RS-pm_lb" {
-  load_balancer_arn = aws_lb.Rstudio-pm_lb.arn
-  port              = "443"
-  protocol          = "HTTPS"
-  certificate_arn   = aws_acm_certificate.ecs_ssl_cert.arn
- 
-  default_action {
-    type             = "forward"
-    target_group_arn = aws_lb_target_group.RS-pm_tg.arn
-  }
-  tags = local.tags
-}
-
-resource "aws_lb_listener_rule" "host_based_weighted_routing_pm" {
-  listener_arn = aws_lb_listener.RS-pm_lb.arn
-  priority     = 01
- 
-  action {
-    type             = "forward"
-    target_group_arn = aws_lb_target_group.RS-pm_tg.arn
-  }
- 
-  condition {
-    host_header {
-      values = [local.ssl_acm_certificate_name]
+    vpc_security_group_ids = [aws_security_group.ecs_sg.id]
+    instance_type        = "t3.xlarge"
+    
+    lifecycle {
+      create_before_destroy = true
     }
+
+    user_data = base64encode(templatefile("${path.module}/templates/pm_asg_userdata.sh", {
+    org_key = var.org_key
+    }
+    ))
+
+}
+
+resource "aws_autoscaling_group" "ecs_asg1" {
+    name                      = "${var.org_key}_asg_connect_pm"
+    vpc_zone_identifier       = data.aws_subnets.org_private_subnets.ids
+    launch_template       {
+      id = aws_launch_template.ecs_launch_template.id
+      version = "$Latest"
+    }
+    desired_capacity          = 2
+    min_size                  = 1
+    max_size                  = 10
+    #health_check_grace_period = 0
+    health_check_type         = "EC2"
+
+    lifecycle {
+      create_before_destroy = true
+    }
+
+    tag {
+        key                 = "AmazonECSManaged"
+        value               = true
+        propagate_at_launch = true
+    }
+}
+
+resource "aws_ecs_capacity_provider" "capacity_provider" {
+  name = "${var.org_key}-Capacity-Provider"
+
+  auto_scaling_group_provider {
+    auto_scaling_group_arn = aws_autoscaling_group.ecs_asg1.arn
+    
+    managed_scaling {
+      maximum_scaling_step_size = 1000
+      minimum_scaling_step_size = 1
+      status                    = "ENABLED"
+      target_capacity           = 100
+      instance_warmup_period    = 300
+    }
+
   }
-   
+
+}
+
+resource "aws_ecs_cluster_capacity_providers" "capacity_provider_cluster" {
+ cluster_name = aws_ecs_cluster.ecs-cluster.name
+
+ capacity_providers = [aws_ecs_capacity_provider.capacity_provider.name]
+ 
 }
