@@ -1,115 +1,23 @@
-# Create Aurora PostgreSQL Subnet Group
-resource "aws_db_subnet_group" "rstudio_sbng" {
-  name       = lower("${var.org_key}-rstudio-db-subnet-group")
-  subnet_ids = data.aws_subnets.org_private_subnets.ids
-}
- 
-# Create Aurora PostgreSQL Cluster
-resource "aws_rds_cluster" "rstudio_connect_db" {
-  cluster_identifier      = lower("${var.org_key}-rstudio-connect-db-cluster")
-  engine                  = "aurora-postgresql"
-  engine_mode             = "serverless"
-  engine_version          = "13.12"
-  availability_zones      = var.azs
-  db_subnet_group_name    = aws_db_subnet_group.rstudio_sbng.name
-  master_username         = "postgres"
-  master_password         = "${random_password.password.result}"
-  database_name           = "rds_rs_connect_database"
-  port                    = 5432
-  backup_retention_period = 1
-  #preferred_backup_window = "22:00-23:00"
-  skip_final_snapshot     = true
-  vpc_security_group_ids  = [aws_security_group.rstudio_connect_rds_sg.id]
- 
-  scaling_configuration {
-    auto_pause               = true
-    max_capacity             = 32
-    min_capacity             = 4
-    seconds_until_auto_pause = 300
-  }
-
-  lifecycle {
-    ignore_changes = [ availability_zones ]
-  }
-
-  tags = merge(
-    {
-    Name = "rstudio connect db cluster"
-    },
-    local.tags
-  )
+module "sagemaker" {
+    source = "../../terraform-modules/terraform-aws-sagemaker"
   
-}
-
-resource "aws_rds_cluster" "rstudio_pm_db" {
-  cluster_identifier      = lower("${var.org_key}-rstudio-pm-db-cluster")
-  engine                  = "aurora-postgresql"
-  engine_mode             = "serverless"
-  engine_version          = "13.12"
-  availability_zones      = var.azs
-  db_subnet_group_name    = aws_db_subnet_group.rstudio_sbng.name
-  master_username         = "postgres"
-  master_password         = "${random_password.password.result}"
-  database_name           = "rds_rs_pm_database"
-  port                    = 5432
-  backup_retention_period = 1
-  #preferred_backup_window = "22:00-23:00"
-  skip_final_snapshot     = true
-  vpc_security_group_ids  = [aws_security_group.rstudio_pm_rds_sg.id]
- 
-  scaling_configuration {
-    auto_pause               = true
-    max_capacity             = 32
-    min_capacity             = 4
-    seconds_until_auto_pause = 300
-  }
-  
-  # based on terraform recommendation we have added lifecycle 
-  # https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/rds_cluster#availability_zones 
-
-  lifecycle {
-    ignore_changes = [ availability_zones ]  
-  }
-
-  tags = merge(
+    region                        = var.region
+    vpc                           = data.aws_vpc.domain_vpc.id
+    subnet_ids                    = data.aws_subnets.domain_subnets.ids
+    domain_name                   = "${var.org_key}-domain"
+    user_execution_role_arn       = data.aws_iam_role.org_role.arn
+    space_execution_role_arn      = data.aws_iam_role.org_role.arn
+    sagemaker_spacename           = "${var.org_key}-space"
+    s3_output_path                = var.s3_output_path
+    s3_artifact_path              = var.s3_artifact_path
+    r_studio_connect_url          = var.r_studio_connect_url
+    r_studio_package_manager_url  = var.r_studio_package_manager_url
+      tags = merge(
     {
-    Name = "rstudio package manager db cluster"
-    },
-    local.tags
-  )  
-}
-
-resource "aws_rds_cluster" "rstudio_pm_usage_db" {
-  cluster_identifier      = lower ("${var.org_key}-rstudio-pm-usage-db-cluster")
-  engine                  = "aurora-postgresql"
-  engine_mode             = "serverless"
-  engine_version          = "13.12"
-  availability_zones      = var.azs
-  db_subnet_group_name    = aws_db_subnet_group.rstudio_sbng.name
-  master_username         = "postgres"
-  master_password         = "${random_password.password.result}"
-  database_name           = "rds_rs_pm_usage_database"
-  port                    = 5432
-  backup_retention_period = 1
-  #preferred_backup_window = "22:00-23:00"
-  skip_final_snapshot     = true
-  vpc_security_group_ids  = [aws_security_group.rstudio_pm_rds_sg.id]
- 
-  scaling_configuration {
-    auto_pause               = true
-    max_capacity             = 32
-    min_capacity             = 4
-    seconds_until_auto_pause = 300
-  }
-  
-  lifecycle {
-    ignore_changes = [ availability_zones ]
-  }
-
-  tags = merge(
+      "organization" = "${var.org_key}"
+    }, 
     {
-    Name = "rstudio package manager usage db cluster"
-    },
-    local.tags
+      "platform"     = "${var.platform}"
+    }, 
   )
 }
