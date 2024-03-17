@@ -1,224 +1,121 @@
-# EFS 
-#############
-module "efs" {
-    source = "../../terraform-modules/terraform-aws-efs"
-    creation_token = "${var.org_key}-persistent_storage"
-    subnet_ids = data.aws_subnets.domain_subnets.ids
-    security_groups = [module.eks.cluster_primary_security_group_id]
-    tags = {
-    Name = "${var.org_key}-persistent-storage"
-  }
+locals {
+  name            = "${var.org_key}-discourse-cluster"
+  cluster_version = "1.28"
+  account_id      = data.aws_caller_identity.current.account_id
+  azs             = var.azs
+
 }
 
-# EFS - Access Points
-resource "aws_efs_access_point" "bitnami-directory" {
-  file_system_id = module.efs.id
-  posix_user {
-    gid = 1000
-    uid = 1000
-  }
+################################################################################
+# EKS Module
+################################################################################
 
-  root_directory {
-    path = "/bitnami"
-    creation_info {
-      owner_gid   = 1000
-      owner_uid   = 1000
-      permissions = "777"
+module "eks" {
+  source = "terraform-aws-modules/eks/aws"
+  version = "19.21.0"
+
+  cluster_name                   = local.name
+  cluster_version                = local.cluster_version
+  cluster_endpoint_public_access = true
+
+  cluster_addons = {
+    kube-proxy = {}
+    vpc-cni    = {}
+    coredns = {
+      configuration_values = jsonencode({
+        computeType = "Fargate"
+      })
     }
   }
-}
 
-resource "aws_efs_access_point" "discourse-directory" {
-  file_system_id = module.efs.id
-  posix_user {
-    gid = 0
-    uid = 1000
-  }
+  vpc_id                   = data.aws_vpc.domain_vpc.id
+  subnet_ids               = data.aws_subnets.domain_subnets.ids
 
-  root_directory {
-    path = "/bitnami/discourse"
-    creation_info {
-      owner_gid   = 0
-      owner_uid   = 1000
-      permissions = "755"
+  # Fargate profiles use the cluster primary security group so these are not utilized
+  create_cluster_security_group = false
+  create_node_security_group    = false
+
+  manage_aws_auth_configmap = true
+  # Role arn values needs to change as variables
+  aws_auth_roles = [
+    {
+      rolearn  = "arn:aws:iam::${local.account_id}:role/StarCapEngineering"
+      username = "StarCapEngineering"
+      groups = ["system:masters"]
+    },
+    {
+      rolearn  = "arn:aws:iam::${local.account_id}:role/StarCapDevOps"
+      username = "StarCapDevOps"
+      groups = ["system:masters"]
     }
-  }
-}
-
-resource "aws_efs_access_point" "data-directory" {
-  file_system_id = module.efs.id
-  posix_user {
-    gid = 1000
-    uid = 1000
-  }
-
-  root_directory {
-    path = "/data"
-    creation_info {
-      owner_gid   = 1000
-      owner_uid   = 1000
-      permissions = "777"
-    }
-  }
-}
-
-resource "aws_efs_access_point" "postgresql-directory" {
-  file_system_id = module.efs.id
-  posix_user {
-    gid = 1001
-    uid = 1001
-  }
-
-  root_directory {
-    path = "/bitnami/postgresql"
-    creation_info {
-      owner_gid   = 1001
-      owner_uid   = 1001
-      permissions = "777"
-    }
-  }
-}
-
-resource "kubernetes_storage_class" "efs-sc" {
-  depends_on = [
-    module.efs
   ]
-  metadata {
-    name = "efs-sc"
-    annotations = {
-      "storageclass.kubernetes.io/is-default-class" = "true"
-    }
-  }
-  storage_provisioner = "efs.csi.aws.com"
-  reclaim_policy = "Retain"
   
-  parameters = {
-    type = "pd-ssd"
-    fileSystemId = module.efs.id
-    directoryPerms = "777"
-  }
-}
-
-resource "kubernetes_persistent_volume_v1" "discourse-persistent-volume" {
-  depends_on = [kubernetes_storage_class.efs-sc]
-
-  metadata {
-    name = "discourse-efs-pvc-discourse"
-  }
-  spec {
-    capacity = {
-      storage = "100Gi"
+  fargate_profile_defaults = {
+    iam_role_additional_policies = {
+      additional = aws_iam_policy.additional.arn
     }
-    access_modes = ["ReadWriteMany"]
-    persistent_volume_source {
-      csi {
-        driver        = "efs.csi.aws.com"
-        volume_handle = "${module.efs.id}::${aws_efs_access_point.discourse-directory.id}"
+  }
+
+  fargate_profiles = merge(
+    {
+      discource-fp = {
+        name = "discource-fp"
+        selectors = [
+          {
+            namespace = "default"
+          },
+          {
+            namespace = "kube-system"
+          }
+        ]
+        subnet_ids = data.aws_subnets.domain_subnets.ids
       }
     }
-    storage_class_name = kubernetes_storage_class.efs-sc.metadata.0.name
-    volume_mode = "Filesystem"
-    persistent_volume_reclaim_policy = "Retain"
-  }
+  )
+
 }
 
-resource "kubernetes_persistent_volume_claim_v1" "discourse-persistent-volume-claim" {
-  depends_on = [kubernetes_persistent_volume_v1.discourse-persistent-volume]
-  metadata {
-    name = "my-discourse-0"
-  }
-  spec {
-    access_modes = ["ReadWriteMany"]
-    resources {
-      requests = {
-        storage = "100Gi"
-      }
-    }
-    volume_name = kubernetes_persistent_volume_v1.discourse-persistent-volume.metadata.0.name
-    storage_class_name = kubernetes_storage_class.efs-sc.metadata.0.name
-  }
-  wait_until_bound = true
+################################################################################
+# Supporting Resources
+################################################################################
+
+resource "aws_iam_policy" "additional" {
+  name = "${local.name}-additional"
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = [
+          "ec2:Describe*",
+        ]
+        Effect   = "Allow"
+        Resource = "*"
+      },
+      {
+        "Effect": "Allow",
+        "Action": [
+          "logs:CreateLogStream",
+          "logs:CreateLogGroup",
+          "logs:DescribeLogStreams",
+          "logs:PutLogEvents"
+        ],
+        "Resource": "*"
+      },
+    ]
+  })
 }
 
-resource "kubernetes_persistent_volume_v1" "postgres-persistent-volume" {
-  depends_on = [kubernetes_storage_class.efs-sc]
+module "eks_load_balancer_controller" {
+  source = "../../terraform-modules/eks-load-balancer-controller"
 
-  metadata {
-    name = lower("${var.org_key}-discourse-efs-pvc-postgres")
-  }
-  spec {
-    capacity = {
-      storage = "100Gi"
-    }
-    access_modes = ["ReadWriteMany"]
-    persistent_volume_source {
-      csi {
-        driver        = "efs.csi.aws.com"
-        volume_handle = "${module.efs.id}::${aws_efs_access_point.postgresql-directory.id}"
-      }
-    }
-    storage_class_name = kubernetes_storage_class.efs-sc.metadata.0.name
-    volume_mode = "Filesystem"
-    persistent_volume_reclaim_policy = "Retain"
-  }
-}
+  enabled = true
+  region  = var.region
+  vpc_id = data.aws_vpc.domain_vpc.id
 
-resource "kubernetes_persistent_volume_claim_v1" "postgres-persistent-volume-claim" {
-  depends_on = [kubernetes_persistent_volume_v1.postgres-persistent-volume]
-  metadata {
-    name = lower("data-${var.org_key}-my-discourse-postgresql-0")
-  }
-  spec {
-    access_modes = ["ReadWriteMany"]
-    resources {
-      requests = {
-        storage = "100Gi"
-      }
-    }
-    volume_name = kubernetes_persistent_volume_v1.postgres-persistent-volume.metadata.0.name
-    storage_class_name = kubernetes_storage_class.efs-sc.metadata.0.name
-  }
-  wait_until_bound = true
-}
+  cluster_identity_oidc_issuer     = module.eks.cluster_oidc_issuer_url
+  cluster_identity_oidc_issuer_arn = module.eks.oidc_provider_arn
+  cluster_name                     = module.eks.cluster_name
 
-resource "kubernetes_persistent_volume_v1" "redis-persistent-volume" {
-  depends_on = [kubernetes_storage_class.efs-sc]
-
-  metadata {
-    name = lower("${var.org_key}-discourse-efs-pvc-redis")
-  }
-  spec {
-    capacity = {
-      storage = "100Gi"
-    }
-    access_modes = ["ReadWriteMany"]
-    persistent_volume_source {
-      csi {
-        driver        = "efs.csi.aws.com"
-        volume_handle = "${module.efs.id}::${aws_efs_access_point.data-directory.id}"
-      }
-    }
-    storage_class_name = kubernetes_storage_class.efs-sc.metadata.0.name
-    volume_mode = "Filesystem"
-    persistent_volume_reclaim_policy = "Retain"
-  }
-}
-
-resource "kubernetes_persistent_volume_claim_v1" "redis-persistent-volume-claim" {
-  depends_on = [kubernetes_persistent_volume_v1.redis-persistent-volume]
-
-  metadata {
-    name = lower("redis-data-${var.org_key}-my-discourse-redis-master-0")
-  }
-  spec {
-    access_modes = ["ReadWriteMany"]
-    resources {
-      requests = {
-        storage = "100Gi"
-      }
-    }
-    volume_name = kubernetes_persistent_volume_v1.redis-persistent-volume.metadata.0.name
-    storage_class_name = kubernetes_storage_class.efs-sc.metadata.0.name
-  }
-  wait_until_bound = true
+  depends_on = [module.eks.fargate_profiles]
 }
