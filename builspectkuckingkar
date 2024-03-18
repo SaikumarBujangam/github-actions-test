@@ -1,127 +1,438 @@
-{
-    "Version": "2012-10-17",
-    "Statement": [
-        {
-            "Sid": "Textract",
-            "Effect": "Allow",
-            "Action": [
-                "textract:AnalyzeDocument",
-                "textract:AnalyzeExpense",
-                "textract:AnalyzeID",
-                "textract:StartDocumentAnalysis",
-                "textract:StartExpenseAnalysis",
-                "textract:GetDocumentAnalysis",
-                "textract:GetExpenseAnalysis"
-            ],
-            "Resource": "*"
-        },
-        {
-            "Sid": "Rekognition",
-            "Effect": "Allow",
-            "Action": [
-                "rekognition:DetectLabels",
-                "rekognition:DetectText"
-            ],
-            "Resource": "*"
-        },
-        {
-            "Sid": "Comprehend",
-            "Effect": "Allow",
-            "Action": [
-                "comprehend:BatchDetectDominantLanguage",
-                "comprehend:BatchDetectEntities",
-                "comprehend:BatchDetectSentiment",
-                "comprehend:DetectPiiEntities",
-                "comprehend:DetectEntities",
-                "comprehend:DetectSentiment",
-                "comprehend:DetectDominantLanguage"
-            ],
-            "Resource": "*"
-        },
-        {
-            "Sid": "Bedrock",
-            "Effect": "Allow",
-            "Action": [
-                "bedrock:InvokeModel",
-                "bedrock:ListFoundationModels",
-                "bedrock:InvokeModelWithResponseStream"
-            ],
-            "Resource": "*"
-        },
-        {
-            "Sid": "CreateBedrockResourcesPermission",
-            "Effect": "Allow",
-            "Action": [
-                "bedrock:CreateModelCustomizationJob",
-                "bedrock:CreateProvisionedModelThroughput",
-                "bedrock:TagResource"
-            ],
-            "Resource": [
-                "arn:aws:bedrock:*:*:model-customization-job/*",
-                "arn:aws:bedrock:*:*:custom-model/*",
-                "arn:aws:bedrock:*:*:provisioned-model/*"
-            ],
-            "Condition": {
-                "ForAnyValue:StringEquals": {
-                    "aws:TagKeys": [
-                        "SageMaker",
-                        "Canvas"
-                    ]
-                },
-                "StringEquals": {
-                    "aws:RequestTag/SageMaker": "true",
-                    "aws:RequestTag/Canvas": "true",
-                    "aws:ResourceTag/SageMaker": "true",
-                    "aws:ResourceTag/Canvas": "true"
-                }
-            }
-        },
-        {
-            "Sid": "GetStopAndDeleteBedrockResourcesPermission",
-            "Effect": "Allow",
-            "Action": [
-                "bedrock:GetModelCustomizationJob",
-                "bedrock:GetCustomModel",
-                "bedrock:GetProvisionedModelThroughput",
-                "bedrock:StopModelCustomizationJob",
-                "bedrock:DeleteProvisionedModelThroughput"
-            ],
-            "Resource": [
-                "arn:aws:bedrock:*:*:model-customization-job/*",
-                "arn:aws:bedrock:*:*:custom-model/*",
-                "arn:aws:bedrock:*:*:provisioned-model/*"
-            ],
-            "Condition": {
-                "StringEquals": {
-                    "aws:ResourceTag/SageMaker": "true",
-                    "aws:ResourceTag/Canvas": "true"
-                }
-            }
-        },
-        {
-            "Sid": "FoundationModelPermission",
-            "Effect": "Allow",
-            "Action": [
-                "bedrock:CreateModelCustomizationJob"
-            ],
-            "Resource": [
-                "arn:aws:bedrock:*::foundation-model/*"
-            ]
-        },
-        {
-            "Sid": "BedrockFineTuningPassRole",
-            "Effect": "Allow",
-            "Action": [
-                "iam:PassRole"
-            ],
-            "Resource": [
-                "arn:aws:iam::*:role/*"
-            ],
-            "Condition": {
-                "StringEquals": {
-                    "iam:PassedToService": "bedrock.amazonaws.com"
-                }
-            }
+locals {
+  nat_gateway_count = 1
+  vpc_name          = "${var.env}-${var.platform}-gateway-vpc"
+  hpc_rule_group    = "${var.env}-${var.platform}-firewall-rule-group"
+  #da_rule_group     = "${var.env}-${var.platform}-da-firewall-rule-group"
+  firewall_policy   = "${var.env}-${var.platform}-firewall-rule-policy"
+  firewall_name     = "${var.env}-${var.platform}-firewall"
+}
+
+##########################################
+# Platform Gateway/Firewall VPC of Starcap
+##########################################
+resource "aws_vpc" "this" {
+
+  cidr_block           = var.vpc_cidr
+  instance_tenancy     = "default"
+  enable_dns_hostnames = true
+  enable_dns_support   = true
+
+  tags = merge(
+    {
+      "Name" = local.vpc_name
+    },
+  )
+}
+
+###################
+# Public Subnets
+###################
+resource "aws_subnet" "public" {
+  count             = length(var.public_subnets_cidr) > 0 ? length(var.public_subnets_cidr) : 0
+  vpc_id            = aws_vpc.this.id
+  cidr_block        = var.public_subnets_cidr[count.index]
+  availability_zone = var.azs[count.index]
+
+  tags = merge(
+    {
+      "Name" = "${var.env}-${var.platform}-fw-pbst-az-${element(split("-",var.azs[count.index]),2)}"
+      "Description" = "firewall-public-subnet"
+    },
+  )
+}
+
+###################
+# Internet Gateway
+###################
+resource "aws_internet_gateway" "this" {
+
+  vpc_id = aws_vpc.this.id
+
+  tags = merge(
+    {
+      "Name" = "${var.env}-${var.platform}-fw-igw"
+    },
+  )
+}
+
+################
+# Publiс routes
+################
+resource "aws_route_table" "public" {
+
+  vpc_id = aws_vpc.this.id
+
+  tags = merge(
+    {
+      "Name" = "${var.env}-${var.platform}-fw-pub-rt"
+    },
+  )
+}
+
+resource "aws_route" "public_internet_gateway" {
+
+  route_table_id         = aws_route_table.public.id
+  destination_cidr_block = "0.0.0.0/0"
+  gateway_id             = aws_internet_gateway.this.id
+
+  timeouts {
+    create = "5m"
+  }
+}
+
+##########################
+# Route table association
+##########################
+
+resource "aws_route_table_association" "public" {
+  count = length(var.public_subnets_cidr) > 0 ? length(var.public_subnets_cidr) : 0
+
+  subnet_id      = element(aws_subnet.public.*.id, count.index)
+  route_table_id = aws_route_table.public.id
+}
+
+####################
+# EIP of NAT Gateway
+#####################
+
+resource "aws_eip" "nat" {
+  count = local.nat_gateway_count
+
+  vpc = true
+
+  tags = merge(
+    {
+      "Name" = "${var.env}-${var.platform}-fw-nat-eip-${count.index}"
+    },
+  )
+}
+
+##############
+# NAT Gateway
+##############
+
+resource "aws_nat_gateway" "this" {
+  count = local.nat_gateway_count
+
+  allocation_id = element(
+    aws_eip.nat.*.id,
+    count.index,
+  )
+  subnet_id = element(
+    aws_subnet.public.*.id,
+    count.index,
+  )
+
+  tags = merge(
+    {
+      "Name" = "${var.env}-${var.platform}-fw-nat-az-${element(split("-",var.azs[count.index]),2)}"
+    },
+  )
+
+  depends_on = [aws_internet_gateway.this]
+}
+
+###################################
+# Network Firewall Subnets
+##################################
+resource "aws_subnet" "application" {
+  count             = length(var.application_subnets_cidr)
+  vpc_id            = aws_vpc.this.id
+  cidr_block        = var.application_subnets_cidr[count.index]
+  availability_zone = var.azs[count.index]
+
+  tags = merge(
+    {
+      "Name" = "${var.env}-${var.platform}-fw-apst-az-${element(split("-",var.azs[count.index]),2)}"
+      "subnet-description" = "firewall-application-subnet"
+    },
+  )
+}
+
+#################
+# Private routes
+#################
+resource "aws_route_table" "private" {
+
+  count = local.nat_gateway_count
+
+  vpc_id = aws_vpc.this.id
+
+  tags = merge(
+    {
+      "Name" = "${var.env}-${var.platform}-fw-pvt-rt-${count.index}"
+    },
+  )
+}
+
+resource "aws_route" "private_nat_gateway" {
+  count = local.nat_gateway_count
+
+  route_table_id         = element(aws_route_table.private.*.id, count.index)
+  destination_cidr_block = "0.0.0.0/0"
+  nat_gateway_id         = element(aws_nat_gateway.this.*.id, count.index)
+
+  timeouts {
+    create = "5m"
+  }
+}
+
+resource "aws_route_table_association" "application" {
+  count = length(var.application_subnets_cidr)
+
+  subnet_id = element(aws_subnet.application.*.id, count.index)
+  route_table_id = element(aws_route_table.private.*.id, count.index)
+}
+
+###################################
+# Firewall Transit Gateway Subnets
+##################################
+resource "aws_subnet" "firewall_tgw" {
+  count             = length(var.firewall_tgw_subnets_cidr)
+  vpc_id            = aws_vpc.this.id
+  cidr_block        = var.firewall_tgw_subnets_cidr[count.index]
+  availability_zone = var.azs[count.index]
+
+  tags = merge(
+    {
+      "Name" = "${var.env}-${var.platform}-fw-tgwst-az-${element(split("-",var.azs[count.index]),2)}"
+      "subnet-description" = "firewall-transit-gateway-subnet"
+    },
+  )
+}
+
+
+
+##############################
+# Transit Gateway -- Creation
+##############################
+module "transit_gateway" {
+  source                = "../aws-common/transit-gateway"
+  create_tgw            = true
+  name                  = "starcap-tgw"
+  description           = "STARCAP Transit Gateway shared with VPCs"
+  tgw_route_table       = true
+  vpc_attachments = {
+    ptfmvpc = {
+      vpc_id                                          = data.aws_vpc.vpc.id      # PTFM VPC Id
+      subnet_ids                                      = data.aws_subnet_ids.subnets.ids # PTFM VPC Application Subnet Ids
+      dns_support                                     = true
+      ipv6_support                                    = false
+      transit_gateway_default_route_table_association = true
+      transit_gateway_default_route_table_propagation = true
+    },
+    fwvpc = {
+      vpc_id                                          = aws_vpc.this.id
+      subnet_ids                                      = aws_subnet.firewall_tgw.*.id
+      dns_support                                     = true
+      ipv6_support                                    = false
+      transit_gateway_default_route_table_association = false
+      transit_gateway_default_route_table_propagation = false
+      appliance_mode_support                          = true
+    },
+  }
+ }
+
+##########################################
+# Network Firewall -- Creating Rule Group
+##########################################
+resource "aws_networkfirewall_rule_group" "hpc_rule_group" {
+  capacity = 1000
+  name     = local.hpc_rule_group
+  type     = var.type
+  rule_group {
+     rule_variables {
+      ip_sets {
+        key = "HOME_NET"
+        ip_set {
+          definition = var.hpc_cidr_list
         }
-    ]
+      }
+    }
+    rules_source {
+      rules_source_list {
+        generated_rules_type = var.rule_type
+        target_types         = var.target_types
+        targets              = var.hpc_target_list
+      }
+    }
+  }
+
+  tags = merge(
+    {
+      "Name" = local.hpc_rule_group
+    },
+  )
+
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+
+##########################################
+# Network Firewall -- Creating Rule Group
+##########################################
+/*resource "aws_networkfirewall_rule_group" "da_rule_group" {
+  capacity = 100
+  name     = local.da_rule_group
+  type     = var.type
+  rule_group {
+    rule_variables {
+      ip_sets {
+        key = "HOME_NET"
+        ip_set {
+          definition = var.da_cidr_list
+        }
+      }
+    }
+    rules_source {
+      rules_source_list {
+        generated_rules_type = var.rule_type
+        target_types         = var.target_types
+        targets              = var.da_target_list
+      }
+    }
+  }
+
+  tags = merge(
+    {
+      "Name" = local.da_rule_group
+    },
+  )
+}*/
+
+############################################################
+# Network Firewall -- Creating Policy and adding Rule Group
+############################################################
+resource "aws_networkfirewall_firewall_policy" "firewall_policy" {
+  name = local.firewall_policy
+
+  firewall_policy {
+    stateless_default_actions          = ["aws:forward_to_sfe"]
+    stateless_fragment_default_actions = ["aws:pass"]
+    stateful_rule_group_reference {
+      resource_arn = aws_networkfirewall_rule_group.hpc_rule_group.arn
+    }
+    /*stateful_rule_group_reference {
+      resource_arn = aws_networkfirewall_rule_group.da_rule_group.arn
+    }*/
+  }
+
+  tags = merge(
+    {
+      "Name" = local.firewall_policy
+    },
+  )
+}
+
+################################################
+# Network Firewall -- Creating Network Firewall
+################################################
+resource "aws_networkfirewall_firewall" "network_firewall" {
+  name                = local.firewall_name
+  firewall_policy_arn = aws_networkfirewall_firewall_policy.firewall_policy.arn
+  vpc_id              = concat(aws_vpc.this.*.id, [""])[0]
+
+  dynamic "subnet_mapping" {
+    for_each = aws_subnet.application.*.id
+
+    content {
+      subnet_id = subnet_mapping.value
+    }
+  }
+
+  tags = {
+    proj_costcenter = "D.38.05612.01.00.5106000"
+    terraform	      = "true"
+  }
+
+  depends_on = [
+    aws_networkfirewall_firewall_policy.firewall_policy
+  ]
+}
+
+#### How to add the network firewall vpce to public and default route table ###
+########################################################
+# Network Firewall -- Adding VPCE to Public Route Table
+########################################################
+resource "aws_route" "public_route_table_ptfm_update" {
+  route_table_id         = aws_route_table.public.id
+  destination_cidr_block = "192.168.0.0/16"
+  vpc_endpoint_id        = aws_networkfirewall_firewall.network_firewall.*.firewall_status[0].*.sync_states[0].*.attachment[0].0.endpoint_id
+
+  timeouts {
+    create = "5m"
+  }
+}
+
+resource "aws_route" "public_route_table_org_update" {
+  route_table_id         = aws_route_table.public.id
+  destination_cidr_block = "172.16.0.0/16"
+  vpc_endpoint_id        = aws_networkfirewall_firewall.network_firewall.*.firewall_status[0].*.sync_states[0].*.attachment[0].0.endpoint_id
+
+  timeouts {
+    create = "5m"
+  }
+}
+
+resource "aws_route" "public_route_table_prj_update" {
+  route_table_id         = aws_route_table.public.id
+  destination_cidr_block = "10.1.0.0/16"
+  vpc_endpoint_id        = aws_networkfirewall_firewall.network_firewall.*.firewall_status[0].*.sync_states[0].*.attachment[0].0.endpoint_id
+
+  timeouts {
+    create = "5m"
+  }
+}
+
+########################################################
+# Network Firewall -- Adding VPCE to Default Route Table
+########################################################
+resource "aws_route" "default_route_table_ptfm_update" {
+  route_table_id         = concat(aws_vpc.this.*.default_route_table_id, [""])[0]
+  destination_cidr_block = "0.0.0.0/0"
+  vpc_endpoint_id        = aws_networkfirewall_firewall.network_firewall.*.firewall_status[0].*.sync_states[0].*.attachment[0].0.endpoint_id
+
+  timeouts {
+    create = "5m"
+  }
+}
+
+########################################################
+# Transit Gateway - Private Route Table update
+########################################################
+resource "aws_route" "private_route_table_ptfm_update" {
+  route_table_id         = element(concat(aws_route_table.private.*.id, [""]), 0)
+  destination_cidr_block = "192.168.0.0/16"
+  transit_gateway_id     = module.transit_gateway.id
+
+  timeouts {
+    create = "5m"
+  }
+}
+
+resource "aws_route" "private_route_table_org_update" {
+  route_table_id         = element(concat(aws_route_table.private.*.id, [""]), 0)
+  destination_cidr_block = "172.16.0.0/16"
+  transit_gateway_id     = module.transit_gateway.id
+
+  timeouts {
+    create = "5m"
+  }
+}
+
+resource "aws_route" "private_route_table_prj_update" {
+  route_table_id         = element(concat(aws_route_table.private.*.id, [""]), 0)
+  destination_cidr_block = "10.1.0.0/16"
+  transit_gateway_id     = module.transit_gateway.id
+
+  timeouts {
+    create = "5m"
+  }
+}
+
+resource "aws_ec2_transit_gateway_route" "def_tgw_static_route" {
+  destination_cidr_block         = "0.0.0.0/0"
+  transit_gateway_attachment_id  = module.transit_gateway.pri_tgw_attachment_id
+  transit_gateway_route_table_id = data.aws_ec2_transit_gateway_route_table.def_tgw_rtb.id
 }
