@@ -1,94 +1,47 @@
-module "kms_fsx" {
-  source                 = "../../terraform-modules/terraform-aws-kms"  
-
-  count = var.create_fsx ? 1:0
-  policy = templatefile("${path.module}/templates/fsx_kms_key_policy.tpl", {
-    current_account = "${data.aws_caller_identity.current.account_id}"
-    endor_project_bucket = var.endor_project_bucket
-    endor_data_bucket = var.endor_data_bucket
-    region            = var.region
-  })
-  alias_name = "${var.project_key}-fsx-kms-key"
-  tags = merge(
-    {
-      "kms" = "${var.project_key}-fsx-kms-key"
-    },local.tags
-   )
+\resource "aws_sagemaker_user_profile" "sagemaker_user_profile" {
   
-}
+  user_profile_name         = "${var.project_key}-${var.rstudio_user_name}"
+  domain_id                 = var.sagemaker_domain_id
+  user_settings {
+    execution_role = data.aws_iam_role.rstudio_user_role.arn
 
-module "project_bucket_fsx" {
-  source                 = "../../terraform-modules/terraform-aws-fsx"
-  count                  = var.create_fsx ? 1:0
+    r_studio_server_pro_app_settings {
+      user_group = "R_STUDIO_USER"
+    }
+      /*canvas_app_settings {
+      direct_deploy_settings {
+        status = "ENABLED"
+      }
 
-  subnet_ids             =  [module.project_vpc.private_subnet_id]
-  deployment_type        =  "PERSISTENT_2"
-  security_groups        = [module.project_sg.security_group_id]
-  storage_capacity       = "1200"
-  kms_key_id             = module.kms_fsx[0].kms_key_arn
-   
+
+    }*/
+
+    canvas_app_settings {
+      kendra_settings = "ENABLED"
+
+
+    }
+
+kendra_settings
+
+
+    }
   tags = merge(
     {
-      "Name" = "${var.org_key}-${var.project_key}-fsx"
-    }, local.tags
+      "project" = "${var.project_key}"
+    }, 
+    {
+      "platform" = "${var.platform}"
+    }, 
+    {
+      "organization" = "${var.org_key}"
+    }, 
   )
 }
-
-resource "aws_fsx_data_repository_association" "fsx_project_bucket" {
-  count                = var.create_fsx ? 1:0
-
-  file_system_id       = module.project_bucket_fsx[0].id
-  data_repository_path = "s3://${var.endor_project_bucket}/${var.org_key}/${var.project_key}/output/"
-  #data_repository_path = "s3://${var.endor_project_bucket}/${var.project_key}/output/"
-  file_system_path     = "/output"
-
-  s3 {
-    auto_export_policy {
-      events = ["NEW", "CHANGED", "DELETED"]
-    }
-
-    auto_import_policy {
-      events = ["NEW", "CHANGED", "DELETED"]
-    }
-  }
-    timeouts {
-    create = "60m"
-    update = "2h"
-    delete = "2h"
-  }
-  
-}
-
-resource "aws_fsx_data_repository_association" "fsx_data_bucket" {
-  count                = var.create_fsx ? 1:0
-
-  file_system_id       = module.project_bucket_fsx[0].id
-  data_repository_path = "s3://${var.endor_data_bucket}/${var.org_key}/${var.project_key}/"
-  #data_repository_path = "s3://${var.endor_data_bucket}/${var.project_key}/"
-  file_system_path     = "/data"
-
-  s3 {
-    auto_import_policy {
-      events = ["NEW", "CHANGED", "DELETED"]
-    }
-
-  }
-    timeouts {
-    create = "60m"
-    update = "2h"
-    delete = "2h"
-  }
-  
-  depends_on = [ aws_fsx_data_repository_association.fsx_project_bucket ]
-}
-
-module "project_bucket_fsx_autoscaling" {
-  source                 = "../../terraform-modules/terraform-aws-fsx/autoscaling"
-  count                  = var.create_fsx ? 1:0
-  region                 = var.region
-  fsx_id                 = module.project_bucket_fsx[0].id
-  fsx_name               = "${var.org_key}-${var.project_key}-fsx"
-  platform_domain_name   = var.platform_domain_name
-  env                    = var.environment_name
-  secret_role_arn        = "arn:aws:iam::195227247767:role/kamino-secret-manager-access-role"
-}
+ ╷
+│ Error: Argument or block definition required
+│
+│   on ..\infra-scripts\user-infra-services\sagemaker-user-creation\main.tf line 25, in resource "aws_sagemaker_user_profile" "sagemaker_user_profile":
+│   25: kendra_settings
+│
+│ An argument or block definition is required here. To set an argument, use the equals sign "=" to introduce the argument value.
