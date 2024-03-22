@@ -1,6 +1,44 @@
-sagemaker user profile's Rstudio settings, License Authorization is configured as "Rstudio User
 
-r_studio_server_pro_app_settings {
-      user_group = "R_STUDIO_USER"
-    }
-    }
+# DO NOT MODIFY OR DELETE THIS WORKFLOW!!
+
+name: ADL CICD Deploy To QC From Master Pipeline
+
+on:
+  workflow_dispatch:
+    inputs:
+      deploy_env:
+        description: 'Deployment Environment'
+        required: true
+        type: choice
+        options:
+          - 'qc'
+jobs:
+  adl-cicd-deploy-to-qc-from-prod-approval:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    environment: admin
+    steps:
+      - name: Awaiting CICD Core Admins Deployment Approval
+        run: echo "Awaiting CICD Core Admins Deployment Approval . . ." 
+
+  adl-cicd-deploy-to-qc-from-prod-deploy-phase:
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.deploy_env == 'qc'
+    uses: AlightEngineering/adl-deploy-cicd/.github/workflows/adl-cicd-deploy-repo-phase.yml@master
+    secrets: inherit
+    with:
+      event_repo_name: ${{ github.repository }}
+      event_repo_branch: 'master'
+      deploy_env: qc
+
+  adl-log-event:
+    runs-on: ubuntu-latest
+    steps:
+      - name: GitHub Event Name
+        run: echo ${{ github.event_name }}
+      - name: Check Feature Branch 
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          if [[ "${{ github.event.inputs.feature_branch_name }}" != feature/* ]]; then
+            echo "Error: The feature_branch_name is an invalid branch and must start with 'feature/'."
+            exit 1
+          fi
