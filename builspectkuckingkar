@@ -1,115 +1,46 @@
-Kamino is a data management and analytics platform which enables the implementation of all data governance policies and allows for secure data sharing and common analytics while maintaining data privacy and regulatory compliance. Kamino allows Roche teams to consolidate and derive value from diagnostic data generated from multiple studies across internal business units and also external research institutions, which are currently locked away in a secure-yet-inaccessible location. Roche DIA CSI researchers and imCORE researchers need to manage data consent, provide access, share and do a joint analysis of data in a single platform, following data privacy management (with internal and external partners).
 
-Kamino is a platform for the aggregation of data as an asset that holds the raw data and all analyses and facilitates the management of data and privacy. Also, it increases the efficiency, effectiveness, and controlled reuse of genetic data for digital product development, discovery, calculation, and patent biomarker profiles associated with genetic and image read-outs. Once populated in the platform, clinical cohorts can be generated quicker and faster. The platform aims at combining and processing patients’ heterogeneous omics data towards an integrated diagnostic solution from different modalities (i.e. genomics/imaging). Furthermore, Kamino is a multi-tenancy data commons platform (internal and external collaborators) with both raw object data and metadata, which can manage controlled data access to each participating institution and implement data management and retention policies. A scalable and secure analytical platform to enable the execution of custom genomic analysis pipelines by participating institutions with access to object data. Dedicated enclaves will be used for this purpose.
+#DO NOT RUN THIS WORKFLOW
 
+name: ADL CICD Deploy To QC From Master Pipeline
 
-Why the solution exists: Roche institutions bioinformatics/data science research and development and their (internal and external) collaborators do not have a solution for joint access and jointly share code and models nor do they have a mechanism to properly obtain data to perform giant analytics across studies and collaborators. Who are the main actors (RACIE): RI- Data Privacy officer; R - Data Owner, A - Data Manager, ECI-Data User - internal and external collaborators performing analysis, submitting data, developing models, and validating the models -Roche Dia and Roche Pharma bioinformatics research and development scientists CI-Regulatory Function Lead Capabilities: Organizational Management; User Access, External Access and Collaboration, Data Ingestion, Data Cataloguing, Search, Metadata Management, Project Management, Bioinformatics Pipelines Management, Analytics Environment Management, Traceability & Auditability, Data Privacy & Security.
+on:
+  workflow_dispatch:
+    inputs:
+      deploy_env:
+        description: 'Deployment Environment'
+        required: true
+        type: choice
+        options:
+          - 'qc'
 
+jobs:
+  adl-cicd-deploy-to-qc-from-prod-approval:
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/master' && github.event.inputs.deploy_env == 'qc'
+    runs-on: ubuntu-latest
+    environment: cicd-admin
+    steps:
+      - name: Awaiting CICD Core Admins Deployment Approval
+        run: echo "Awaiting CICD Core Admins Deployment Approval . . ." 
 
-Business Driver / Background:
-
-Unmet Need or Problem:
-
-1) Declining R&D productivity: Lack of infrastructure and/or business model to manage and analyze data (for secondary purposes) to support collaboration is a challenge. 2)
-
-Academic Medical Centers ambition to increase collaboration with industry.
-
-imCORE is the flagship initiative that consolidates requirements to deliver on the state-of-art Data Sharing and Analytical Platform which can facilitate the collaboration
-
-process, enabling the entire partnership lifecycle between the institutions and unlocking secondary data use. Critical requirement is to ensure full auditability, data privacy and
-
-proactive transparency for collaborative research and data analysis on privacy-impacted data. Solving for automated data governance, increased data searchability, findability
-
-and discoverability.
-
-
-The Future Solution or Product: Kamino, a scientist-first data, analytics and collaboration platform: 1) enabling TRE, privacy-impacted data management and internal and
-
-external data sharing and collaboration in a compliant way, 2) providing a framework for integrating and enabling state-of-art analytical tools, 3) increasing data discoverability
-
-and secondary data use. imCORE is the first enclave on the platform. Beyond imCore there are more than 20 additional projects (e.g. early cancer detection) and project
-
-proposals that expand KAMINO technical roadmap and enrich the archetype of use cases to be delivered.
-
-
-Expected Value:
-
-I. Accelerate R&D efficiency (reducing time and cost):
-
-A. Fill pipeline (e.g. assay) roadmap via Multimodal biomarker discovery with internal & external data: 1) Minimized redundancies, inefficiencies and need for manual
-
-activities. Connected FAIR data across the entire (non-linear) R&D process enabling the flow of data among research teams. 2) Simplified access to a growing range of
-
-computational analytics tools (incl open source) integrated in the workflow.
-
-B. Enabling academic/industry collaborations while 1) protecting privacy-impacted sensitive data via built-in compliance, audit readiness and governance. 2) Accelerated
-
-initiation and broadening partnership opportunities due to adherence to industry standards (5 Safes, TRE), enclave concept, and proactive transparency across all actors.
-
-II. Portfolio differentiation & Digitalization of our customers via
-
-A. Potential to Increase our DIA sequencing portfolio differentiation with data as a product discipline
-
-B. Connect the scientific workflow and insights to advance clinical care (2025 ambition)
+  adl-cicd-deploy-to-qc-from-prod-deploy-phase:
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.deploy_env == 'qc'
+    uses: AlightEngineering/adl-deploy-cicd/.github/workflows/adl-cicd-deploy-repo-phase.yml@master
+    secrets: inherit
+    with:
+      event_repo_name: ${{ github.repository }}
+      event_repo_branch: ${{ github.ref_name }}
+      deploy_env: ${{ github.event.inputs.deploy_env }}
 
 
-Strategies that support expected enterprise values with imCore as accelerator project & at interface:
-
-I. 1) Ix - Simplify Access to Research Computational Analytics 2) Ix - Optimize R&D Lab Workflows & Environments 3) imCORE Digital Strategy 4) Roche R&D Excellence
-
-5) DIA RDS R&D: Digital Lab & efficiency in R&D
-
-II. 1) DIA Data Strategy; 2) FMI Data and Insights Strategy (read out Aug 2023); 3) RIS CoE for digital (new announcement) 4) imCORE Digital Strategy 5) PHC DP Data
-
-Partnership & External Collaborations
-
-
-Difference to Current/Alternative Solution:
-
-1) 5 Safes Framework (industry standard) for a TRE solution.
-
-2) TRE as a platform: Multiple enclaves enabled.
-
-3) Cloud native experience and toolset; flexibility in mind. Aiming to reduce adoption barriers by allowing Bring Your Own Pipeline.
-
-4) Scientist-first approach: enabling the right capabilities to allow scientists fulfil their end-to-end workflow. Rapid response to enabling new services (days not months).
-
-5) Cloud adoption/exploration journey support: A multi-disciplinary team driving cultural change with scientist-centric approach
-
-6) Audit trail of data transformation
-
-Click to view the available transitions
-2 
- Purpose & Scope
-
-»
-«
-Purpose
-The Product Delivery Strategy is maintained in Retina as a list of items in this Tracker. The documentation follows the approach from the PMM Agile Product Delivery Guidance. Processes described in this document ensure that kamino will be implemented and maintained and can be demonstrated to be fit for its intended use throughout the system lifecycle. It is a basic document that describes an IT systems, an applications and/or a services, and its related activities and responsibilities necessary for its delivery approach as Validation Plan and Test Plan & Strategy, in accordance with the internal and/or external standards and guidelines.
-
-
-In alignment with the Guideline for use of Agile Frameworks for GxP Systems, this Product Delivery Strategy replaces the Validation Plan for the system. It is expected that this document is issued once at the beginning of the delivery effort. It will not be updated with each release or delivery of a new component/capability. Rather, processes and controls are described in such a way as to allow individual elements to be adjusted over the lifespan of the system.
-
-The IT system/application are documented based on
-Guideline for use of Agile Framework for GxP Systems [ID: SRD-0145688]
-Standard Operating Procedure (SOP) CSV Lifecycle Implementation SOP031553
-CSV Lifecycle Operations and Maintenance SOP-0109167
-The relevant and maintained Processes
-Delivery
-Validation Strategy
-Test Plan & Strategy including Defect Management
-Operation Handover
-The IT system/application is delivered by:
-Product Community / Business
-Kamino Team
-The Provider / Development Team
-Responsible for update of this document is the Product Delivery Organization:
-Kamino Team Members
-Scope
-
-This document is valid for:
-
-All people (external and internal employees) involved in the delivery of the IT system/application, and their representatives.
-All people (external and internal employees) involved in the validation of the IT system/application, and their representatives.
-All people (external and internal employees) involved in the handover of the IT system/application into operation, and their representatives.
-The maintenance, change management, and training strategy is defined in the Operational Support Plan
+  adl-log-event:
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.deploy_env == 'qc'
+    runs-on: ubuntu-latest
+    needs: [adl-cicd-deploy-to-qc-from-prod-approval, adl-cicd-deploy-to-qc-from-prod-deploy-phase]
+    steps:
+      - name: Log Deployment Information
+        run: |
+          echo "Workflow Dispatched for Deployment"
+          echo "Event Name: ${{ github.event_name }}"
+          echo "Repository: ${{ github.repository }}"
+          echo "Branch: ${{ github.ref }}"
+          echo "Deployment Environment: ${{ github.event.inputs.deploy_env }}"
