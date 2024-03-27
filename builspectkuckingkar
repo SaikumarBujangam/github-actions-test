@@ -1,14 +1,7 @@
-pipeline_checker = PipelineCheck()
-try:
-    statuses = pipeline_checker.check_pipeline_status()
-    failed_stages = [stage for stage, status in statuses if status in ['Failed', 'Stopped']]
-    
-    if failed_stages:
-        error_message = "Pipeline execution failed/stopped in stages: {}".format(", ".join([stage for stage, _ in failed_stages]))
-        pipeline_checker.logger.error(error_message)
-        raise Exception(error_message)
-    else:
-        pipeline_checker.logger.info("All pipeline stages completed successfully.")
-except Exception as e:
-    pipeline_checker.logger.error("Error checking pipeline status: {}".format(e))
-    sys.exit(1)
+[2024-03-27 14:48:13,898] [pipelinecheck] [consolelogger] [check_pipeline_status:30] [INFO]: "Pipeline is in stage 'Source' with status 'Succeeded'."
+[2024-03-27 14:48:13,898] [pipelinecheck] [consolelogger] [check_pipeline_status:30] [INFO]: "Pipeline is in stage 'Deploy' with status 'InProgress'."
+[2024-03-27 14:48:13,898] [pipelinecheck] [consolelogger] [check_pipeline_status:37] [INFO]: "Pipeline execution is still in progress . . ."
+[2024-03-27 14:48:44,054] [pipelinecheck] [consolelogger] [check_pipeline_status:30] [INFO]: "Pipeline is in stage 'Source' with status 'Succeeded'."
+[2024-03-27 14:48:44,054] [pipelinecheck] [consolelogger] [check_pipeline_status:30] [INFO]: "Pipeline is in stage 'Deploy' with status 'Failed'."
+[2024-03-27 14:48:44,055] [sourcestage] [consolelogger] [<module>:61] [ERROR]: "Error checking pipeline status: too many values to unpack (expected 2)" 
+[2024-03-27::14:48:44:IST)] [INFO] Execution returned a status of  1
