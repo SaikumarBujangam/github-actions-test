@@ -1,1 +1,47 @@
-PipelineCheck.logger.info("Pipeline is in stage '{}' with status '{}'.".format(stage_name, status))
+Error:
+
+[2024-03-27 13:57:46,807] [sourcestage] [consolelogger] [<module>:58] [ERROR]: "Error checking pipeline status: Parameter validation failed:
+Missing required parameter in input: "name"
+Unknown parameter in input: "pipelineName", must be one of: name"
+
+
+why this error?
+
+import os
+import boto3
+import time
+from alight.foundation.util.logging.standardlogger import StandardLogger
+
+class PipelineCheck:
+    def __init__(self):
+        self.logger = StandardLogger().getDefaultLogger()
+        self.codepipeline = boto3.client('codepipeline')
+        self.app_subject_area = os.environ.get('APP_SUBJECT_AREA')
+        self.lifecycle_env = os.environ.get('lifecycle_env')
+
+    def check_pipeline_status(self, wait_time=30, max_attempts=120):
+        pipeline_name_prefix = "adl-com-{}".format(self.lifecycle_env)
+        pipeline_suffix = "codepipeline"
+        adjusted_app_subject_area = self.app_subject_area.replace("adl-", "")
+        pipeline_name = "{}-{}-{}".format(pipeline_name_prefix, adjusted_app_subject_area, pipeline_suffix)
+        attempt = 0
+        statuses = []
+        while attempt < max_attempts:
+            response = self.codepipeline.get_pipeline_state(pipelineName=pipeline_name)
+            stages = response['stageStates']
+
+            for stage in stages:
+                stage_name = stage['stageName']
+                latest_execution = stage['latestExecution']
+                if latest_execution:
+                    status = latest_execution['status']
+                    statuses.append((stage_name, status))
+                    PipelineCheck.logger.info("Pipeline is in stage '{}' with status '{}'.".format(stage_name, status))
+                    if status in ['Succeeded', 'Failed', 'Stopped']:
+                        return statuses 
+            if all(status not in ['Succeeded', 'Failed', 'Stopped'] for _, status in statuses):
+                PipelineCheck.logger.info("Pipeline execution is still in progress . . .")
+
+            time.sleep(wait_time)
+            attempt +=1
+        return statuses
