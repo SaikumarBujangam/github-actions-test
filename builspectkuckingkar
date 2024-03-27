@@ -1,33 +1,9 @@
-attempt = 0
-statuses = []  # List to hold all statuses
-
-while attempt < max_attempts:
-    response = self.codepipeline.get_pipeline_state(pipelineName=pipeline_name)
-    stages = response['stageStates']
-    
-    # Extract the status from the last execution in the relevant stage
-    for stage in stages:
-        stage_name = stage['stageName']
-        latest_execution = stage['latestExecution']
-        if latest_execution:
-            status = latest_execution['status']
-            statuses.append((stage_name, status))  # Add the tuple (stage_name, status) to the list
-
-            # Print the current stage and status using .format()
-            print("Pipeline is in stage '{stage_name}' with status '{status}'.".format(stage_name=stage_name, status=status))
-
-            # Check if the status is one of the final states
-            if status in ['Succeeded', 'Failed', 'Stopped']:
-                return statuses  # Return all collected statuses
-
-    # If none of the stages are in a final state, print that the pipeline is still running using .format()
-    if all(status not in ['Succeeded', 'Failed', 'Stopped'] for _, status in statuses):
-        print("Pipeline execution is still in progress...")
-
-    # Wait for some time before the next attempt
-    time.sleep(wait_time)
-    attempt += 1
-
-# If the loop exits without returning, it means a final status wasn't reached
-# within the maximum number of attempts.
-return statuses
+        pipeline_checker = PipelineCheck()
+        try:
+            status=pipeline_checker.check_pipeline_status()
+            pipeline_checker.logger.info("Pipeline completed with status: {}".format(status))
+        except Exception as e:
+            pipeline_checker.logger.error("Error checking pipeline status: {}".format(e))
+    except Exception as e:
+        logger.error(e)
+        sys.exit(1)
