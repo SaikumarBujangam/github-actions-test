@@ -1,8 +1,7 @@
 Error:
 
-[2024-03-27 13:57:46,807] [sourcestage] [consolelogger] [<module>:58] [ERROR]: "Error checking pipeline status: Parameter validation failed:
-Missing required parameter in input: "name"
-Unknown parameter in input: "pipelineName", must be one of: name"
+[2024-03-27 14:05:27,228] [sourcestage] [consolelogger] [<module>:58] [ERROR]: "Error checking pipeline status: type object 'PipelineCheck' has no attri
+bute 'logger'"
 
 
 why this error?
@@ -27,7 +26,7 @@ class PipelineCheck:
         attempt = 0
         statuses = []
         while attempt < max_attempts:
-            response = self.codepipeline.get_pipeline_state(pipelineName=pipeline_name)
+            response = self.codepipeline.get_pipeline_state(name=pipeline_name)
             stages = response['stageStates']
 
             for stage in stages:
