@@ -1,7 +1,1 @@
-PipelineCheck.logger.info("Pipeline is in stage '{}' with status '{}'."format(stage_name, status))
-
-Anything wrong wit the above line? getting the below error
-
-[2024-03-27 13:48:46,506] [logger] [root] [log_uncaught_exceptions:92] [CRITICAL]: "<class 'SyntaxError'>: invalid syntax. Perhaps you forgot a comma? (
-pipelinecheck.py, line 48)"
-
+PipelineCheck.logger.info("Pipeline is in stage '{}' with status '{}'.".format(stage_name, status))
