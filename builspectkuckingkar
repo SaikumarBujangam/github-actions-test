@@ -1,9 +1,1 @@
-        pipeline_checker = PipelineCheck()
-        try:
-            status=pipeline_checker.check_pipeline_status()
-            pipeline_checker.logger.info("Pipeline completed with status: {}".format(status))
-        except Exception as e:
-            pipeline_checker.logger.error("Error checking pipeline status: {}".format(e))
-    except Exception as e:
-        logger.error(e)
-        sys.exit(1)
+PipelineCheck.logger.info("Pipeline is in stage '{}' with status '{}'."format(stage_name, status))
