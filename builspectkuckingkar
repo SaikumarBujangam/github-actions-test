@@ -1,1 +1,16 @@
-Throughout the year, my commitment to quality, proactive problem-solving, and continuous improvement has driven notable successes in project delivery and team efficiency. By prioritizing clear communication with clients, adhering strictly to schedules and SLAs, and maintaining a 'zero' defect rate in deliveries, I've demonstrated my ability to meet and exceed project expectations. My dedication to enhancing my technical, domain, and behavioral competencies has not only fueled my personal growth but has also positively impacted our team's dynamics and productivity. I look forward to building on this foundation to tackle new challenges and contribute to our collective achievements.
+attempt = 0
+        while attempt < max_attempts:
+            response = self.codepipeline.list_pipeline_executions(pipelineName=pipeline_name, maxResults=1)
+            if not response['pipelineExecutionSummaries']:
+                raise Exception("No executions found for the pipeline.")
+            latest_execution = response['pipelineExecutionSummaries'][0]
+            execution_id = latest_execution['pipelineExecutionId']
+
+            execution_details = self.codepipeline.get_pipeline_execution(pipelineName=pipeline_name, pipelineExecutionId=execution_id)
+            status = execution_details['pipelineExecution']['status']
+
+            if status in ['Succeeded', 'Failed', 'Stopped']:
+                return status
+            else:
+                time.sleep(wait_time)
+                attempt += 1
