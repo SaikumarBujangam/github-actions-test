@@ -1,18 +1,106 @@
-[2024-03-27 16:44:28,450] [sourcestage] [consolelogger] [<module>:56] [ERROR]: "Pipeline execution failed/stopped in stages: Deploy"
-[2024-03-27 16:44:28,450] [sourcestage] [consolelogger] [<module>:61] [ERROR]: "Error checking pipeline status: Pipeline execution failed/stopped in sta
-ges: Deploy"
+#!/bin/bash
+echo "Starting AfterInstall at $date"
 
-Code:
+SOURCE_DIR="{{APP_LAND_DIR}}/stage"
+DEST_DIR="/apps"
 
-        try:
-            statuses = pipeline_checker.check_pipeline_status()
-            failed_stages = [stage for stage in statuses if len(stage) > 1 and stage[1] in ['Failed', 'Stopped']]
-            if failed_stages:
-                error_message = "Pipeline execution failed/stopped in stages: {}".format(", ".join([stage[0] for stage in failed_stages]))
-                pipeline_checker.logger.error(error_message)
-                raise Exception(error_message)
-            else:
-                pipeline_checker.logger.info("All pipeline stages completed successfully.")
-        except Exception as e:
-            pipeline_checker.logger.error("Error checking pipeline status: {}".format(e))
-            sys.exit(1)
+# List all contents under the team directory
+ls -al {{APP_DATAPRODUCT_DIR}}/{{APP_SUBJECT_AREA}}
+# Create the directories if they don't exist
+sudo -i -u {{DATAPRODUCT_USER}} mkdir {{APP_INSTALL_DIR}}
+sudo -i -u {{DATAPRODUCT_USER}} mkdir -p {{APP_LAND_DIR}}/stage
+# Unzip the tar file to a staging folder
+sudo -i -u {{DATAPRODUCT_USER}} tar -xvf {{APP_LAND_DIR}}/{{APP_SUBJECT_AREA}}-{{APP_VERSION}}.tar --directory {{APP_LAND_DIR}}/stage
+
+# Set the staging directory
+cd {{APP_LAND_DIR}}/stage
+ls -al {{APP_LAND_DIR}}/stage
+
+# Loop through all files in the staging directory
+for install_path in $(find . -type f); do
+  # File name
+  install_file=$(echo ${install_path##*/})
+  # Directory name
+  install_directory=$(echo ${install_path%/*} | cut -c3- )
+  # Verify the files by comparing the source and destination directory hash codes
+  # Skip to the next line of the FOR loop if the check fails
+  if [ -e "${DEST_DIR}/${install_directory}/${install_file}" ]; then
+    source_checksum=$(md5sum "${SOURCE_DIR}/${install_directory}/${install_file}" | awk '{print $1}')
+    dest_checksum=$(md5sum "${DEST_DIR}/${install_directory}/${install_file}" | awk '{print $1}')
+    if [ "${source_checksum}" = "${dest_checksum}" ]; then
+      echo "File unchanged: ${DEST_DIR}/${install_directory}/${install_file}. Skipping ..."
+      continue
+    fi
+  fi
+
+  echo $install_path
+  echo "creating this directory /apps/$install_directory"
+  echo "sudo -i -u {{DATAPRODUCT_USER}} mkdir -p /apps/${install_directory}"
+
+  # Create the sub directory if it doesn't exist
+  if [[ ! -e /apps/${install_directory} ]]; then
+    sudo -i -u {{DATAPRODUCT_USER}} mkdir -p /apps/${install_directory}
+    # Set permissions on the new folder only
+    chmod -R 775 /apps/${install_directory}
+    if [[ $? -ne "0" ]]; then
+      echo "Could not create directory: /apps/${install_directory}"
+      exit 1
+    fi
+
+    update_grp_dir="/apps"
+
+    # Loops through all files in the sub directory
+    for subdir in $(echo ${install_directory} | tr "/" " "); do
+      if [[ ${update_grp_dir} == "" ]]; then
+        update_grp_dir=${subdir}
+      else
+        update_grp_dir=${update_grp_dir}/${subdir}
+      fi
+
+      # Set the group if this is not a base directory
+      if [[ ${update_grp_dir} == "/apps" || ${update_grp_dir} == "/apps/edh" || ${update_grp_dir} == "/apps/edh/prod" || ${update_grp_dir} == "/apps/ben" ]]; then
+        echo "Base Directories, no action"
+      else
+        chgrp {{DATAPRODUCT_GROUP}} ${update_grp_dir}
+        if [[ $? -ne "0" ]]; then
+          echo "Could not chgrp to: {{DATAPRODUCT_GROUP}} on ${update_grp_dir}"
+          exit 1
+        fi
+      fi
+    done
+  fi
+
+  # Copy files from staging to the dataproduct folders
+  echo "Starting the copy of {{APP_LAND_DIR}}/stage/${install_directory}/${install_file} at $date"
+  sudo -i -u {{DATAPRODUCT_USER}} cp {{APP_LAND_DIR}}/stage/${install_directory}/${install_file} /apps/${install_directory}/${install_file}
+  # Exit if the copy fails
+  if [[ $? -ne "0" ]]; then
+    echo "Could not write file to: /apps/${install_directory}/${install_file}"
+    exit 1
+  fi
+
+
+  # Set permissions for the copied file
+  if [[ ( /apps/${install_directory} == *"apps/ben"* ||  /apps/${install_directory} == *"apps/edh"* || /apps/${install_directory} == *"apps/dataproduct"* )
+     && /apps/${install_directory} == *"/config" ]]; then
+    echo "Updated config file:" ${install_file}
+    chmod 666 /apps/${install_directory}/${install_file}
+  elif [[ ! ( ( /apps/${install_directory} == *"apps/ben"* ||  /apps/${install_directory} == *"apps/edh"* || /apps/${install_directory} == *"apps/dataproduct"* ) && ${install_directory} == *"/bin" )
+       && ! ( ( /apps/${install_directory} == *"apps/ben"* ||  /apps/${install_directory} == *"apps/edh"* ) && ${install_directory} == *"/log" )
+       && ! ( ${install_directory} == *"logs/dataproduct"* || ${install_directory} == *"working/dataproduct"* || ${install_directory} == *"runtime/dataproduct"* )
+       && ! ( /apps/${install_directory} == *"apps/edh/prod/raw"* ) ]]; then
+    echo "Updated other file:" ${install_file}
+    chmod 661 /apps/${install_directory}/${install_file}
+  else
+    chmod 775 /apps/${install_directory}/${install_file}
+  fi
+done
+
+# Remove the staging directories
+cd {{APP_LAND_DIR}}
+rm -rf stage
+# Create log
+cp -f /opt/codedeploy-agent/deployment-root/deployment-logs/codedeploy-agent-deployments.log /tmp/codedeploy-agent-deployments.log
+chmod 755 /tmp/codedeploy-agent-deployments.log
+chown  {{DATAPRODUCT_USER}}:{{DATAPRODUCT_GROUP}} /tmp/codedeploy-agent-deployments.log
+echo "Finishing AfterInstall at $date"
